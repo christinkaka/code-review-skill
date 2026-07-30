@@ -1,0 +1,52 @@
+# 设计规约 - API 设计规范
+
+rules:
+  - id: api-java-rest-naming
+    languages: [java]
+    pattern: |
+      @GetMapping("/get$RESOURCE")
+    message: >
+      [API规范] RESTful 接口命名不规范。GET 接口应使用名词复数形式（如 /users），
+      不应使用动词前缀（如 /getUser）。
+    severity: WARNING
+    category: design
+    fix: '@GetMapping("/users")'
+
+  - id: api-java-missing-response-wrapper
+    languages: [java]
+    patterns:
+      - pattern: |
+          @RestController
+          ...
+          public $RETURNTYPE $METHOD(...) {
+            ...
+            return $DATA;
+          }
+      - pattern-not: |
+          @RestController
+          ...
+          public Result<$TYPE> $METHOD(...) {
+            ...
+            return Result.success($DATA);
+          }
+    message: "[API规范] Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。"
+    severity: INFO
+    category: design
+
+  - id: api-java-missing-validation
+    languages: [java]
+    patterns:
+      - pattern: |
+          @PostMapping(...)
+          public $RETURNTYPE $METHOD(@RequestBody $TYPE $param) {
+            ...
+          }
+      - pattern-not: |
+          @PostMapping(...)
+          public $RETURNTYPE $METHOD(@Valid @RequestBody $TYPE $param) {
+            ...
+          }
+    message: "[API规范] @RequestBody 参数缺少 @Valid 注解，入参校验未启用。"
+    severity: WARNING
+    category: design
+    fix: "@Valid @RequestBody $TYPE $param"

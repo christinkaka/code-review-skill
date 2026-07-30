@@ -1,0 +1,24 @@
+# 严格评审规约配置
+name: strict
+description: 严格模式，所有规约提升为 ERROR 级别
+
+specs:
+  - path: design/*.md
+    enabled: true
+    severity_override: ERROR
+  - path: implementation/*.md
+    enabled: true
+    severity_override: WARNING
+  - path: security/*.md
+    enabled: true
+    severity_override: ERROR
+  - path: rules/*.md
+    enabled: true
+    severity_override: WARNING
+
+exclude:
+  - "**/test/**"
+  - "**/generated/**"
+  - "**/target/**"
+  - "**/build/**"
+  - "**/node_modules/**"

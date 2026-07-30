@@ -1,0 +1,43 @@
+# 设计规约 - 数据库设计规范
+
+rules:
+  - id: db-java-missing-transaction
+    languages: [java]
+    patterns:
+      - pattern: |
+          public void $METHOD(...) {
+            ...
+            $repo1.save(...);
+            ...
+            $repo2.save(...);
+            ...
+          }
+      - pattern-not: |
+          @Transactional
+          public void $METHOD(...) {
+            ...
+          }
+    message: "[数据库规范] 方法中执行多次数据库写操作但未添加 @Transactional，可能导致数据不一致。"
+    severity: WARNING
+    category: design
+
+  - id: db-java-n-plus-one
+    languages: [java]
+    patterns:
+      - pattern: |
+          for ($TYPE $item : $list) {
+            ...
+            $repo.findById($item.getId());
+            ...
+          }
+    message: "[数据库规范] 循环中执行数据库查询（N+1 问题），严重影响性能。使用 JOIN 查询或批量查询替代。"
+    severity: WARNING
+    category: design
+
+  - id: db-python-raw-sql-in-orm
+    languages: [python]
+    pattern: |
+      $session.execute(text("SELECT ..."))
+    message: "[数据库规范] ORM 中使用原生 SQL，可能绕过 ORM 的安全机制。优先使用 ORM API。"
+    severity: INFO
+    category: design

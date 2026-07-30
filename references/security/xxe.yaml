@@ -1,0 +1,158 @@
+# 安全规约 - XML 外部实体注入 (XXE)
+# CWE-611: Improper Neutralization of XML External Entity Reference
+# OWASP: A05:2021 - Security Misconfiguration
+
+rules:
+  # ===== Java =====
+  - id: xxe-java-sax-parser
+    languages: [java]
+    patterns:
+      - pattern: |
+          SAXParserFactory $FACTORY = SAXParserFactory.newInstance();
+          ...
+          $FACTORY.newSAXParser().parse(...);
+      - pattern-not: |
+          SAXParserFactory $FACTORY = SAXParserFactory.newInstance();
+          ...
+          $FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+          ...
+          $FACTORY.newSAXParser().parse(...);
+    message: "[XXE] SAXParser 未禁用外部实体，存在 XXE 风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-611
+      owasp: "A05:2021"
+
+  - id: xxe-java-xml-reader
+    languages: [java]
+    pattern: |
+      XMLReader $READER = XMLReaderFactory.createXMLReader();
+      ...
+      $READER.parse(...);
+    message: "[XXE] XMLReader 未配置安全特性，存在 XXE 风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-611
+
+  - id: xxe-java-unmarshaller
+    languages: [java]
+    pattern: |
+      Unmarshaller $UM = $JAXB_CONTEXT.createUnmarshaller();
+      ...
+      $UM.unmarshal(...);
+    message: "[XXE] JAXB Unmarshaller 处理外部 XML 输入时可能存在 XXE 风险，请确认输入来源可信。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-611
+
+  - id: xxe-java-document-builder-usage
+    languages: [java]
+    patterns:
+      - pattern: |
+          DocumentBuilderFactory $FACTORY = DocumentBuilderFactory.newInstance();
+          ...
+          DocumentBuilder $BUILDER = $FACTORY.newDocumentBuilder();
+          ...
+          $BUILDER.parse(...);
+      - pattern-not: |
+          DocumentBuilderFactory $FACTORY = DocumentBuilderFactory.newInstance();
+          ...
+          $FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+          ...
+          DocumentBuilder $BUILDER = $FACTORY.newDocumentBuilder();
+          ...
+          $BUILDER.parse(...);
+    message: >
+      [XXE] DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。
+      攻击者可通过构造恶意 XML 读取服务器文件或发起 SSRF 攻击。
+    severity: ERROR
+    category: security
+    fix: |
+      FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+      FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+      FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    metadata:
+      cwe: CWE-611
+      owasp: "A05:2021"
+      confidence: MEDIUM
+
+  # ===== Python =====
+  - id: xxe-python-lxml
+    languages: [python]
+    pattern: |
+      from lxml import etree
+      ...
+      etree.parse($SOURCE)
+    message: "[XXE] lxml.etree.parse() 默认可能解析外部实体，建议使用 defusedxml 替代。"
+    severity: WARNING
+    category: security
+    fix: "from defusedxml.lxml import fromstring, parse"
+    metadata:
+      cwe: CWE-611
+
+  - id: xxe-python-xml-dom
+    languages: [python]
+    pattern: |
+      import xml.dom.minidom
+      ...
+      xml.dom.minidom.parse($SOURCE)
+    message: "[XXE] xml.dom.minidom 不安全处理外部实体，建议使用 defusedxml。"
+    severity: ERROR
+    category: security
+    fix: "from defusedxml.minidom import parse"
+    metadata:
+      cwe: CWE-611
+
+  - id: xxe-python-lxml-parser
+    languages: [python]
+    patterns:
+      - pattern: |
+          from lxml import etree
+          ...
+          etree.XMLParser()
+      - pattern-not: |
+          from lxml import etree
+          ...
+          etree.XMLParser(resolve_entities=False, ...)
+    message: "[XXE] lxml.etree.XMLParser() 使用默认配置，未禁用外部实体解析（resolve_entities 默认为 True），存在 XXE 漏洞。设置 resolve_entities=False, no_network=True。"
+    severity: ERROR
+    category: security
+    fix: "parser = etree.XMLParser(resolve_entities=False, no_network=True, dtd_validation=False)"
+    metadata:
+      cwe: CWE-611
+
+  - id: xxe-python-lxml-parse
+    languages: [python]
+    patterns:
+      - pattern: |
+          from lxml import etree
+          ...
+          etree.parse($FILE_PATH)
+      - pattern-not: |
+          from lxml import etree
+          ...
+          $PARSER = etree.XMLParser(resolve_entities=False, ...)
+          ...
+          etree.parse($FILE_PATH, $PARSER)
+    message: "[XXE] lxml.etree.parse() 未传入安全解析器，使用默认配置解析 XML 文件，存在 XXE 漏洞。创建禁用外部实体的 XMLParser 并传入。"
+    severity: ERROR
+    category: security
+    fix: "parser = etree.XMLParser(resolve_entities=False, no_network=True); tree = etree.parse(file_path, parser)"
+    metadata:
+      cwe: CWE-611
+
+  - id: xxe-python-lxml-resolve-entities
+    languages: [python]
+    pattern: |
+      from lxml import etree
+      ...
+      etree.XMLParser(resolve_entities=True, ...)
+    message: "[XXE] 显式设置 resolve_entities=True，主动启用了外部实体解析，存在 XXE 漏洞。设置 resolve_entities=False。"
+    severity: ERROR
+    category: security
+    fix: "parser = etree.XMLParser(resolve_entities=False)"
+    metadata:
+      cwe: CWE-611

@@ -1,0 +1,34 @@
+{
+  "round": 14,
+  "metrics": {
+    "recall": 80.8,
+    "precision": 61.8,
+    "fpr": 38.2,
+    "fnr": 19.2,
+    "f1": 70.0
+  },
+  "counts": {
+    "true_positives": 21,
+    "false_negatives": 5,
+    "false_positives": 13,
+    "total_scan": 35,
+    "total_known": 26
+  },
+  "targets": {
+    "recall": {
+      "target": 100,
+      "actual": 80.8,
+      "pass": false
+    },
+    "precision": {
+      "target": 84,
+      "actual": 61.8,
+      "pass": false
+    },
+    "f1": {
+      "target": 91,
+      "actual": 70.0,
+      "pass": false
+    }
+  }
+}

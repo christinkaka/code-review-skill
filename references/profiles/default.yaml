@@ -1,0 +1,56 @@
+# 默认评审规约配置
+name: default
+description: 默认评审规约集，启用全部规约类别
+
+specs:
+  # 设计规约
+  - path: design/architecture.md
+    enabled: true
+  - path: design/api-design.md
+    enabled: true
+  - path: design/database.md
+    enabled: true
+
+  # 代码实现规约
+  - path: implementation/naming.md
+    enabled: true
+  - path: implementation/error-handling.md
+    enabled: true
+  - path: implementation/concurrency.md
+    enabled: true
+  - path: implementation/null-safety.md
+    enabled: true
+
+  # 安全规约
+  - path: security/authorization.md
+    enabled: true
+  - path: security/xxe.md
+    enabled: true
+  - path: security/xss.md
+    enabled: true
+  - path: security/path-traversal.md
+    enabled: true
+  - path: security/privilege-escalation.md
+    enabled: true
+  - path: security/signature-bypass.md
+    enabled: true
+  - path: security/sql-injection.md
+    enabled: true
+  - path: security/ssrf.md
+    enabled: true
+
+  # 自定义规则
+  - path: rules/custom.md
+    enabled: true
+
+# 排除路径
+exclude:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/generated/**"
+  - "**/target/**"
+  - "**/build/**"
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/vendor/**"

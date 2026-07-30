@@ -1,0 +1,81 @@
+# 安全规约 - SQL 注入
+# CWE-89: Improper Neutralization of Special Elements used in an SQL Command
+# OWASP: A03:2021 - Injection
+
+rules:
+  - id: sqli-java-string-concat
+    languages: [java]
+    pattern: |
+      "SELECT ... " + $USER_INPUT + " ..."
+    message: "[SQL注入] 字符串拼接构建 SQL 语句，存在 SQL 注入风险。使用参数化查询（PreparedStatement）。"
+    severity: ERROR
+    category: security
+    fix: "PreparedStatement ps = conn.prepareStatement(\"SELECT ... WHERE id = ?\"); ps.setString(1, userInput);"
+    metadata:
+      cwe: CWE-89
+      owasp: "A03:2021"
+
+  - id: sqli-java-statement-execute
+    languages: [java]
+    patterns:
+      - pattern: |
+          Statement $STMT = ...;
+          ...
+          $STMT.execute("..." + $VAR + "...");
+    message: "[SQL注入] Statement 执行拼接 SQL，存在注入风险。改用 PreparedStatement。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-89
+
+  - id: sqli-java-statement-concat
+    languages: [java]
+    patterns:
+      - pattern: |
+          Statement $STMT = ...;
+          ...
+          $STMT.execute($SQL);
+    message: "[SQL注入] 使用字符串拼接构建 SQL 语句并通过 Statement 执行，存在 SQL 注入风险。使用 PreparedStatement 参数化查询。"
+    severity: ERROR
+    category: security
+    fix: "PreparedStatement ps = conn.prepareStatement(\"SELECT ... WHERE id = ?\"); ps.setString(1, userInput);"
+    metadata:
+      cwe: CWE-89
+      owasp: "A03:2021"
+
+  - id: sqli-java-mybatis-dollar
+    languages: [java]
+    pattern-regex: \$\{[a-zA-Z_.]+\}
+    message: >
+      [SQL注入] MyBatis 使用 ${} 占位符直接拼接变量，存在 SQL 注入风险。
+      使用 #{} 参数化占位符替代。
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-89
+
+  - id: sqli-python-execute-format
+    languages: [python]
+    patterns:
+      - pattern: |
+          $CURSOR.execute("...".format(...))
+      - pattern: |
+          $CURSOR.execute(f"...")
+      - pattern: |
+          $CURSOR.execute("..." + ... + "...")
+    message: "[SQL注入] Python 使用字符串格式化/拼接构建 SQL，存在注入风险。使用参数化查询。"
+    severity: ERROR
+    category: security
+    fix: "$CURSOR.execute(\"SELECT ... WHERE id = %s\", (user_input,))"
+    metadata:
+      cwe: CWE-89
+
+  - id: sqli-python-raw-query
+    languages: [python]
+    pattern: |
+      $ENGINE.execute("..." + ...)
+    message: "[SQL注入] SQLAlchemy raw query 使用字符串拼接，存在注入风险。使用 text() + 参数绑定。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-89

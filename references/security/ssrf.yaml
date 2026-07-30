@@ -1,0 +1,110 @@
+# 安全规约 - 服务端请求伪造 (SSRF)
+# CWE-918: Server-Side Request Forgery
+# OWASP: A10:2021 - SSRF
+
+rules:
+  - id: ssrf-java-url-connection
+    languages: [java]
+    patterns:
+      - pattern: |
+          new URL($USER_INPUT).openConnection()
+      - pattern-not: |
+          if (isAllowedUrl($USER_INPUT)) { ... }
+    message: "[SSRF] URL 连接使用用户输入未做白名单校验，存在 SSRF 风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918
+      owasp: "A10:2021"
+
+  - id: ssrf-java-http-client
+    languages: [java]
+    patterns:
+      - pattern: |
+          URI.create($USER_INPUT)
+      - pattern-not: |
+          if (isAllowedUrl($USER_INPUT)) { ... }
+    message: "[SSRF] HttpClient 请求用户可控 URL，存在 SSRF 风险。添加 URL 白名单和协议限制。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918
+
+  - id: ssrf-python-requests
+    languages: [python]
+    patterns:
+      - pattern: |
+          requests.get($USER_INPUT, ...)
+      - pattern-not: |
+          if is_safe_url($USER_INPUT): ...
+    message: "[SSRF] requests 请求用户可控 URL，存在 SSRF 风险。使用 URL 白名单 + 协议限制。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918
+
+  - id: ssrf-python-urllib
+    languages: [python]
+    pattern: |
+      urllib.request.urlopen($USER_INPUT)
+    message: "[SSRF] urllib 请求用户可控 URL，存在 SSRF 风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918
+
+  - id: ssrf-js-fetch
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: |
+          fetch($URL, ...)
+      - pattern-not: |
+          $URL.includes("localhost")
+      - pattern-not: |
+          $URL.includes("127.0.0.1")
+      - pattern-not: |
+          allowedDomains.includes(...)
+      - pattern-not: |
+          if (!$URL.startsWith("https://")) { ... }
+    message: "[SSRF] fetch() 使用用户可控 URL，存在 SSRF 风险。添加 URL 白名单校验。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918
+
+  - id: ssrf-js-axios
+    languages: [javascript, typescript]
+    pattern: |
+      axios.get($USER_INPUT, ...)
+    message: "[SSRF] axios 请求用户可控 URL（服务端），存在 SSRF 风险。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-918
+
+  - id: ssrf-js-http-get
+    languages: [javascript, typescript]
+    pattern: |
+      http.get($USER_INPUT, ...)
+    message: "[SSRF] http.get() 请求用户可控 URL，存在 SSRF 风险。添加 URL 白名单校验。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918
+
+  - id: ssrf-js-fetch-weak-filter
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: |
+          if ($URL.includes("localhost")) { ... }
+          ...
+          fetch($URL, ...)
+      - pattern: |
+          if ($URL.includes("127.0.0.1")) { ... }
+          ...
+          fetch($URL, ...)
+    message: "[SSRF] 仅使用字符串包含检查过滤 URL，可被 127.0.0.1、0.0.0.0、[::1] 等绕过。使用 URL 解析 + 域名白名单 + DNS 解析校验的组合防护。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-918

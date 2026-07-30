@@ -1,0 +1,329 @@
+{
+  "round": 10,
+  "total_known": 26,
+  "total_scan": 49,
+  "loose_match": {
+    "tp": 15,
+    "fn": 11,
+    "fp": 26,
+    "recall": 57.7,
+    "precision": 30.6,
+    "fpr": 53.1,
+    "fnr": 42.3,
+    "f1": 40.0
+  },
+  "strict_match": {
+    "tp": 8,
+    "recall": 30.8,
+    "precision": 16.3,
+    "f1": 21.3
+  },
+  "safe_file_fp": 23,
+  "detected": [
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "expected_rule": "xxe-java-document-builder-usage",
+      "scan_rule": "xxe-java-document-builder-usage"
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "expected_rule": "xxe-java-document-builder-usage",
+      "scan_rule": "xxe-java-document-builder-usage"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 27,
+      "expected_rule": "path-traversal-java-file",
+      "scan_rule": "path-write-traversal"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 36,
+      "expected_rule": "path-traversal-java-weak-filter",
+      "scan_rule": "path-traversal-pattern"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 22,
+      "expected_rule": "priv-python-subprocess-shell-true",
+      "scan_rule": "priv-python-subprocess-run"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 30,
+      "expected_rule": "priv-python-os-system",
+      "scan_rule": "priv-python-os-system"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 37,
+      "expected_rule": "priv-python-popen-shell-true",
+      "scan_rule": "null-python-none-check"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 22,
+      "expected_rule": "path-traversal-python-os-path-join",
+      "scan_rule": "path-config-traversal"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 30,
+      "expected_rule": "path-traversal-python-weak-filter",
+      "scan_rule": "path-traversal-pattern"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 39,
+      "expected_rule": "path-traversal-python-os-path-join",
+      "scan_rule": "path-read-traversal"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 21,
+      "expected_rule": "xss-js-innerhtml",
+      "scan_rule": "xss-js-innerhtml"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 30,
+      "expected_rule": "xss-js-document-write",
+      "scan_rule": "xss-js-document-write"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 22,
+      "expected_rule": "ssrf-js-fetch",
+      "scan_rule": "ssrf-js-fetch"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 44,
+      "expected_rule": "ssrf-js-fetch",
+      "scan_rule": "ssrf-js-fetch"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 59,
+      "expected_rule": "ssrf-js-fetch-weak-filter",
+      "scan_rule": "ssrf-js-fetch"
+    }
+  ],
+  "missed": [
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 30,
+      "rule_id": "xss-java-servlet-output"
+    },
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 44,
+      "rule_id": "xss-java-servlet-output"
+    },
+    {
+      "file": "java/sqli/Vulnerable.java",
+      "line": 33,
+      "rule_id": "sqli-java-statement-concat"
+    },
+    {
+      "file": "java/sqli/Vulnerable.java",
+      "line": 45,
+      "rule_id": "sqli-java-statement-concat"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 20,
+      "rule_id": "xxe-python-lxml-parser"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 28,
+      "rule_id": "xxe-python-lxml-parse"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 35,
+      "rule_id": "xxe-python-lxml-resolve-entities"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 46,
+      "rule_id": "priv-python-check-output-shell-true"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 40,
+      "rule_id": "xss-js-outerhtml"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 50,
+      "rule_id": "xss-js-dangerouslysetinnerhtml"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 31,
+      "rule_id": "ssrf-js-http-get"
+    }
+  ],
+  "false_positives": [
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 18,
+      "rule_id": "custom-hardcoded-password",
+      "safe_file": true
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 18,
+      "rule_id": "naming-java-constant-case",
+      "safe_file": true
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 24,
+      "rule_id": "path-read-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 25,
+      "rule_id": "path-write-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 32,
+      "rule_id": "path-config-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 47,
+      "rule_id": "path-config-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 20,
+      "rule_id": "custom-hardcoded-password",
+      "safe_file": false
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 20,
+      "rule_id": "naming-java-constant-case",
+      "safe_file": false
+    },
+    {
+      "file": "java/sqli/Safe.java",
+      "line": 30,
+      "rule_id": "custom-hardcoded-password",
+      "safe_file": true
+    },
+    {
+      "file": "java/sqli/Safe.java",
+      "line": 43,
+      "rule_id": "custom-hardcoded-password",
+      "safe_file": true
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 18,
+      "rule_id": "priv-python-subprocess-run",
+      "safe_file": true
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 30,
+      "rule_id": "priv-python-subprocess-run",
+      "safe_file": true
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 42,
+      "rule_id": "priv-python-subprocess-run",
+      "safe_file": true
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "rule_id": "null-python-none-check",
+      "safe_file": true
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "rule_id": "priv-python-subprocess-popen",
+      "safe_file": true
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "rule_id": "path-config-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "rule_id": "path-read-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "rule_id": "path-config-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "rule_id": "path-read-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "rule_id": "path-read-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "rule_id": "path-write-traversal",
+      "safe_file": true
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "rule_id": "xxe-python-lxml",
+      "safe_file": false
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "line": 40,
+      "rule_id": "ssrf-js-fetch",
+      "safe_file": true
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "line": 82,
+      "rule_id": "ssrf-js-fetch",
+      "safe_file": true
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "line": 20,
+      "rule_id": "xss-js-innerhtml",
+      "safe_file": true
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "line": 68,
+      "rule_id": "xss-js-innerhtml",
+      "safe_file": true
+    }
+  ]
+}

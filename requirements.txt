@@ -1,0 +1,19 @@
+# 核心依赖
+pyyaml>=6.0
+gitpython>=3.1.40
+rich>=13.0.0
+
+# 规则引擎（可选，推荐安装）
+# semgrep 需要通过 pip install semgrep 或 brew install semgrep 单独安装
+
+# 多语言解析（可选，用于调用图分析）
+tree-sitter>=0.20.0
+tree-sitter-java>=0.20.0
+tree-sitter-python>=0.20.0
+tree-sitter-javascript>=0.20.0
+
+# 报告生成
+jinja2>=3.1.0
+
+# 数据处理
+pandas>=2.0.0

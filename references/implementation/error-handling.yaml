@@ -1,0 +1,58 @@
+# 代码实现规约 - 异常处理规范
+
+rules:
+  - id: err-java-empty-catch
+    languages: [java]
+    pattern: |
+      catch ($Exception $e) {
+      }
+    message: "[异常处理] 空的 catch 块会吞掉异常，导致问题难以排查。至少记录日志。"
+    severity: WARNING
+    category: implementation
+    fix: "catch (Exception e) { log.error(\"Operation failed\", e); throw new BusinessException(e); }"
+
+  - id: err-java-catch-generic
+    languages: [java]
+    patterns:
+      - pattern: |
+          catch (Exception $e) {
+            ...
+          }
+      - pattern-not: |
+          catch (Exception $e) {
+            log.error(...);
+            ...
+          }
+    message: "[异常处理] 捕获通用 Exception 未记录日志，建议捕获具体异常类型或至少记录日志。"
+    severity: WARNING
+    category: implementation
+
+  - id: err-java-throw-in-finally
+    languages: [java]
+    pattern: |
+      finally {
+        ...
+        throw $EXCEPTION;
+      }
+    message: "[异常处理] finally 块中抛出异常会覆盖 try 块中的原始异常，导致信息丢失。"
+    severity: ERROR
+    category: implementation
+
+  - id: err-python-bare-except
+    languages: [python]
+    pattern: |
+      except:
+        ...
+    message: "[异常处理] 使用裸 except 会捕获所有异常（包括 SystemExit、KeyboardInterrupt），应指定具体异常类型。"
+    severity: WARNING
+    category: implementation
+    fix: "except (ValueError, TypeError) as e:"
+
+  - id: err-python-silent-except
+    languages: [python]
+    pattern: |
+      except $EXCEPTION:
+        pass
+    message: "[异常处理] except 块中使用 pass 吞掉异常，建议至少记录日志。"
+    severity: WARNING
+    category: implementation

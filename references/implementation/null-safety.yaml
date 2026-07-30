@@ -1,0 +1,27 @@
+# 代码实现规约 - 空指针防护
+
+rules:
+  - id: null-java-method-chain
+    languages: [java]
+    pattern: |
+      $OBJ.get$B().get$C().get$D()
+    message: "[空指针] 链式调用未做空值检查，任一环节返回 null 将导致 NPE。建议使用 Optional 或逐级判空。"
+    severity: WARNING
+    category: implementation
+    fix: "Optional.ofNullable($OBJ).map(A::getB).map(B::getC).map(C::getD).orElse(defaultValue);"
+
+  - id: null-java-collection-get
+    languages: [java]
+    pattern: |
+      $MAP.get($KEY).$METHOD(...)
+    message: "[空指针] Map.get() 可能返回 null，直接调用方法会导致 NPE。先判空或使用 getOrDefault()。"
+    severity: WARNING
+    category: implementation
+
+  - id: null-java-unwrap-boxed
+    languages: [java]
+    pattern: |
+      int $X = $INTEGER_OBJ;
+    message: "[空指针] Integer 自动拆箱为 int，若 Integer 为 null 将抛出 NullPointerException。使用 Optional 或显式判空。"
+    severity: WARNING
+    category: implementation
