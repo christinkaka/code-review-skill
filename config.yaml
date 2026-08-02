@@ -50,6 +50,19 @@ review:
     generate_fix: true
     # 是否生成分析说明
     generate_analysis: true
+  
+  # Subagent 评审配置（温度参数）
+  subagent:
+    # 是否启用 subagent 评审
+    enabled: true
+    # 各工作流的温度参数（0.0-1.0，越低越严谨）
+    # 温度参数影响评审的严谨性和一致性
+    temperature:
+      security: 0.1        # 安全审计需要最高严谨性
+      quality: 0.2         # 代码质量评审需要较高一致性
+      performance: 0.1     # 性能分析需要严谨性
+      architecture: 0.2    # 架构评审需要一致性
+      comprehensive: 0.1   # 综合评审需要严谨性
 
 # Semgrep 配置（可选增强，不是必须的）
 semgrep:

@@ -163,20 +163,25 @@ def run_scan(args):
     )
     logger.info(f"  发现 {len(raw_issues)} 个原始问题")
 
-    # 5. AI 增强评审（可选）
+    # 5. 生成 Subagent 评审任务
     issues = raw_issues
-    if config.get("ai_review", {}).get("enabled", False):
-        logger.info("[4/5] AI 增强评审...")
-        ai_config = config.get("ai_review", {})
-        # 从命令行参数获取工作流
-        if hasattr(args, "workflow"):
-            ai_config["workflow"] = args.workflow
-        ai_reviewer = AIReviewer(ai_config)
-        issues = ai_reviewer.review(raw_issues, diff_result, call_graph)
-        logger.info(f"  工作流: {ai_reviewer.get_current_workflow()}")
-        logger.info(f"  AI 过滤后剩余 {len(issues)} 个问题")
-    else:
-        logger.info("[4/5] AI 增强评审已跳过（未启用）")
+    logger.info("[4/5] 生成 Subagent 评审任务...")
+    ai_config = {}
+    # 从命令行参数获取工作流
+    if hasattr(args, "workflow"):
+        ai_config["workflow"] = args.workflow
+    ai_reviewer = AIReviewer(ai_config)
+    
+    # 生成 subagent 任务描述
+    task = ai_reviewer.generate_subagent_task(raw_issues, diff_result, call_graph)
+    
+    # 保存任务到文件
+    task_file = output_dir / "subagent-review-task.md"
+    ai_reviewer.save_task_to_file(task, str(task_file))
+    
+    logger.info(f"  工作流: {ai_reviewer.get_current_workflow()}")
+    logger.info(f"  Subagent 任务已保存到: {task_file}")
+    logger.info(f"  请 TRAE Agent 委派 subagent 读取该文件并执行评审")
 
     # 6. 关联调用链
     for issue in issues:

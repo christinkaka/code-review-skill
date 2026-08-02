@@ -180,10 +180,20 @@ class RuleEngine:
         self.specs_dir = Path(specs_dir)
         self.profile = profile
         self.md_parser = MarkdownRuleParser()
+        
+        # 初始化预编译器
+        try:
+            from rule_compiler import RuleCompiler
+            self.compiler = RuleCompiler(specs_dir)
+            self.use_cache = True
+        except ImportError:
+            self.compiler = None
+            self.use_cache = False
+        
         self.rules = self._load_rules()
 
     def _load_rules(self) -> List[Dict]:
-        """加载 Profile 中启用的所有规则（从 Markdown 文件解析）"""
+        """加载 Profile 中启用的所有规则（优先使用预编译缓存）"""
         all_rules = []
 
         for spec in self.profile.get("specs", []):
@@ -209,7 +219,27 @@ class RuleEngine:
                     continue
 
                 try:
-                    rules = self.md_parser.parse_file(file_path)
+                    # 尝试从缓存加载
+                    if self.use_cache and self.compiler:
+                        rel_path = str(Path(file_path).relative_to(self.specs_dir))
+                        manifest = self.compiler.load_manifest()
+                        current_hash = self.compiler.compute_file_hash(file_path)
+                        
+                        if self.compiler.is_cache_valid(rel_path, current_hash, manifest):
+                            # 从缓存加载
+                            compiled_path = self.compiler.compiled_dir / f"{rel_path}.json"
+                            with open(compiled_path, "r", encoding="utf-8") as f:
+                                compiled = json.load(f)
+                                rules = compiled.get("rules", [])
+                                logger.debug(f"从缓存加载 {rel_path} ({len(rules)} 条规则)")
+                        else:
+                            # 缓存无效，重新解析
+                            rules = self.md_parser.parse_file(file_path)
+                            logger.debug(f"缓存无效，重新解析 {os.path.basename(file_path)}")
+                    else:
+                        # 不使用缓存，直接解析
+                        rules = self.md_parser.parse_file(file_path)
+                    
                     for rule in rules:
                         # Skip disabled rules
                         if rule.get("enabled") is False:
@@ -218,9 +248,9 @@ class RuleEngine:
                         if severity_override:
                             rule["severity"] = severity_override
                         all_rules.append(rule)
-                    logger.debug(f"从 {os.path.basename(file_path)} 解析出 {len(rules)} 条规则")
+                    logger.debug(f"从 {os.path.basename(file_path)} 加载 {len(rules)} 条规则")
                 except Exception as e:
-                    logger.error(f"解析规约文件失败 {file_path}: {e}")
+                    logger.error(f"加载规约文件失败 {file_path}: {e}")
 
         logger.info(f"已加载 {len(all_rules)} 条规则（从 Markdown 规约）")
         return all_rules

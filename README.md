@@ -3,9 +3,11 @@
 自动化代码评审工具，支持分支差异扫描、调用链分析、多规约（设计/实现/安全）自动评审，输出结构化问题报告与修复建议。
 
 **核心设计理念**：
-- **Agent 主导**：Agent 自身就是 LLM，直接执行评审，无需外部 API
-- **离线优先**：所有核心功能离线可用，最小化外部依赖
-- **脚本辅助**：Python 脚本只负责 Git diff 提取、文件解析、报告格式化
+- **规则引擎主导**：基于 Semgrep 和内置正则引擎进行代码扫描，完全离线可用
+- **主 Agent 调度**：主 Agent 负责流程编排，委派子 Agent 进行代码评审
+- **子 Agent 评审**：子 Agent 使用低温度参数（0.1-0.2）确保严谨性和一致性
+- **离线优先**：所有核心功能离线可用，无需外部 API
+- **脚本辅助**：Python 脚本只负责确定性扫描，不参与 AI 评审
 
 ---
 
@@ -93,14 +95,27 @@ Step 2: 数据提取（Python 脚本辅助）
 ├─ 调用图构建（追踪血缘关系）
 └─ 读取规约文件（references/）
 
-Step 3: Agent 评审（核心）
-├─ Agent 读取规约 Markdown
-├─ Agent 分析变更代码
-├─ Agent 执行评审（利用自身 LLM 能力）
-├─ Agent 过滤误报（基于上下文理解）
-└─ Agent 生成修复建议
+Step 3: 规则预编译（可选，自动执行）
+├─ 计算 Markdown 规则文件的 hash
+├─ 检查缓存（references/compiled/）是否有效
+├─ 如果 hash 变化，重新解析 Markdown
+├─ 如果 hash 未变化，直接加载缓存
+└─ 性能提升：加载速度提升 50%（17ms → 8ms）
 
-Step 4: 报告生成（Python 脚本辅助）
+Step 4: 规则引擎评审（核心）
+├─ 加载规约文件（优先使用预编译缓存）
+├─ 使用 Semgrep 或内置正则引擎执行扫描
+├─ 生成结构化问题列表
+└─ 生成 subagent 评审任务文件
+
+Step 5: 子 Agent 评审（主 Agent 委派）
+├─ 主 Agent 读取 config.yaml 中的温度参数
+├─ 主 Agent 委派子 Agent 执行代码评审
+├─ 子 Agent 使用低温度参数（0.1-0.2）确保严谨性
+├─ 子 Agent 分析代码上下文，过滤误报
+└─ 返回结构化评审结果
+
+Step 6: 报告生成（Python 脚本辅助）
 ├─ 格式化报告（JSON + Markdown）
 ├─ 统计摘要（按规约类型、严重等级、文件维度）
 └─ 输出到 report/ 目录
@@ -115,11 +130,11 @@ Step 4: 报告生成（Python 脚本辅助）
 ### 核心技术层次
 
 ```
-Level 3: Agent 评审（核心）
-├─ Agent 自身就是 LLM，直接执行评审
+Level 3: Subagent 评审（核心）
+├─ TRAE Agent 委派 subagent 执行代码评审
+├─ 低温度参数（0.1-0.2）确保严谨性和一致性
 ├─ 上下文理解，过滤误报
-├─ 生成修复建议和分析说明
-└─ 无需外部 API，离线可用
+└─ 生成修复建议和分析说明
     ↓
 Level 2: Semgrep 规则引擎（可选增强）
 ├─ 跨行模式匹配
@@ -144,7 +159,7 @@ Level 0: Git 差异分析（变更检测）
 
 | 技术 | 精准度 | 性能 | 适用场景 | 外部依赖 | 当前状态 |
 |------|--------|------|----------|----------|----------|
-| **Agent 评审** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 核心评审，上下文理解 | 无 | ✅ 已集成 |
+| **Subagent 评审** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 低温度参数确保严谨性 | 无（TRAE Agent 委派） | ✅ 已集成 |
 | **Semgrep** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 跨行模式、数据流分析 | 需安装 | ⚠️ 可选 |
 | **Tree-sitter** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | AST 解析、调用图 | 无 | ✅ 已集成 |
 | **GitPython** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 分支差异、变更检测 | 无 | ✅ 已集成 |
@@ -159,9 +174,9 @@ Level 0: Git 差异分析（变更检测）
 | **tree-sitter** | ✅ 必须 | AST 解析 | ✅ |
 | **rich** | ✅ 必须 | 终端输出 | ✅ |
 | **Semgrep** | ❌ 可选 | 精准模式匹配 | ✅（如果已安装） |
-| **外部 LLM API** | ❌ 不需要 | Agent 自身就是 LLM | - |
+| **外部 LLM API** | ❌ 不需要 | AI Agent 本身就是 LLM | - |
 
-**核心优势**：所有核心功能离线可用，无需外部 API 调用。
+**核心优势**：所有核心功能离线可用，无需外部 API 调用。AI Agent 直接分析扫描结果，无需额外调用 LLM API。
 
 详细技术分析请参考 [TECH-STACK.md](docs/TECH-STACK.md)。
 
@@ -230,20 +245,20 @@ flowchart TB
         输出: merged_issues[]"]
     end
 
-    subgraph AI评审层["AI 评审层"]
+    subgraph AI评审层["Subagent 评审层"]
         A1["上下文感知
         ─────
-        Agent 读取代码+调用图
+        Subagent 读取代码+调用图
         理解语义，关联分析
         输出: 增强上下文"]
         A2["误报过滤
         ─────
-        LLM 置信度评估
-        过滤低置信度问题
+        低温度参数（0.1-0.2）
+        确保严谨性和一致性
         输出: is_false_positive"]
         A3["修复建议生成
         ─────
-        5种工作流提示词
+        Subagent 直接生成
         安全/质量/性能/架构
         输出: enhanced_fix"]
     end
@@ -296,7 +311,7 @@ flowchart TB
 1. **调度层** → 触发扫描任务（Cron 定时 / 手动触发两种方式）
 2. **差异分析层** → 提取变更文件和调用关系（Git Diff + Tree-sitter）
 3. **规约引擎层** → 双引擎并行扫描（内置正则 + Semgrep）
-4. **AI 评审层** → 上下文感知、误报过滤、修复建议（Agent 主导）
+4. **Subagent 评审层** → TRAE Agent 委派 subagent，使用低温度参数（0.1-0.2）确保严谨性和一致性
 5. **输出层** → 生成报告和通知（JSON/Markdown/Webhook）
 6. **扫描完成通知** → 通过 Webhook 将结果发送到外部系统
 
@@ -329,13 +344,46 @@ flowchart TB
 | **Semgrep 引擎** | 调用 Semgrep CLI，YAML 规则格式 | 跨行模式匹配，数据流分析 | Semgrep JSON 输出，精准度高 |
 | **双引擎合并** | `dual_engine.py` 合并结果，去重 | 结合两者优势，提高检出率 | 去重后的问题列表，标注检出引擎 |
 
-### AI 评审层
+### Subagent 评审层
 
 | 模块 | 实现方式 | 效果 | 输出 |
 |------|----------|------|------|
-| **上下文感知** | Agent 读取代码上下文、调用图、diff | 理解代码语义，避免误报 | 增强的问题上下文 |
-| **误报过滤** | LLM 评估置信度，过滤低置信度问题 | 减少噪音，提高准确性 | `is_false_positive: bool`，`ai_confidence: float` |
-| **修复建议生成** | 5 种工作流提示词（安全/质量/性能/架构/综合） | 提供针对性的修复代码 | `enhanced_fix: string`，工作流特定字段 |
+| **上下文感知** | Subagent 读取代码上下文、调用图、diff | 理解代码语义，避免误报 | 增强的问题上下文 |
+| **误报过滤** | 低温度参数（0.1-0.2）确保严谨性和一致性 | 减少噪音，提高准确性 | `is_false_positive: bool`，`ai_confidence: float` |
+| **修复建议生成** | Subagent 直接生成修复建议 | 提供针对性的修复代码 | `enhanced_fix: string`，工作流特定字段 |
+
+**说明**：TRAE Agent 委派 subagent 执行代码评审，通过低温度参数确保严谨性和一致性。
+
+**温度参数配置**：
+
+温度参数可以在 `config.yaml` 中配置，支持按工作流自定义：
+
+```yaml
+review:
+  subagent:
+    enabled: true
+    temperature:
+      security: 0.1        # 安全审计需要最高严谨性
+      quality: 0.2         # 代码质量评审需要较高一致性
+      performance: 0.1     # 性能分析需要严谨性
+      architecture: 0.2    # 架构评审需要一致性
+      comprehensive: 0.1   # 综合评审需要严谨性
+```
+
+**温度参数说明**：
+
+| 工作流 | 默认温度 | 说明 |
+|--------|----------|------|
+| security | 0.1 | 安全审计需要最高严谨性 |
+| quality | 0.2 | 代码质量评审需要较高一致性 |
+| performance | 0.1 | 性能分析需要严谨性 |
+| architecture | 0.2 | 架构评审需要一致性 |
+| comprehensive | 0.1 | 综合评审需要严谨性 |
+
+**温度参数影响**：
+- **低温（0.1）**：评审结果更稳定、更严谨，适合安全审计和性能分析
+- **中温（0.2）**：评审结果有一定灵活性，适合代码质量和架构评审
+- **高温（>0.3）**：不推荐用于代码评审，可能导致结果不稳定
 
 ### 输出层
 
@@ -357,7 +405,7 @@ flowchart TB
 | **调用链/血缘分析** | ✅ 已实现 | Tree-sitter | 方法级调用图，影响范围追踪 |
 | **自定义规约体系** | ✅ 已实现 | Markdown + YAML | 分层目录（设计/实现/安全），Profile 配置 |
 | **安全漏洞检测** | ✅ 已实现 | 双引擎 | 12 类安全规约，覆盖 OWASP Top 10 |
-| **AI 辅助评审** | ✅ 已实现 | 多工作流 | 5 种工作流（安全/质量/性能/架构/综合） |
+| **Subagent 委派评审** | ✅ 已实现 | TRAE Agent 委派 | 低温度参数（0.1-0.2）确保严谨性和一致性 |
 | **定期扫描调度** | ✅ 已实现 | Cron + Webhook | 定时扫描 + 结果通知 |
 | **CI/CD 集成** | ✅ 已实现 | CLI | 可嵌入 GitHub Actions / GitLab CI |
 | **离线运行** | ✅ 已实现 | 无外部依赖 | 核心功能全部离线可用 |
@@ -370,7 +418,7 @@ flowchart TB
 | 调用链/血缘分析 | ✅ Tree-sitter | ⚠️ 数据流 | ✅ 污点追踪 | ⚠️ 有限 | ⚠️ 上下文窗口 |
 | 自定义规约体系 | ✅ Markdown | ✅ YAML | ✅ QL 查询 | ✅ 插件 | ✅ 项目/用户规则 |
 | 安全漏洞检测 | ✅ 12 类 | ✅ OWASP Top 10 | ✅ 全覆盖 | ✅ 安全热点 | ⚠️ 4 类微调规则 |
-| AI 辅助评审 | ✅ 多工作流 | ❌ | ❌ | ❌ | ✅ 混合架构 |
+| Subagent 委派评审 | ✅ 低温度参数 | ❌ | ❌ | ❌ | ✅ 混合架构 |
 | 离线运行 | ✅ 完全离线 | ✅ | ❌ 需云端 | ❌ 需服务端 | ⚠️ 需 API |
 | 定期扫描调度 | ✅ 内置 Cron | ⚠️ 需外部 | ✅ GitHub | ✅ 内置 | ❌ 需外部 |
 
@@ -385,6 +433,7 @@ code-review-skill/
 ├── docs/                     # 文档目录
 │   ├── guides/               # 使用指南
 │   ├── reports/              # 报告目录
+│   ├── SUBAGENT-REVIEW-ARCHITECTURE.md  # Subagent 委派评审架构
 │   └── *.md                  # 项目文档
 ├── references/               # 规约库（Markdown 格式，人机都好维护）
 │   ├── design/               # 设计规约（架构、API、数据库）
@@ -399,16 +448,24 @@ code-review-skill/
 │       └── implementation/   # 实现规约测试案例
 ├── scripts/                  # Python 工程脚本
 │   ├── scan.py               # 主扫描入口
-│   ├── diff_analyzer.py      # 分支差异分析
+│   ├── diff_analyzer.py      # 分支差异分析与全库扫描
 │   ├── call_graph.py         # 调用图构建与血缘分析
 │   ├── rule_engine.py        # 规则引擎（Semgrep 集成，可选）
+│   ├── builtin_engine_v2.py  # 内置引擎 V2（基于 Tree-sitter）
+│   ├── dual_engine.py        # 双引擎并行扫描器
+│   ├── ai_reviewer.py        # AI 增强评审器（多工作流）
 │   ├── report_generator.py   # 报告生成（JSON + Markdown）
+│   ├── scheduler.py          # Cron 定时调度器
+│   ├── notifier.py           # Webhook 通知器
 │   └── test_rules.py         # 规则测试脚本
 ├── test-validation/          # 测试验证数据
 ├── tests/                    # 单元测试
-├── offline-packages/         # 离线依赖包（20 个包，约 19MB）
+├── offline-packages/         # 核心离线依赖包（41 个包，约 104MB，支持多平台）
+├── semgrep-offline-packages/ # Semgrep 离线依赖包（70 个包，约 76MB，可选）
 ├── config.yaml               # 全局配置
 ├── requirements.txt          # Python 依赖
+├── install-offline.sh        # 智能离线安装脚本（跨平台）
+├── download-offline-packages.sh  # 离线包下载脚本
 └── README.md
 ```
 
@@ -462,14 +519,15 @@ brew install semgrep  # macOS
 ```
 
 **离线包说明**：
-- 位置：`offline-packages/`
-- 大小：约 100MB（包含多平台包）
+- **核心依赖**：`offline-packages/`（41 个包，约 104MB）
+- **Semgrep 依赖**：`semgrep-offline-packages/`（70 个包，约 76MB，可选）
+- **总计**：111 个包，约 180MB
 - 支持平台：
   - macOS ARM64 (Apple Silicon)
   - macOS x86_64 (Intel)
   - Linux x86_64
   - Windows amd64
-- 包含：40+ 个依赖包（pyyaml, gitpython, tree-sitter, pandas, numpy 等）
+- 包含：pyyaml, gitpython, tree-sitter, pandas, numpy, semgrep 等
 - 适用：无网络环境或网络不稳定时
 
 详细安装说明请参考 [OFFLINE-INSTALL.md](docs/guides/OFFLINE-INSTALL.md)。
@@ -737,12 +795,12 @@ flowchart TD
     去重、排序
     输出: merged_issues[]"]
     
-    AGG --> AI["AI Agent 二次评审
+    AGG --> AI["Subagent 评审
     ─────
-    ai_reviewer.py
+    TRAE Agent 委派 subagent
+    低温度参数（0.1-0.2）
     上下文关联分析
     误报过滤（置信度评估）
-    修复建议生成
     输出: reviewed_issues[]"]
     
     AI --> REPORT["生成评审报告
@@ -776,7 +834,7 @@ flowchart TD
 3. **构建调用图** → 使用 Tree-sitter 分析方法级调用关系
 4. **并行评审** → 三类规约（设计/实现/安全）同时执行，使用内置正则引擎和 Semgrep
 5. **结果聚合** → 合并三类规约的检出结果，去重排序
-6. **AI 二次评审** → Agent 进行上下文关联分析，过滤误报，生成修复建议
+6. **Subagent 评审** → TRAE Agent 委派 subagent，使用低温度参数（0.1-0.2）确保严谨性和一致性，进行上下文关联分析，过滤误报，生成修复建议
 7. **生成报告** → 输出 JSON 和 Markdown 格式的报告
 8. **输出/通知** → 保存本地文件，通过 Webhook 推送到外部系统
 
@@ -832,6 +890,201 @@ flowchart TD
 267 passed, 6 skipped in 10.17s
 ```
 
+### 稳定性验证
+
+运行两轮全库扫描验证输出稳定性：
+
+```bash
+# 第一轮扫描
+python scripts/scan.py --repo test-validation/ --full-scan --output report-round1/
+
+# 第二轮扫描
+python scripts/scan.py --repo test-validation/ --full-scan --output report-round2/
+```
+
+**验证结果**：
+
+| 指标 | 第一轮 | 第二轮 | 一致性 |
+|------|--------|--------|--------|
+| 总问题数 | 59 | 59 | ✅ 一致 |
+| CRITICAL | 39 | 39 | ✅ 一致 |
+| HIGH | 20 | 20 | ✅ 一致 |
+| MEDIUM | 0 | 0 | ✅ 一致 |
+| LOW | 0 | 0 | ✅ 一致 |
+| summary.json | - | - | ✅ 完全一致 |
+
+**结论**：规则引擎扫描结果完全稳定，两次扫描的问题检测结果 100% 一致。`report.json` 仅有时间戳和耗时差异，这是预期行为。
+
+### 预编译机制
+
+规则引擎采用预编译机制，将 Markdown 规则文件编译为缓存格式，提升加载速度。
+
+**完整流程图**：
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  预编译阶段（人触发）                                                 │
+│                                                                     │
+│  ┌──────────────────────────────┐                                   │
+│  │  人编辑 Markdown 规则         │  如 security/sql-injection.md    │
+│  │  写自然语言 + 违规示例 +      │  包含 ```yaml 元数据             │
+│  │  ```pattern 检测模式          │  和 ```pattern 代码块            │
+│  └──────────────┬───────────────┘                                   │
+│                 ↓                                                   │
+│  ┌──────────────────────────────┐                                   │
+│  │  运行预编译器                 │  rule_compiler.py --compile      │
+│  └──────────────┬───────────────┘                                   │
+│                 ↓                                                   │
+│  ┌──────────────────────────────┐                                   │
+│  │  计算 SHA256 hash            │  对每个 .md 文件计算 hash        │
+│  └──────────────┬───────────────┘                                   │
+│                 ↓                                                   │
+│            ┌────hash 变化?────┐                                     │
+│            │                  │                                     │
+│          未变化              已变化                                  │
+│            │                  │                                     │
+│            ↓                  ↓                                     │
+│  ┌─────────────────┐  ┌────────────────────────────┐               │
+│  │ 加载缓存 JSON    │  │ MarkdownRuleParser          │               │
+│  │ (compiled/*.json)│  │ 解析 Markdown，提取：       │               │
+│  └────────┬────────┘  │  - id, languages, severity  │               │
+│           │           │  - patterns (检测模式)       │               │
+│           │           │  - pattern-not (排除模式)    │               │
+│           │           │  - cwe, owasp 元数据         │               │
+│           │           └──────────────┬──────────────┘               │
+│           │                          │                              │
+│           └──────────┬───────────────┘                              │
+│                      ↓                                              │
+│  ┌──────────────────────────────┐                                   │
+│  │ 保存到 compiled/             │  生成 *.md.json 缓存文件          │
+│  │ 更新 manifest.json           │  记录 hash + 编译时间             │
+│  └──────────────────────────────┘                                   │
+└─────────────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  扫描阶段（自动执行）                                                 │
+│                                                                     │
+│  ┌──────────────────────────────┐                                   │
+│  │  RuleEngine 加载规则          │  优先从 compiled/ 缓存加载       │
+│  └──────────────┬───────────────┘                                   │
+│                 ↓                                                   │
+│  ┌──────────────────────────────┐                                   │
+│  │  转换 Semgrep YAML           │  _build_semgrep_rule()           │
+│  │  pattern → Semgrep DSL       │  写入临时 .yaml 文件              │
+│  └──────────────┬───────────────┘                                   │
+│                 ↓                                                   │
+│  ┌──────────────────────────────┐                                   │
+│  │  Semgrep CLI 执行扫描        │  semgrep --config <临时文件>      │
+│  └──────────────────────────────┘                                   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Markdown 规则文件格式**：
+
+```markdown
+# SQL 注入 - Java 字符串拼接构建 SQL
+
+> 字符串拼接构建 SQL 语句，存在 SQL 注入风险。
+
+```yaml
+id: sqli-java-string-concat
+languages: [java]
+severity: ERROR
+cwe: CWE-89
+owasp: A03:2021
+```
+
+## 违规示例
+
+```java
+String sql = "SELECT * FROM users WHERE id = " + userId;
+Statement stmt = conn.createStatement();
+stmt.execute(sql);
+```
+
+## 正确示例
+
+```java
+PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
+ps.setString(1, userId);
+ps.execute();
+```
+
+## 检测模式
+
+```pattern
+Statement $STMT = ...;
+...
+$STMT.execute("..." + $VAR + "...");
+```
+
+```pattern-not
+PreparedStatement $PS = ...;
+...
+$PS.execute(...);
+```
+```
+
+**规则文件分类**：
+
+| 类别 | 目录 | 说明 |
+|------|------|------|
+| 安全规则 | `references/security/` | SQL 注入、XXE、XSS 等 12 类 |
+| 设计规则 | `references/design/` | 架构合规、API 设计、数据库设计 |
+| 实现规则 | `references/implementation/` | 命名、异常、并发、空指针 |
+| 自定义规则 | `references/rules/custom.md` | 用户自定义业务规则 |
+| 规则生成指南 | `references/RULE-GENERATOR-GUIDE.md` | 指导如何编写新规则 |
+
+**使用方法**：
+
+```bash
+# 查看编译状态
+python scripts/rule_compiler.py --status
+
+# 编译所有规则
+python scripts/rule_compiler.py --compile
+
+# 强制重新编译
+python scripts/rule_compiler.py --compile --force
+```
+
+**性能提升**：
+
+| 加载方式 | 耗时 | 说明 |
+|----------|------|------|
+| 从缓存加载 | ~8ms | 优先使用 |
+| 解析 Markdown | ~17ms | 缓存失效时回退 |
+| **性能提升** | **~50%** | - |
+
+**缓存目录结构**：
+
+```
+references/
+├── RULE-GENERATOR-GUIDE.md    # 规则生成指南（不编译）
+├── security/
+│   ├── sql-injection.md       # 原始 Markdown（人可读）
+│   └── ...
+├── design/
+│   └── ...
+├── implementation/
+│   └── ...
+├── prompts/                   # 提示词模板（不编译）
+├── test-cases/                # 测试案例（不编译）
+├── compiled/                  # 编译后的缓存（.gitignore）
+│   ├── manifest.json          # hash 清单
+│   ├── security/
+│   │   ├── sql-injection.md.json  # 编译后的规则（机器可执行）
+│   │   └── ...
+│   ├── design/
+│   └── implementation/
+```
+
+**注意事项**：
+- 修改 Markdown 规则文件后，hash 会变化，下次编译会自动重新解析
+- 缓存目录 `references/compiled/` 已加入 `.gitignore`
+- `RULE-GENERATOR-GUIDE.md`、`prompts/`、`test-cases/` 不会被编译
+- 预编译机制是自动的，RuleEngine 初始化时自动检查缓存
+
 ---
 
 ## 扩展
@@ -849,16 +1102,16 @@ flowchart TD
 ### Q1: 为什么不需要 AI API Key？
 
 **A**: 
-- **Agent 本身就是 LLM**：Skill 在 AI Agent 内部执行，Agent 自身就是大语言模型
-- **无需外部调用**：Agent 直接读取规约、分析代码、执行评审，不需要调用外部 API
-- **离线可用**：所有核心功能离线可用，无需网络连接
+- **TRAE Agent 委派 subagent**：TRAE Agent 委派 subagent 执行代码评审
+- **低温度参数**：通过低温度参数（0.1-0.2）确保评审的严谨性和一致性
+- **无需外部调用**：不需要调用外部 LLM API，完全离线可用
 
-### Q2: Agent 评审和 Semgrep 评审有什么区别？
+### Q2: Subagent 评审和 Semgrep 评审有什么区别？
 
 **A**: 
-- **Agent 评审**：利用 Agent 自身的 LLM 能力，理解代码上下文，过滤误报，生成修复建议。**无需外部 API，离线可用**。默认推荐。
+- **Subagent 评审**：TRAE Agent 委派 subagent 执行代码评审，使用低温度参数（0.1-0.2）确保严谨性和一致性。理解代码上下文，过滤误报，生成修复建议。**完全离线可用**。
 - **Semgrep 评审**：使用 Semgrep 工具进行精准模式匹配，支持跨行模式和数据流分析。**需要安装 Semgrep**。可选增强。
-- **建议**：默认使用 Agent 评审（无需外部依赖），如果安装了 Semgrep 可以结合使用（Agent + Semgrep 双重评审）。
+- **建议**：使用 Semgrep 进行确定性扫描，然后由 TRAE Agent 委派 subagent 分析扫描结果。两者结合使用效果最佳。
 
 ### Q3: 离线安装和在线安装有什么区别？
 
@@ -886,7 +1139,8 @@ flowchart TD
 
 ## 相关文档
 
-- [SKILL.md](.trae/skills/code-review/SKILL.md) - 完整工作流说明
+- [SKILL.md](.trae/skills/code-review/SKILL.md) - **主 Agent 工作流说明**（包含子 Agent 委派和温度参数配置）
+- [SUBAGENT-REVIEW-ARCHITECTURE.md](docs/SUBAGENT-REVIEW-ARCHITECTURE.md) - Subagent 委派评审架构
 - [TECH-STACK.md](docs/TECH-STACK.md) - 技术栈详细分析
 - [OFFLINE-INSTALL.md](docs/guides/OFFLINE-INSTALL.md) - 离线安装说明
 - [IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md) - 实施规划文档

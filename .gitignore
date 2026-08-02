@@ -8,3 +8,5 @@ reports/
 report/
 logs/
 *.log
+references/compiled/
+semgrep-offline-packages/semgrep-*.whl
