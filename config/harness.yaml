@@ -1,0 +1,40 @@
+# Harness 配置文件
+# 用于控制 AI 评审的行为约束、监控和反馈机制
+
+harness:
+  # 是否启用 harness
+  enabled: true
+  
+  # 决策日志配置
+  decision_logging:
+    enabled: true
+    # 保留最近 N 次扫描的决策日志
+    keep_recent: 10
+    # 存储目录
+    storage_dir: "data/decisions"
+  
+  # 反馈配置
+  feedback:
+    enabled: true
+    # 是否允许批量反馈（一次标记多个）
+    allow_batch: true
+    # 反馈数据存储位置
+    storage_file: "data/feedbacks.json"
+  
+  # 自动改进配置
+  auto_improvement:
+    enabled: false  # MVP 阶段先关闭
+    # 准确率低于这个阈值时自动调整
+    min_accuracy_threshold: 0.7
+    # 每次调整的最大幅度
+    max_adjustment_delta: 0.2
+    # 是否需要人工确认调整
+    require_confirmation: true
+    # 调整记录存储位置
+    storage_file: "data/adjustments.json"
+  
+  # 质量监控配置
+  quality_monitor:
+    enabled: true
+    # 统计缓存存储位置
+    cache_file: "data/stats_cache.json"

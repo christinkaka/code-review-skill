@@ -10,3 +10,15 @@ logs/
 *.log
 references/compiled/
 semgrep-offline-packages/semgrep-*.whl
+
+# Harness 数据
+data/
+
+# Harness 数据
+data/
+
+# Harness 数据
+data/
+
+# Harness 数据
+data/
