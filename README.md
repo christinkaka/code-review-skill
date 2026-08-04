@@ -1087,6 +1087,193 @@ references/
 
 ---
 
+## Harness 系统（AI 评审质量管控）
+
+Harness 系统围绕 AI 评审构建约束机制、反馈回路和质量监控，让 AI 评审行为**可控、可量化、可改进**。
+
+### 架构总览
+
+```mermaid
+flowchart TB
+    subgraph 约束层["约束层"]
+        C1["行为边界
+        ─────
+        config/harness.yaml
+        定义 AI 允许/禁止的操作
+        输出: 约束规则"]
+        C2["置信度阈值
+        ─────
+        confidence_thresholds.yaml
+        按规则配置最低置信度
+        输出: 过滤阈值"]
+    end
+
+    subgraph 监控层["监控层"]
+        M1["决策日志
+        ─────
+        decision_logger.py
+        记录 AI 每个决策及理由
+        输出: decisions/*.json"]
+        M2["质量统计
+        ─────
+        quality_monitor.py
+        计算准确率、误报率
+        输出: stats_cache.json"]
+    end
+
+    subgraph 反馈层["反馈层"]
+        F1["用户反馈 CLI
+        ─────
+        harness.py feedback
+        标记 confirmed/false_positive
+        输出: feedbacks.json"]
+        F2["自动改进
+        ─────
+        auto_improver.py
+        根据反馈调整阈值
+        输出: adjustments.json"]
+    end
+
+    C1 --> M1
+    C2 --> M1
+    M1 --> F1
+    M1 --> M2
+    F1 --> M2
+    F1 --> F2
+    F2 -.->|调整阈值| C2
+```
+
+### 数据流
+
+```mermaid
+flowchart LR
+    A["扫描完成
+    report.json"] --> B["AI 评审
+    记录决策"]
+    B --> C["decision_log.json
+    每个决策的理由和证据"]
+    C --> D["用户反馈
+    harness.py feedback"]
+    D --> E["feedbacks.json
+    用户裁定"]
+    E --> F["质量统计
+    harness.py stats"]
+    F --> G["准确率报告
+    按规则/总体"]
+    G --> H["自动改进
+    调整置信度阈值"]
+    H -.->|下一轮扫描| B
+
+    style A fill:#f0f0f0,stroke:#333
+    style C fill:#e8f4fd,stroke:#4a90d9
+    style E fill:#e8f4fd,stroke:#4a90d9
+    style G fill:#e8f4fd,stroke:#4a90d9
+```
+
+### 反馈闭环
+
+```mermaid
+flowchart TD
+    START(["AI 评审输出决策"]) --> LOG["记录到 decision_log.json
+    包含: issue_id, ai_action,
+    ai_confidence, ai_reasoning,
+    ai_evidence"]
+    LOG --> LIST["用户查看待反馈问题
+    harness.py list"]
+    LIST --> FEEDBACK{"用户裁定"}
+    FEEDBACK -->|confirmed| CORRECT["AI 判断正确"]
+    FEEDBACK -->|false_positive| WRONG["AI 判断错误"]
+    FEEDBACK -->|uncertain| SKIP["跳过"]
+    CORRECT --> STATS["更新质量统计"]
+    WRONG --> STATS
+    SKIP --> STATS
+    STATS --> CHECK{"准确率 < 70%?"}
+    CHECK -->|是| ADJUST["提高该规则置信度阈值"]
+    CHECK -->|否| KEEP["保持当前阈值"]
+    ADJUST --> NEXT(["下一轮扫描使用新阈值"])
+    KEEP --> NEXT
+```
+
+### CLI 命令
+
+```bash
+# 列出待反馈的问题（只显示未反馈的）
+python scripts/harness.py list
+
+# 显示所有问题（包括已反馈的）
+python scripts/harness.py list --all
+
+# 标记 AI 判断正确
+python scripts/harness.py feedback --issue-id issue-001 --verdict confirmed
+
+# 标记 AI 判断错误（误报）
+python scripts/harness.py feedback --issue-id issue-002 --verdict false_positive --comment "AI 理由不成立"
+
+# 标记不确定
+python scripts/harness.py feedback --issue-id issue-003 --verdict uncertain
+
+# 查看质量统计报告
+python scripts/harness.py stats
+```
+
+### 质量报告示例
+
+```
+============================================================
+AI 评审质量统计报告
+============================================================
+
+总体统计:
+  总决策数: 50
+  总反馈数: 30
+  有反馈的决策: 30
+  正确判断: 25
+  错误判断: 5
+  准确率: 83.3%
+
+按规则统计:
+  sqli-java-string-concat:
+    准确率: 100.0% (8/8)
+  xxe-java-document-builder:
+    准确率: 60.0% (3/5)  ← 需要改进
+  xss-js-innerhtml:
+    准确率: 90.0% (9/10)
+```
+
+### 目录结构
+
+```
+code-review-skill/
+├── config/
+│   └── harness.yaml              # Harness 配置
+├── harness/
+│   ├── __init__.py
+│   ├── decision_logger.py        # 决策日志
+│   ├── feedback_manager.py       # 反馈管理
+│   ├── quality_monitor.py        # 质量监控
+│   └── cli.py                    # CLI 入口
+├── scripts/
+│   └── harness.py                # 可执行脚本
+├── data/                         # 运行时数据（.gitignore）
+│   ├── decisions/                # 决策日志（按扫描批次）
+│   ├── feedbacks.json            # 用户反馈
+│   ├── adjustments.json          # 调整记录
+│   └── stats_cache.json          # 统计缓存
+└── tests/
+    └── test_harness.py           # 测试用例
+```
+
+### 设计决策
+
+| 决策 | 选择 | 理由 |
+|------|------|------|
+| 存储格式 | JSON 文件 | 数据量小，可直接查看和编辑，方便 git 追踪 |
+| 决策日志 | 按扫描批次分文件 | 方便管理和定期清理 |
+| 反馈数据 | 单文件集中存储 | 跨批次查询更快 |
+| 自动改进 | 先保守（只调阈值） | 安全可逆，后续可扩展为自动生成 pattern-not |
+
+---
+
 ## 扩展
 
 - **新增安全规则**: 在 `references/security/` 下添加 Markdown
