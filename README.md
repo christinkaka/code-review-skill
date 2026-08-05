@@ -1091,6 +1091,149 @@ references/
 
 Harness 系统围绕 AI 评审构建约束机制、反馈回路和质量监控，让 AI 评审行为**可控、可量化、可改进**。
 
+### 交互机制
+
+Harness 系统与 AI 评审的交互分为三个阶段：
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant Scan as scan.py
+    participant AI as 子 Agent
+    participant Harness as Harness 系统
+    participant Log as 决策日志
+
+    User->>Scan: 触发扫描
+    Scan->>Harness: 读取 harness.yaml（约束配置）
+    Scan->>Harness: 读取 feedbacks.json（历史反馈）
+    Scan->>AI: 生成提示词（包含约束 + 历史反馈）
+    AI->>AI: 执行评审（遵守约束）
+    AI->>Log: 输出决策日志（理由 + 证据）
+    Log->>Harness: 保存 decision_log.json
+    Scan->>User: 输出评审报告
+    User->>Harness: 标记反馈（confirmed/false_positive）
+    Harness->>Harness: 更新 feedbacks.json
+    Note over Harness: 下一轮扫描时，<br/>历史反馈会被注入到提示词
+```
+
+#### 阶段 1：扫描前（约束注入）
+
+**谁读取 harness.yaml？** - `scan.py` 在生成子 Agent 提示词时读取
+
+```python
+# scan.py 中的逻辑（待实现）
+def generate_subagent_prompt(issues, harness_config, feedbacks):
+    prompt = "## 评审约束\n"
+    
+    # 1. 注入行为边界
+    if harness_config.get('constraints'):
+        prompt += "### 允许的操作\n"
+        for action in harness_config['constraints']['allowed_actions']:
+            prompt += f"- {action}\n"
+        
+        prompt += "### 禁止的操作\n"
+        for action in harness_config['constraints']['forbidden_actions']:
+            prompt += f"- {action}\n"
+    
+    # 2. 注入历史反馈
+    if feedbacks:
+        prompt += "\n## 历史反馈（参考）\n"
+        for fb in feedbacks:
+            prompt += f"- {fb['issue_id']}: {fb['verdict']} ({fb['comment']})\n"
+    
+    # 3. 注入问题列表
+    prompt += "\n## 待评审问题\n"
+    prompt += json.dumps(issues, indent=2)
+    
+    return prompt
+```
+
+#### 阶段 2：评审中（决策记录）
+
+**谁写决策日志？** - 子 Agent 输出结构化决策，`scan.py` 负责保存
+
+```json
+// 子 Agent 输出格式（增强版）
+{
+  "issue_id": "sqli-java-string-concat-001",
+  "rule_id": "sqli-java-string-concat",
+  "file": "src/UserService.java",
+  "line": 42,
+  
+  // AI 决策
+  "ai_action": "keep",
+  "ai_confidence": 0.85,
+  "ai_reasoning": "该代码使用字符串拼接构建 SQL，且未使用 PreparedStatement，确认为真实问题",
+  "ai_evidence": [
+    "第 42 行：String sql = \"SELECT * FROM users WHERE id = \" + userId;",
+    "第 43 行：Statement stmt = conn.createStatement();"
+  ],
+  
+  // 修复建议
+  "enhanced_fix": "使用 PreparedStatement 替代字符串拼接",
+  
+  // 参考历史反馈
+  "historical_feedback": [
+    {"scan_id": "2026-08-01", "verdict": "confirmed", "comment": "确认是真实问题"}
+  ]
+}
+```
+
+`scan.py` 接收到子 Agent 输出后，调用 `decision_logger.py` 保存：
+
+```python
+# scan.py 中的逻辑（待实现）
+from harness.decision_logger import DecisionLogger
+
+logger = DecisionLogger()
+scan_id = logger.start_scan(repo=args.repo, workflow=args.workflow, total_issues=len(issues))
+
+for review_result in subagent_results:
+    logger.log_decision(
+        issue_id=review_result['issue_id'],
+        rule_id=review_result['rule_id'],
+        file=review_result['file'],
+        line=review_result['line'],
+        severity=review_result['severity'],
+        original_message=review_result['message'],
+        ai_action=review_result['ai_action'],
+        ai_confidence=review_result['ai_confidence'],
+        ai_reasoning=review_result['ai_reasoning'],
+        ai_evidence=review_result['ai_evidence'],
+    )
+
+logger.save()
+```
+
+#### 阶段 3：评审后（反馈闭环）
+
+**用户反馈如何影响 AI？** - 下一轮扫描时，历史反馈会被注入到提示词
+
+```python
+# scan.py 中的逻辑（待实现）
+from harness.feedback_manager import FeedbackManager
+
+fm = FeedbackManager()
+historical_feedbacks = fm.get_all_feedbacks()
+
+# 在生成提示词时，注入历史反馈
+prompt = generate_subagent_prompt(issues, harness_config, historical_feedbacks)
+```
+
+子 Agent 在评审时，会参考历史反馈：
+
+```
+## 历史反馈（参考）
+
+以下问题在之前的扫描中已被用户标记：
+- issue-001: confirmed（用户确认是真实问题）
+- issue-002: false_positive（用户认为是误报）
+
+请根据历史反馈调整你的评审标准：
+- 如果某个规则多次被标记为 false_positive，请提高该规则的置信度阈值
+- 如果某个规则多次被标记为 confirmed，请保持当前的评审标准
+```
+
 ### 架构总览
 
 ```mermaid
@@ -1262,6 +1405,55 @@ code-review-skill/
 └── tests/
     └── test_harness.py           # 测试用例
 ```
+
+### 当前实现状态
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| **harness.yaml 配置** | ✅ 已实现 | 配置文件存在，定义了约束和阈值 |
+| **DecisionLogger** | ✅ 已实现 | 决策日志记录器已实现 |
+| **FeedbackManager** | ✅ 已实现 | 反馈管理器已实现 |
+| **QualityMonitor** | ✅ 已实现 | 质量监控器已实现 |
+| **CLI 命令** | ✅ 已实现 | list/feedback/stats 命令可用 |
+| **scan.py 读取 harness.yaml** | ❌ 未实现 | 需要在生成提示词时注入约束 |
+| **scan.py 写入决策日志** | ❌ 未实现 | 需要在评审后保存决策 |
+| **scan.py 读取历史反馈** | ❌ 未实现 | 需要在生成提示词时注入反馈 |
+| **子 Agent 输出决策日志** | ❌ 未实现 | 需要修改提示词，要求输出理由和证据 |
+
+### 改进计划
+
+#### 阶段 1：集成 Harness 到扫描流程（优先级：高）
+
+**修改文件**：
+1. `scripts/scan.py` - 读取 harness.yaml 和 feedbacks.json
+2. `scripts/ai_reviewer.py` - 生成包含约束和历史反馈的提示词
+3. `references/prompts/ai-enhancer-prompt.md` - 添加 harness 约束说明
+
+**预期效果**：
+- 子 Agent 在评审时遵守 harness.yaml 中定义的约束
+- 子 Agent 参考历史反馈调整评审标准
+- 子 Agent 输出决策理由和证据
+
+#### 阶段 2：自动保存决策日志（优先级：中）
+
+**修改文件**：
+1. `scripts/scan.py` - 在评审后调用 DecisionLogger 保存决策
+2. `scripts/ai_reviewer.py` - 解析子 Agent 输出，提取决策信息
+
+**预期效果**：
+- 每次扫描自动生成 decision_log.json
+- 记录每个问题的 AI 决策、理由、证据
+
+#### 阶段 3：自动改进（优先级：低）
+
+**修改文件**：
+1. `harness/auto_improver.py` - 根据反馈自动调整置信度阈值
+2. `scripts/scan.py` - 在扫描前读取调整后的阈值
+
+**预期效果**：
+- 系统自动学习用户反馈
+- 动态调整各规则的置信度阈值
+- 减少误报，提高准确率
 
 ### 设计决策
 
