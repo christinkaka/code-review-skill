@@ -1415,34 +1415,48 @@ code-review-skill/
 | **FeedbackManager** | ✅ 已实现 | 反馈管理器已实现 |
 | **QualityMonitor** | ✅ 已实现 | 质量监控器已实现 |
 | **CLI 命令** | ✅ 已实现 | list/feedback/stats 命令可用 |
-| **scan.py 读取 harness.yaml** | ❌ 未实现 | 需要在生成提示词时注入约束 |
-| **scan.py 写入决策日志** | ❌ 未实现 | 需要在评审后保存决策 |
-| **scan.py 读取历史反馈** | ❌ 未实现 | 需要在生成提示词时注入反馈 |
-| **子 Agent 输出决策日志** | ❌ 未实现 | 需要修改提示词，要求输出理由和证据 |
+| **scan.py 读取 harness.yaml** | ✅ 已实现 | load_harness_config() 函数 |
+| **scan.py 写入决策日志** | ✅ 已实现 | 扫描时自动记录决策到 decision_log.json |
+| **scan.py 读取历史反馈** | ✅ 已实现 | build_feedback_examples() 提取反馈 |
+| **ai_reviewer.py 注入反馈** | ✅ 已实现 | 提示词包含历史反馈统计和示例 |
+| **提示词要求输出证据** | ✅ 已实现 | 5 个提示词文件已更新，要求 evidence 字段 |
+| **单元测试覆盖** | ✅ 已实现 | 195 个测试全部通过 |
 
-### 改进计划
+### 已完成的工作
 
-#### 阶段 1：集成 Harness 到扫描流程（优先级：高）
+**2026-08-06 更新**：
 
-**修改文件**：
-1. `scripts/scan.py` - 读取 harness.yaml 和 feedbacks.json
-2. `scripts/ai_reviewer.py` - 生成包含约束和历史反馈的提示词
-3. `references/prompts/ai-enhancer-prompt.md` - 添加 harness 约束说明
+1. ✅ **Harness 集成到扫描流程**
+   - scan.py 读取 config/harness.yaml
+   - scan.py 初始化 DecisionLogger、FeedbackManager、QualityMonitor
+   - scan.py 记录每个问题的决策日志到 data/decisions/
+   - scan.py 提取历史反馈并注入 AI 提示词
 
-**预期效果**：
-- 子 Agent 在评审时遵守 harness.yaml 中定义的约束
-- 子 Agent 参考历史反馈调整评审标准
-- 子 Agent 输出决策理由和证据
+2. ✅ **AI 评审器增强**
+   - ai_reviewer.py 接受 feedback_summary 和 feedback_examples
+   - 生成的任务描述包含历史反馈统计和示例
+   - 提示词要求输出 evidence 字段（决策证据）
 
-#### 阶段 2：自动保存决策日志（优先级：中）
+3. ✅ **提示词更新**
+   - 5 个提示词文件添加决策证据要求
+   - 要求引用具体代码行号和上下文
 
-**修改文件**：
-1. `scripts/scan.py` - 在评审后调用 DecisionLogger 保存决策
-2. `scripts/ai_reviewer.py` - 解析子 Agent 输出，提取决策信息
+4. ✅ **测试覆盖**
+   - test_diff_analyzer.py: 8 个测试
+   - test_call_graph.py: 6 个测试
+   - test_report_generator.py: 6 个测试
+   - test_rule_compiler.py: 9 个测试
+   - test_scan.py: 14 个测试
+   - test_ai_reviewer.py: 19 个测试
+   - test_profile_completeness.py: 4 个测试
+   - **总计 195 个测试全部通过**
 
-**预期效果**：
-- 每次扫描自动生成 decision_log.json
-- 记录每个问题的 AI 决策、理由、证据
+5. ✅ **代码清理**
+   - 删除 scripts/builtin_engine_v2.py（实验性 AST 引擎，从未集成）
+   - 删除 scripts/dual_engine.py（依赖已删除的模块）
+   - 删除 scripts/diff_analyzer.py.bak（备份文件）
+
+### 待完成的工作
 
 #### 阶段 3：自动改进（优先级：低）
 
