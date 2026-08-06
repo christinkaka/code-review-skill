@@ -16,7 +16,19 @@ import logging
 import os
 import re
 import subprocess
+import sys
 import tempfile
+
+# AST 引擎（可选依赖）
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+try:
+    from builtin_engine_v2 import BuiltinEngineV2, TS_AVAILABLE
+except ImportError:
+    BuiltinEngineV2 = None
+    TS_AVAILABLE = False
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -257,7 +269,14 @@ class RuleEngine:
 
     def run(self, repo_path: str, changed_files: List[Dict]) -> List[Dict]:
         """
-        执行规则检查
+        执行规则检查 - 多引擎融合
+
+        引擎优先级：
+        1. Semgrep（pattern 匹配，基于 AST）
+        2. Tree-sitter AST（精确语法分析）
+        3. 内置正则引擎（回退）
+
+        多引擎结果会自动去重合并。
 
         Args:
             repo_path: 仓库路径
@@ -270,12 +289,65 @@ class RuleEngine:
             logger.warning("无可用规则，跳过检查")
             return []
 
-        # 尝试使用 Semgrep
+        all_issues = []
+        engines_used = []
+
+        # 引擎 1: Semgrep
         if self._semgrep_available():
-            return self._run_with_semgrep(repo_path, changed_files)
+            semgrep_issues = self._run_with_semgrep(repo_path, changed_files)
+            all_issues.extend(semgrep_issues)
+            engines_used.append(f"Semgrep({len(semgrep_issues)})")
         else:
+            # 引擎 3: 内置正则引擎（Semgrep 不可用时回退）
             logger.info("Semgrep 不可用，使用内置模式匹配引擎")
-            return self._run_with_builtin(repo_path, changed_files)
+            builtin_issues = self._run_with_builtin(repo_path, changed_files)
+            all_issues.extend(builtin_issues)
+            engines_used.append(f"Regex({len(builtin_issues)})")
+
+        # 引擎 2: Tree-sitter AST（补充扫描，与 Semgrep 并行）
+        if BuiltinEngineV2 is not None and TS_AVAILABLE:
+            try:
+                ast_engine = BuiltinEngineV2()
+                ast_issues, ast_stats = ast_engine.scan_repo(repo_path)
+                if ast_issues:
+                    all_issues.extend(ast_issues)
+                    engines_used.append(f"AST({len(ast_issues)})")
+                    logger.info(f"AST 引擎扫描完成: {ast_stats.get('files_scanned', 0)} 个文件, {len(ast_issues)} 个问题")
+            except Exception as e:
+                logger.warning(f"AST 引擎扫描失败: {e}")
+
+        # 去重合并
+        merged = self._deduplicate_issues(all_issues)
+        logger.info(f"多引擎融合结果: {' + '.join(engines_used)} → 去重后 {len(merged)} 个问题")
+
+        return merged
+
+    def _deduplicate_issues(self, issues: List[Dict]) -> List[Dict]:
+        """去重合并多个引擎的结果
+
+        去重规则：同一文件、同一行、同一规则 ID 视为重复。
+        保留优先级：AST > Semgrep > Regex（AST 最精确）
+        """
+        seen = {}
+        # 引擎优先级（数字越小优先级越高）
+        engine_priority = {"ast": 0, "semgrep": 1, "regex": 2, "builtin": 2}
+
+        for issue in issues:
+            key = (
+                issue.get("file", ""),
+                issue.get("line", 0),
+                issue.get("rule_id", ""),
+            )
+            if key not in seen:
+                seen[key] = issue
+            else:
+                # 如果新问题的引擎优先级更高，替换
+                existing_engine = seen[key].get("engine", "semgrep")
+                new_engine = issue.get("engine", "semgrep")
+                if engine_priority.get(new_engine, 99) < engine_priority.get(existing_engine, 99):
+                    seen[key] = issue
+
+        return list(seen.values())
 
     def _semgrep_available(self) -> bool:
         """检查 Semgrep 是否可用"""

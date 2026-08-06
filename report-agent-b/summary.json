@@ -1,0 +1,51 @@
+{
+  "total": 80,
+  "critical": 39,
+  "high": 37,
+  "medium": 4,
+  "low": 0,
+  "by_category": {
+    "security": 76,
+    "unknown": 4
+  },
+  "by_file": {
+    "typescript/ssrf/vulnerable.ts": 14,
+    "typescript/ssrf/safe.ts": 12,
+    "java/path-traversal/Vulnerable.java": 8,
+    "typescript/xss/vulnerable.ts": 8,
+    "python/xxe/vulnerable.py": 5,
+    "java/path-traversal/Safe.java": 4,
+    "java/sqli/Vulnerable.java": 4,
+    "java/xxe/Vulnerable.java": 4,
+    "python/command-injection/vulnerable.py": 4,
+    "python/path-traversal/safe.py": 4,
+    "python/path-traversal/vulnerable.py": 4,
+    "java/sqli/Safe.java": 2,
+    "java/xss/Vulnerable.java": 2,
+    "java/xxe/Safe.java": 2,
+    "typescript/xss/safe.ts": 2,
+    "python/command-injection/safe.py": 1
+  },
+  "by_rule": {
+    "ssrf-deep-detection": 12,
+    "ssrf-js-fetch": 10,
+    "path-read-traversal": 9,
+    "path-write-traversal": 5,
+    "xxe-deep-detection": 5,
+    "crypto-hardcoded-key-java": 4,
+    "xss-js-innerhtml": 4,
+    "path-config-traversal": 3,
+    "sqli-java-statement-concat": 2,
+    "sqli-java-string-concat": 2,
+    "xss-java-servlet-output": 2,
+    "xxe-java-document-builder": 2,
+    "priv-python-subprocess-run": 2,
+    "ssrf-js-http-get": 2,
+    "ssrf-js-fetch-weak-filter": 2,
+    "xss-js-document-write": 2,
+    "xss-js-outerhtml": 2,
+    "xss-js-dangerouslysetinnerhtml": 2,
+    "path-traversal-pattern": 1,
+    "priv-python-os-system": 1
+  }
+}
