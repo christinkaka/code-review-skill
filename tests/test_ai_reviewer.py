@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 """
-AI 评审器单元测试 (UT1-UT3)
+AI 评审器单元测试
 
 覆盖 AIReviewer 的核心方法：
-- UT1: _build_prompt() 生成符合 OpenAI API 格式的 prompt
-- UT2: _parse_response() 正确解析 JSON 响应 / 处理无效 JSON
-- UT3: _is_available() 在有/无 API Key 时的行为
-- API 超时处理
+- 工作流配置和切换
+- 任务生成（generate_subagent_task）
+- 反馈注入
+- 文件保存
 """
 
 import json
 import os
-import textwrap
-import urllib.request
-from unittest.mock import MagicMock, patch, PropertyMock
+import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from ai_reviewer import AIReviewer
 
@@ -25,470 +28,277 @@ from ai_reviewer import AIReviewer
 # ===================================================================
 
 @pytest.fixture
-def reviewer_with_config():
-    """创建带有完整配置的 AIReviewer 实例"""
+def reviewer():
+    """创建默认配置的 AIReviewer 实例"""
+    config = {"workflow": "comprehensive"}
+    return AIReviewer(config)
+
+
+@pytest.fixture
+def reviewer_with_feedback():
+    """创建带反馈数据的 AIReviewer 实例"""
     config = {
-        "llm": {
-            "url": "https://api.openai.com/v1/chat/completions",
-            "api_key_env": "OPENAI_API_KEY",
-            "model": "gpt-4",
+        "workflow": "comprehensive",
+        "feedback_summary": {
+            "total": 50,
+            "confirmed": 30,
+            "false_positive": 15,
+            "uncertain": 5,
         },
-        "confidence_threshold": 0.7,
+        "feedback_examples": [
+            {
+                "rule_id": "xxe-java-document-builder",
+                "verdict": "confirmed",
+                "comment": "确认是真实问题",
+            },
+            {
+                "rule_id": "naming-convention",
+                "verdict": "false_positive",
+                "comment": "这是测试代码",
+            },
+        ],
     }
     return AIReviewer(config)
 
 
 @pytest.fixture
-def reviewer_without_config():
-    """创建无 LLM 配置的 AIReviewer 实例"""
-    config = {}
-    return AIReviewer(config)
-
-
-@pytest.fixture
-def reviewer_no_api_key():
-    """创建有 URL 但无 API Key 环境变量的 AIReviewer 实例"""
-    config = {
-        "llm": {
-            "url": "https://api.openai.com/v1/chat/completions",
-            "api_key_env": "NONEXISTENT_API_KEY_12345",
-            "model": "gpt-4",
-        },
-        "confidence_threshold": 0.7,
-    }
-    return AIReviewer(config)
-
-
-@pytest.fixture
-def two_issues():
-    """创建两个用于 AI 评审测试的问题（包含一个真实问题和一个疑似误报）"""
+def sample_issues():
+    """示例问题列表"""
     return [
         {
-            "rule_id": "xxe-java-document-builder",
-            "category": "security",
-            "severity": "ERROR",
-            "file": "src/main/java/com/example/Parser.java",
+            "rule_id": "sqli-java-concat",
+            "file": "src/UserDAO.java",
             "line": 42,
-            "end_line": 45,
-            "message": "XXE vulnerability: DocumentBuilderFactory not secured",
-            "code_snippet": "DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();",
+            "severity": "ERROR",
+            "message": "SQL 注入 - 字符串拼接",
         },
         {
-            "rule_id": "naming-convention",
-            "category": "implementation",
+            "rule_id": "xss-js-innerhtml",
+            "file": "web/app.js",
+            "line": 88,
             "severity": "WARNING",
-            "file": "src/main/java/com/example/Utils.java",
-            "line": 10,
-            "end_line": 10,
-            "message": "Variable name does not follow convention",
-            "code_snippet": "String a = \"hello\";",
+            "message": "XSS - innerHTML 赋值",
         },
     ]
 
 
 @pytest.fixture
-def two_issue_diff():
-    """创建与 two_issues 配套的 diff 结果"""
+def sample_diff_result():
+    """示例差异分析结果"""
     return {
         "changed_files": [
-            {"path": "src/main/java/com/example/Parser.java", "status": "modified"},
-            {"path": "src/main/java/com/example/Utils.java", "status": "added"},
+            {"path": "src/UserDAO.java", "status": "modified"},
+            {"path": "web/app.js", "status": "modified"},
         ],
-        "summary": {"total_files": 2, "total_lines": 50},
+        "changed_methods": [
+            {"file": "src/UserDAO.java", "name": "queryUser", "line": 40},
+        ],
     }
 
 
 @pytest.fixture
-def two_issue_ai_response():
-    """创建与 two_issues 配套的 AI 响应"""
-    return json.dumps([
-        {
-            "rule_id": "xxe-java-document-builder",
-            "is_valid": True,
-            "confidence": 0.95,
-            "enhanced_fix": "在创建 DocumentBuilder 前调用 factory.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true) 禁用 DTD",
-        },
-        {
-            "rule_id": "naming-convention",
-            "is_valid": False,
-            "confidence": 0.3,
-            "enhanced_fix": "",
-        },
-    ], ensure_ascii=False)
+def sample_call_graph():
+    """示例调用图"""
+    return {
+        "node_count": 15,
+        "edge_count": 20,
+        "affected_methods": ["handleRequest", "queryUser"],
+        "call_chains": {},
+    }
 
 
 # ===================================================================
-# UT1: _build_prompt() 生成符合 OpenAI API 格式的 prompt
+# 测试工作流配置
 # ===================================================================
 
-class TestBuildPrompt:
-    """测试 prompt 构建"""
+class TestWorkflowConfig:
+    """测试工作流配置和切换"""
 
-    def test_build_prompt_format(self, reviewer_with_config, two_issues, two_issue_diff, sample_call_graph):
-        """UT1: _build_prompt() 返回非空字符串且包含关键信息"""
-        prompt = reviewer_with_config._build_prompt(
-            two_issues, two_issue_diff, sample_call_graph
-        )
+    def test_init_default_workflow(self):
+        """默认工作流为 comprehensive"""
+        reviewer = AIReviewer({})
+        assert reviewer.workflow == "comprehensive"
 
-        assert isinstance(prompt, str)
-        assert len(prompt) > 0
+    def test_init_custom_workflow(self):
+        """支持自定义工作流"""
+        reviewer = AIReviewer({"workflow": "security"})
+        assert reviewer.workflow == "security"
 
-    def test_build_prompt_contains_issues(self, reviewer_with_config, two_issues, two_issue_diff, sample_call_graph):
-        """UT1: prompt 中包含扫描结果的问题信息"""
-        prompt = reviewer_with_config._build_prompt(
-            two_issues, two_issue_diff, sample_call_graph
-        )
+    def test_get_current_workflow(self, reviewer):
+        """get_current_workflow() 返回当前工作流"""
+        assert reviewer.get_current_workflow() == "comprehensive"
 
-        # prompt 应包含规则 ID
-        assert "xxe-java-document-builder" in prompt
-        assert "naming-convention" in prompt
+    def test_get_available_workflows(self, reviewer):
+        """get_available_workflows() 返回所有可用工作流"""
+        workflows = reviewer.get_available_workflows()
+        assert "security" in workflows
+        assert "quality" in workflows
+        assert "comprehensive" in workflows
+        assert len(workflows) == 5
 
-    def test_build_prompt_contains_changed_files(self, reviewer_with_config, two_issues, two_issue_diff, sample_call_graph):
-        """UT1: prompt 中包含变更文件列表"""
-        prompt = reviewer_with_config._build_prompt(
-            two_issues, two_issue_diff, sample_call_graph
-        )
+    def test_set_workflow_success(self, reviewer):
+        """set_workflow() 成功切换工作流"""
+        result = reviewer.set_workflow("security")
+        assert result is True
+        assert reviewer.workflow == "security"
 
-        assert "Parser.java" in prompt
-        assert "Utils.java" in prompt
+    def test_set_workflow_invalid(self, reviewer):
+        """set_workflow() 无效工作流返回 False"""
+        result = reviewer.set_workflow("invalid_workflow")
+        assert result is False
+        assert reviewer.workflow == "comprehensive"
 
-    def test_build_prompt_contains_output_format(self, reviewer_with_config, sample_issues, sample_diff_result, sample_call_graph):
-        """UT1: prompt 中包含期望的输出格式说明"""
-        prompt = reviewer_with_config._build_prompt(
+
+# ===================================================================
+# 测试任务生成
+# ===================================================================
+
+class TestGenerateTask:
+    """测试任务生成"""
+
+    def test_generate_task_returns_string(self, reviewer, sample_issues, 
+                                          sample_diff_result, sample_call_graph):
+        """generate_subagent_task() 返回字符串"""
+        task = reviewer.generate_subagent_task(
             sample_issues, sample_diff_result, sample_call_graph
         )
+        assert isinstance(task, str)
+        assert len(task) > 0
 
-        # 应包含 JSON 输出格式的指示
-        assert "JSON" in prompt
-        assert "rule_id" in prompt
-        # 新提示词使用 is_false_positive 或 is_valid
-        assert "is_false_positive" in prompt or "is_valid" in prompt
-        assert "confidence" in prompt or "ai_confidence" in prompt
-
-    def test_build_prompt_contains_task_description(self, reviewer_with_config, sample_issues, sample_diff_result, sample_call_graph):
-        """UT1: prompt 中包含任务描述"""
-        prompt = reviewer_with_config._build_prompt(
+    def test_generate_task_contains_workflow(self, reviewer, sample_issues,
+                                              sample_diff_result, sample_call_graph):
+        """任务描述包含工作流信息"""
+        task = reviewer.generate_subagent_task(
             sample_issues, sample_diff_result, sample_call_graph
         )
+        assert "综合评审工作流" in task or "工作流" in task
 
-        # 应包含任务指示
-        assert "评审" in prompt or "review" in prompt.lower()
-
-    def test_build_prompt_is_chinese(self, reviewer_with_config, sample_issues, sample_diff_result, sample_call_graph):
-        """UT1: prompt 使用中文编写"""
-        prompt = reviewer_with_config._build_prompt(
+    def test_generate_task_contains_temperature(self, reviewer, sample_issues,
+                                                 sample_diff_result, sample_call_graph):
+        """任务描述包含温度参数"""
+        task = reviewer.generate_subagent_task(
             sample_issues, sample_diff_result, sample_call_graph
         )
+        assert "temperature" in task
 
-        # prompt 应包含中文内容
-        assert "代码" in prompt or "评审" in prompt
+    def test_generate_task_contains_issues(self, reviewer, sample_issues,
+                                            sample_diff_result, sample_call_graph):
+        """任务描述包含问题列表"""
+        task = reviewer.generate_subagent_task(
+            sample_issues, sample_diff_result, sample_call_graph
+        )
+        assert "sqli-java-concat" in task
+        assert "xss-js-innerhtml" in task
+
+    def test_generate_task_contains_changed_files(self, reviewer, sample_issues,
+                                                   sample_diff_result, sample_call_graph):
+        """任务描述包含变更文件"""
+        task = reviewer.generate_subagent_task(
+            sample_issues, sample_diff_result, sample_call_graph
+        )
+        assert "UserDAO.java" in task or "app.js" in task
+
+    def test_generate_task_empty_issues(self, reviewer, sample_diff_result, sample_call_graph):
+        """空问题列表返回空字符串"""
+        task = reviewer.generate_subagent_task(
+            [], sample_diff_result, sample_call_graph
+        )
+        assert task == ""
+
+    def test_generate_task_contains_output_format(self, reviewer, sample_issues,
+                                                   sample_diff_result, sample_call_graph):
+        """任务描述包含输出格式要求"""
+        task = reviewer.generate_subagent_task(
+            sample_issues, sample_diff_result, sample_call_graph
+        )
+        assert "rule_id" in task
+        assert "is_valid" in task
+        assert "confidence" in task
+        assert "enhanced_fix" in task
 
 
 # ===================================================================
-# UT2: _parse_response() 正确解析 JSON 响应
+# 测试反馈注入
 # ===================================================================
 
-class TestParseResponse:
-    """测试 AI 响应解析"""
+class TestFeedbackInjection:
+    """测试历史反馈注入"""
 
-    def test_parse_response_json(
-        self, reviewer_with_config, two_issues, two_issue_ai_response
-    ):
-        """UT2: 正确解析有效 JSON 响应并过滤低置信度结果"""
-        result = reviewer_with_config._parse_response(
-            two_issues, two_issue_ai_response
-        )
-
-        # xxe-java-document-builder 的 confidence=0.95 >= 0.7，应保留
-        assert len(result) >= 1
-        valid_ids = [r["rule_id"] for r in result]
-        assert "xxe-java-document-builder" in valid_ids
-
-    def test_parse_response_filters_low_confidence(
-        self, reviewer_with_config, two_issues, two_issue_ai_response
-    ):
-        """UT2: 过滤掉置信度低于阈值的结果"""
-        result = reviewer_with_config._parse_response(
-            two_issues, two_issue_ai_response
-        )
-
-        # naming-convention 的 confidence=0.3 < 0.7，应被过滤
-        valid_ids = [r["rule_id"] for r in result]
-        assert "naming-convention" not in valid_ids
-
-    def test_parse_response_filters_invalid(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 过滤掉 is_valid=False 的结果"""
-        response = json.dumps([
-            {
-                "rule_id": "xxe-java-document-builder",
-                "is_valid": False,
-                "confidence": 0.95,
-                "enhanced_fix": "",
+    def test_reviewer_accepts_feedback_summary(self):
+        """AIReviewer 接受 feedback_summary 配置"""
+        config = {
+            "workflow": "comprehensive",
+            "feedback_summary": {
+                "total": 50,
+                "confirmed": 30,
+                "false_positive": 15,
+                "uncertain": 5,
             },
-        ])
-
-        result = reviewer_with_config._parse_response(two_issues, response)
-
-        valid_ids = [r["rule_id"] for r in result]
-        assert "xxe-java-document-builder" not in valid_ids
-
-    def test_parse_response_enhances_fix(
-        self, reviewer_with_config, two_issues, two_issue_ai_response
-    ):
-        """UT2: 增强修复建议被写入 issue"""
-        result = reviewer_with_config._parse_response(
-            two_issues, two_issue_ai_response
-        )
-
-        xxe_issue = next(
-            (r for r in result if r["rule_id"] == "xxe-java-document-builder"),
-            None,
-        )
-        assert xxe_issue is not None
-        assert "fix" in xxe_issue
-        assert "setFeature" in xxe_issue["fix"]
-
-    def test_parse_response_adds_confidence(
-        self, reviewer_with_config, two_issues, two_issue_ai_response
-    ):
-        """UT2: 解析后 issue 包含 ai_confidence 字段"""
-        result = reviewer_with_config._parse_response(
-            two_issues, two_issue_ai_response
-        )
-
-        for issue in result:
-            assert "ai_confidence" in issue
-
-    def test_parse_response_with_markdown_code_block(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 处理包含 markdown 代码块包裹的 JSON 响应"""
-        response = "```json\n" + json.dumps([
-            {
-                "rule_id": "xxe-java-document-builder",
-                "is_valid": True,
-                "confidence": 0.9,
-                "enhanced_fix": "修复建议",
-            },
-        ]) + "\n```"
-
-        result = reviewer_with_config._parse_response(two_issues, response)
-
-        assert len(result) >= 1
-        assert result[0]["rule_id"] == "xxe-java-document-builder"
-
-
-# ===================================================================
-# UT2: _parse_response() 处理无效 JSON
-# ===================================================================
-
-class TestParseResponseInvalidJson:
-    """测试无效 JSON 响应的处理"""
-
-    def test_parse_response_invalid_json(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 无效 JSON 响应返回原始问题列表"""
-        result = reviewer_with_config._parse_response(
-            two_issues, "this is not valid json"
-        )
-
-        # 应返回原始结果
-        assert result == two_issues
-
-    def test_parse_response_empty_string(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 空字符串响应返回原始问题列表"""
-        result = reviewer_with_config._parse_response(two_issues, "")
-
-        assert result == two_issues
-
-    def test_parse_response_empty_json_array(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 空 JSON 数组时，所有 issue 无 AI 匹配，使用默认值（is_valid=True, confidence=0.8）全部保留"""
-        result = reviewer_with_config._parse_response(two_issues, "[]")
-
-        # 空数组意味着 AI 没有对任何 issue 给出评价
-        # _parse_response 中 ai_map 为空，每个 issue 的默认 is_valid=True, confidence=0.8
-        # 0.8 >= 0.7 阈值，所以所有 issue 都被保留
-        assert len(result) == len(two_issues)
-
-    def test_parse_response_partial_json(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 部分有效的 JSON（缺少字段）使用默认值"""
-        response = json.dumps([
-            {"rule_id": "xxe-java-document-builder"},
-            # 缺少 is_valid, confidence, enhanced_fix
-        ])
-
-        result = reviewer_with_config._parse_response(two_issues, response)
-
-        # 缺少 is_valid 默认为 True，缺少 confidence 默认为 0.8
-        # 0.8 >= 0.7 阈值，应保留
-        assert len(result) >= 1
-
-    def test_parse_response_non_list_json(
-        self, reviewer_with_config, two_issues
-    ):
-        """UT2: 非数组 JSON 返回原始问题列表"""
-        response = json.dumps({"key": "value"})
-
-        result = reviewer_with_config._parse_response(two_issues, response)
-
-        # 应优雅处理，返回原始结果
-        assert result == two_issues
-
-
-# ===================================================================
-# UT3: _is_available() 在有/无 API Key 时的行为
-# ===================================================================
-
-class TestIsAvailable:
-    """测试 AI 评审可用性检查"""
-
-    def test_is_available_with_api_key(self, reviewer_with_config):
-        """UT3: 有 URL 和有效 API Key 时返回 True"""
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key"}):
-            assert reviewer_with_config._is_available() is True
-
-    def test_is_available_without_api_key(self, reviewer_no_api_key):
-        """UT3: 有 URL 但无 API Key 环境变量时返回 False"""
-        # 确保环境变量不存在
-        env_key = reviewer_no_api_key.llm_config["api_key_env"]
-        with patch.dict(os.environ, {}, clear=False):
-            os.environ.pop(env_key, None)
-            assert reviewer_no_api_key._is_available() is False
-
-    def test_is_available_without_url(self, reviewer_without_config):
-        """UT3: 无 URL 配置时返回 False"""
-        assert reviewer_without_config._is_available() is False
-
-    def test_is_available_empty_url(self):
-        """UT3: URL 为空字符串时返回 False"""
-        config = {"llm": {"url": "", "api_key_env": "OPENAI_API_KEY"}}
+        }
         reviewer = AIReviewer(config)
-        assert reviewer._is_available() is False
+        assert reviewer.feedback_summary is not None
+        assert reviewer.feedback_summary["total"] == 50
 
-    def test_is_available_no_api_key_required(self):
-        """UT3: 配置中未指定 api_key_env 时，只要有 URL 就可用"""
-        config = {"llm": {"url": "https://api.example.com/v1"}}
+    def test_reviewer_accepts_feedback_examples(self):
+        """AIReviewer 接受 feedback_examples 配置"""
+        config = {
+            "workflow": "comprehensive",
+            "feedback_examples": [
+                {
+                    "rule_id": "xxe-java-document-builder",
+                    "verdict": "confirmed",
+                    "comment": "确认是真实问题",
+                },
+            ],
+        }
         reviewer = AIReviewer(config)
-        assert reviewer._is_available() is True
+        assert len(reviewer.feedback_examples) == 1
 
-    def test_is_available_empty_api_key_env(self):
-        """UT3: api_key_env 为空字符串时，不检查环境变量"""
-        config = {"llm": {"url": "https://api.example.com/v1", "api_key_env": ""}}
-        reviewer = AIReviewer(config)
-        assert reviewer._is_available() is True
-
-
-# ===================================================================
-# API 超时处理
-# ===================================================================
-
-class TestAPITimeout:
-    """测试 API 超时场景"""
-
-    def test_api_timeout_returns_original(
-        self, reviewer_with_config, two_issues, two_issue_diff, sample_call_graph
-    ):
-        """API 超时时返回原始问题列表"""
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key"}):
-            with patch("urllib.request.urlopen") as mock_urlopen:
-                mock_urlopen.side_effect = TimeoutError("Connection timed out")
-
-                result = reviewer_with_config.review(
-                    two_issues, two_issue_diff, sample_call_graph
-                )
-
-        # 超时时应返回原始结果
-        assert result == two_issues
-
-    def test_api_network_error_returns_original(
-        self, reviewer_with_config, two_issues, two_issue_diff, sample_call_graph
-    ):
-        """网络错误时返回原始问题列表"""
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key"}):
-            with patch("urllib.request.urlopen") as mock_urlopen:
-                mock_urlopen.side_effect = ConnectionError("Network unreachable")
-
-                result = reviewer_with_config.review(
-                    two_issues, two_issue_diff, sample_call_graph
-                )
-
-        assert result == two_issues
-
-    def test_api_returns_invalid_response(
-        self, reviewer_with_config, two_issues, two_issue_diff, sample_call_graph
-    ):
-        """API 返回无效响应时返回原始问题列表"""
-        mock_response = MagicMock()
-        mock_response.read.return_value = b"not valid json"
-        mock_response.__enter__ = MagicMock(return_value=mock_response)
-        mock_response.__exit__ = MagicMock(return_value=False)
-
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key"}):
-            with patch("urllib.request.urlopen", return_value=mock_response):
-                result = reviewer_with_config.review(
-                    two_issues, two_issue_diff, sample_call_graph
-                )
-
-        # 无效响应应返回原始结果
-        assert result == two_issues
-
-
-# ===================================================================
-# 集成场景测试
-# ===================================================================
-
-class TestReviewIntegration:
-    """AI 评审集成场景测试"""
-
-    def test_review_empty_issues(self, reviewer_with_config):
-        """空问题列表时直接返回空列表"""
-        result = reviewer_with_config.review([], {}, {})
-        assert result == []
-
-    def test_review_unavailable_returns_original(
-        self, reviewer_without_config, sample_issues, sample_diff_result, sample_call_graph
-    ):
-        """AI 不可用时返回原始问题列表"""
-        result = reviewer_without_config.review(
+    def test_generate_task_includes_feedback_section(self, reviewer_with_feedback,
+                                                      sample_issues, sample_diff_result,
+                                                      sample_call_graph):
+        """生成的任务描述包含历史反馈部分"""
+        task = reviewer_with_feedback.generate_subagent_task(
             sample_issues, sample_diff_result, sample_call_graph
         )
-        assert result == sample_issues
+        assert "历史反馈" in task or "反馈统计" in task
 
-    def test_review_batches_large_input(self, reviewer_with_config, sample_diff_result, sample_call_graph):
-        """大量问题时分批处理"""
-        # 创建超过 batch_size(20) 的问题列表
-        large_issues = [
-            {"rule_id": f"rule-{i}", "message": f"Issue {i}"}
-            for i in range(25)
-        ]
+    def test_generate_task_no_feedback_section_when_empty(self, reviewer, sample_issues,
+                                                           sample_diff_result, sample_call_graph):
+        """无反馈数据时不包含历史反馈部分"""
+        task = reviewer.generate_subagent_task(
+            sample_issues, sample_diff_result, sample_call_graph
+        )
+        assert "历史反馈" not in task
 
-        # 模拟 LLM 调用返回有效响应
-        mock_response_data = json.dumps([
-            {"rule_id": f"rule-{i}", "is_valid": True, "confidence": 0.9, "enhanced_fix": ""}
-            for i in range(25)
-        ])
 
-        mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({
-            "choices": [{"message": {"content": mock_response_data}}]
-        }).encode("utf-8")
-        mock_response.__enter__ = MagicMock(return_value=mock_response)
-        mock_response.__exit__ = MagicMock(return_value=False)
+# ===================================================================
+# 测试文件保存
+# ===================================================================
 
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key"}):
-            with patch("urllib.request.urlopen", return_value=mock_response):
-                result = reviewer_with_config.review(
-                    large_issues, sample_diff_result, sample_call_graph
-                )
+class TestSaveTask:
+    """测试任务文件保存"""
 
-        # 所有问题应被保留（confidence=0.9 >= 0.7）
-        assert len(result) == 25
+    def test_save_task_to_file(self, reviewer, sample_issues, sample_diff_result,
+                                sample_call_graph, tmp_path):
+        """save_task_to_file() 正确保存任务到文件"""
+        task = reviewer.generate_subagent_task(
+            sample_issues, sample_diff_result, sample_call_graph
+        )
+        output_file = tmp_path / "task.md"
+        
+        reviewer.save_task_to_file(task, str(output_file))
+        
+        assert output_file.exists()
+        content = output_file.read_text(encoding="utf-8")
+        assert content == task
+
+    def test_save_task_creates_parent_dirs(self, reviewer, sample_issues,
+                                            sample_diff_result, sample_call_graph, tmp_path):
+        """save_task_to_file() 创建父目录"""
+        task = "test task"
+        output_file = tmp_path / "subdir" / "task.md"
+        
+        reviewer.save_task_to_file(task, str(output_file))
+        
+        assert output_file.exists()

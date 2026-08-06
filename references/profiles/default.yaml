@@ -38,6 +38,14 @@ specs:
     enabled: true
   - path: security/ssrf.md
     enabled: true
+  - path: security/weak-randomness.md
+    enabled: true
+  - path: security/hardcoded-secrets.md
+    enabled: true
+  - path: security/deserialization.md
+    enabled: true
+  - path: security/log-injection.md
+    enabled: true
 
   # 自定义规则
   - path: rules/custom.md

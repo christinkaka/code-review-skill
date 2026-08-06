@@ -30,6 +30,21 @@ except ImportError:
     Scheduler = None
     Notifier = None
 
+# Harness 模块（可选依赖）
+# 需要把项目根目录加入 sys.path，因为 harness 包在项目根目录
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+try:
+    from harness.decision_logger import DecisionLogger
+    from harness.feedback_manager import FeedbackManager
+    from harness.quality_monitor import QualityMonitor
+except ImportError:
+    DecisionLogger = None
+    FeedbackManager = None
+    QualityMonitor = None
+
 # ============================================================
 # 日志配置
 # ============================================================
@@ -79,6 +94,94 @@ def load_profile(profile_name: str, specs_dir: str) -> dict:
 
     with open(profile_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def load_harness_config(harness_config_path: str = None) -> dict:
+    """加载 Harness 配置文件
+
+    Harness 配置控制 AI 评审的行为约束、监控和反馈机制。
+    与 config.yaml（全局扫描配置）分离，专注于 AI 质量管控。
+    """
+    import yaml
+
+    if harness_config_path is None:
+        project_root = Path(__file__).parent.parent
+        harness_config_path = project_root / "config" / "harness.yaml"
+
+    harness_config_path = Path(harness_config_path)
+    if harness_config_path.exists():
+        with open(harness_config_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+
+    # 配置文件不存在时返回禁用配置
+    return {
+        "harness": {
+            "enabled": False,
+            "decision_logging": {"enabled": False, "keep_recent": 10, "storage_dir": "data/decisions"},
+            "feedback": {"enabled": False, "allow_batch": True, "storage_file": "data/feedbacks.json"},
+            "auto_improvement": {"enabled": False},
+            "quality_monitor": {"enabled": False, "cache_file": "data/stats_cache.json"},
+        }
+    }
+
+
+def init_harness_components(harness_config: dict) -> dict:
+    """根据 harness 配置初始化各组件
+
+    Returns:
+        {"decision_logger": DecisionLogger|None,
+         "feedback_manager": FeedbackManager|None,
+         "quality_monitor": QualityMonitor|None}
+    """
+    result = {
+        "decision_logger": None,
+        "feedback_manager": None,
+        "quality_monitor": None,
+    }
+
+    harness = harness_config.get("harness", {})
+    if not harness.get("enabled", False):
+        return result
+
+    # 初始化决策日志
+    dl_config = harness.get("decision_logging", {})
+    if dl_config.get("enabled", False) and DecisionLogger is not None:
+        result["decision_logger"] = DecisionLogger(
+            storage_dir=dl_config.get("storage_dir", "data/decisions")
+        )
+
+    # 初始化反馈管理
+    fb_config = harness.get("feedback", {})
+    if fb_config.get("enabled", False) and FeedbackManager is not None:
+        result["feedback_manager"] = FeedbackManager(
+            storage_file=fb_config.get("storage_file", "data/feedbacks.json")
+        )
+
+    # 初始化质量监控（依赖前两个组件）
+    qm_config = harness.get("quality_monitor", {})
+    if qm_config.get("enabled", False) and QualityMonitor is not None:
+        if result["decision_logger"] and result["feedback_manager"]:
+            result["quality_monitor"] = QualityMonitor(
+                decision_logger=result["decision_logger"],
+                feedback_manager=result["feedback_manager"],
+                cache_file=qm_config.get("cache_file", "data/stats_cache.json"),
+            )
+
+    return result
+
+
+def build_feedback_examples(feedback_manager, max_examples: int = 10) -> list:
+    """从 FeedbackManager 提取近期反馈示例
+
+    取最近的 max_examples 条反馈，附加到 AI 评审提示词中。
+
+    Returns:
+        [{"issue_id": str, "verdict": str, "comment": str|None, "timestamp": str}]
+    """
+    all_feedbacks = feedback_manager.get_all_feedbacks()
+    # 按时间倒序取最近的
+    recent = sorted(all_feedbacks, key=lambda f: f.get("timestamp", ""), reverse=True)
+    return recent[:max_examples]
 
 
 # ============================================================
@@ -163,25 +266,65 @@ def run_scan(args):
     )
     logger.info(f"  发现 {len(raw_issues)} 个原始问题")
 
-    # 5. 生成 Subagent 评审任务
+    # 5. 初始化 Harness 组件
+    harness_config = load_harness_config()
+    harness_components = init_harness_components(harness_config)
+    decision_logger = harness_components["decision_logger"]
+    feedback_manager = harness_components["feedback_manager"]
+
+    if decision_logger:
+        logger.info("  Harness: 决策日志已启用")
+    if feedback_manager:
+        logger.info("  Harness: 反馈管理已启用")
+
+    # 6. 生成 Subagent 评审任务
     issues = raw_issues
     logger.info("[4/5] 生成 Subagent 评审任务...")
     ai_config = {}
     # 从命令行参数获取工作流
     if hasattr(args, "workflow"):
         ai_config["workflow"] = args.workflow
+
+    # 注入历史反馈数据到 AI 评审器
+    if feedback_manager:
+        ai_config["feedback_summary"] = feedback_manager.get_feedback_summary()
+        ai_config["feedback_examples"] = build_feedback_examples(feedback_manager)
+
     ai_reviewer = AIReviewer(ai_config)
-    
+
     # 生成 subagent 任务描述
     task = ai_reviewer.generate_subagent_task(raw_issues, diff_result, call_graph)
-    
+
     # 保存任务到文件
     task_file = output_dir / "subagent-review-task.md"
     ai_reviewer.save_task_to_file(task, str(task_file))
-    
+
     logger.info(f"  工作流: {ai_reviewer.get_current_workflow()}")
     logger.info(f"  Subagent 任务已保存到: {task_file}")
     logger.info(f"  请 TRAE Agent 委派 subagent 读取该文件并执行评审")
+
+    # 7. 记录决策日志
+    if decision_logger:
+        scan_id = decision_logger.start_scan(
+            repo=args.repo,
+            workflow=getattr(args, "workflow", "comprehensive"),
+            total_issues=len(raw_issues),
+        )
+        for idx, issue in enumerate(raw_issues):
+            decision_logger.log_decision(
+                issue_id=f"{scan_id}-{idx:04d}",
+                rule_id=issue.get("rule_id", "unknown"),
+                file=issue.get("file", ""),
+                line=issue.get("line", 0),
+                severity=issue.get("severity", "UNKNOWN"),
+                original_message=issue.get("message", ""),
+                ai_action="keep",
+                ai_confidence=issue.get("ai_confidence", 0.8),
+                ai_reasoning=issue.get("analysis", "规则引擎检出，待 AI 二次评审"),
+                ai_evidence=[issue.get("code_snippet", "")] if issue.get("code_snippet") else [],
+            )
+        decision_logger.save()
+        logger.info(f"  决策日志已记录 ({len(raw_issues)} 条，scan_id={scan_id})")
 
     # 6. 关联调用链
     for issue in issues:

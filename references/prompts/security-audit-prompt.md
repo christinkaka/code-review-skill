@@ -170,3 +170,12 @@ SECURITY_API_PARAMS = {
     "top_p": 0.9,
 }
 ```
+
+## 决策证据要求
+
+每个评审结论必须提供证据（evidence 字段），引用具体的代码行号和上下文。
+例如：
+- "第 42 行：String sql = \"SELECT * FROM users WHERE id = \" + userId; -- 字符串拼接构建 SQL"
+- "第 10 行已调用 sanitize() 方法进行了转义处理"
+
+每条证据应引用具体的文件名、行号和代码片段。
