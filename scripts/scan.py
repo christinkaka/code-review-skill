@@ -125,6 +125,63 @@ def load_harness_config(harness_config_path: str = None) -> dict:
     }
 
 
+
+
+def create_workspace(base_dir: str = None) -> dict:
+    """创建独立的工作空间
+    
+    每次扫描创建独立的工作空间目录，包含：
+    - report/: 扫描报告
+    - cache/: 规则编译缓存
+    - decisions/: 决策日志
+    
+    Args:
+        base_dir: 工作空间基础目录，默认为项目根目录下的 workspace/
+        
+    Returns:
+        {
+            "scan_id": str,          # 扫描ID（时间戳_随机后缀）
+            "workspace_dir": Path,   # 工作空间根目录
+            "report_dir": Path,      # 报告目录
+            "cache_dir": Path,       # 缓存目录
+            "decisions_dir": Path,   # 决策日志目录
+        }
+    """
+    import hashlib
+    
+    if base_dir is None:
+        project_root = Path(__file__).parent.parent
+        base_dir = project_root / "workspace"
+    
+    base_dir = Path(base_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 生成 scan_id: 时间戳_随机后缀
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    random_suffix = hashlib.md5(str(time.time()).encode()).hexdigest()[:4]
+    scan_id = f"{timestamp}_{random_suffix}"
+    
+    # 创建工作空间目录结构
+    workspace_dir = base_dir / scan_id
+    report_dir = workspace_dir / "report"
+    cache_dir = workspace_dir / "cache"
+    decisions_dir = workspace_dir / "decisions"
+    
+    report_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    decisions_dir.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"工作空间已创建: {workspace_dir}")
+    
+    return {
+        "scan_id": scan_id,
+        "workspace_dir": workspace_dir,
+        "report_dir": report_dir,
+        "cache_dir": cache_dir,
+        "decisions_dir": decisions_dir,
+    }
+
+
 def init_harness_components(harness_config: dict) -> dict:
     """根据 harness 配置初始化各组件
 
@@ -191,20 +248,26 @@ def run_scan(args):
     """执行完整扫描流程"""
     start_time = time.time()
 
+    # 0. 创建工作空间
+    workspace = create_workspace()
+    scan_id = workspace["scan_id"]
+    output_dir = workspace["report_dir"]  # 报告输出到工作空间
+    cache_dir = workspace["cache_dir"]
+    decisions_dir = workspace["decisions_dir"]
+
     # 1. 加载配置
     config = load_config(args.config)
     specs_dir = args.specs_dir or os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "references"
     )
     profile = load_profile(args.profile, specs_dir)
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     # 确定扫描模式
     is_full_scan = getattr(args, "full_scan", False)
 
     logger.info(f"=" * 60)
     logger.info(f"代码评审扫描启动")
+    logger.info(f"  Scan ID: {scan_id}")
     logger.info(f"  仓库: {args.repo}")
     if is_full_scan:
         logger.info(f"  扫描模式: 全库静态分析")
@@ -212,7 +275,7 @@ def run_scan(args):
         logger.info(f"  基线分支: {args.base}")
         logger.info(f"  目标分支: {args.target}")
     logger.info(f"  规约 Profile: {args.profile}")
-    logger.info(f"  输出目录: {output_dir}")
+    logger.info(f"  工作空间: {workspace['workspace_dir']}")
     if hasattr(args, "workflow"):
         logger.info(f"  AI 工作流: {args.workflow}")
     logger.info(f"=" * 60)
@@ -266,8 +329,11 @@ def run_scan(args):
     )
     logger.info(f"  发现 {len(raw_issues)} 个原始问题")
 
-    # 5. 初始化 Harness 组件
+    # 5. 初始化 Harness 组件（使用工作空间的 decisions_dir）
     harness_config = load_harness_config()
+    # 覆盖 decisions_dir 为工作空间目录
+    harness_config["harness"]["decision_logging"]["storage_dir"] = str(decisions_dir)
+    harness_config["harness"]["feedback"]["storage_file"] = str(workspace["workspace_dir"] / "feedbacks.json")
     harness_components = init_harness_components(harness_config)
     decision_logger = harness_components["decision_logger"]
     feedback_manager = harness_components["feedback_manager"]
@@ -305,7 +371,8 @@ def run_scan(args):
 
     # 7. 记录决策日志
     if decision_logger:
-        scan_id = decision_logger.start_scan(
+        # 使用工作空间的 scan_id
+        decision_logger.start_scan(
             repo=args.repo,
             workflow=getattr(args, "workflow", "comprehensive"),
             total_issues=len(raw_issues),

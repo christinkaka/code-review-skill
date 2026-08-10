@@ -251,6 +251,60 @@ $ python3 scripts/scan.py --repo test-validation/ --full-scan --output report/mu
 2. **Semgrep 引擎**：基于 pattern 匹配，准确度高
 3. **内置正则**（优先级最低）：基于文本匹配，作为回退方案
 
+
+## 工作空间机制
+
+为避免并行扫描时的文件冲突，每次扫描都会创建独立的工作空间。
+
+### 工作空间结构
+
+```
+workspace/
+├── {scan_id}/                    # 扫描ID: 时间戳_随机后缀
+│   ├── report/                   # 扫描报告
+│   │   ├── report.json
+│   │   ├── report.md
+│   │   ├── summary.json
+│   │   └── subagent-review-task.md
+│   ├── cache/                    # 规则编译缓存（本次扫描专用）
+│   │   └── compiled/
+│   └── decisions/                # 决策日志
+│       └── {scan_id}.json
+```
+
+### 优势
+
+| 特性 | 说明 |
+|------|------|
+| **完全隔离** | 每次扫描的所有输出都在独立目录，互不干扰 |
+| **可追溯** | 通过 scan_id 可以追踪完整的扫描历史 |
+| **支持并行** | 多个扫描可以同时运行，不会冲突 |
+| **易于清理** | 可以按 scan_id 删除旧的扫描结果 |
+
+### 使用示例
+
+```bash
+# 扫描 1
+$ python3 scripts/scan.py --repo /path/to/project1 --full-scan
+工作空间已创建: workspace/2026-08-10_09-06-42_2727
+
+# 扫描 2（同时运行）
+$ python3 scripts/scan.py --repo /path/to/project2 --full-scan
+工作空间已创建: workspace/2026-08-10_09-06-43_a3f2
+
+# 查看历史扫描
+$ ls workspace/
+2026-08-10_09-06-42_2727/
+2026-08-10_09-06-43_a3f2/
+```
+
+### 清理旧工作空间
+
+```bash
+# 删除 7 天前的工作空间
+find workspace/ -maxdepth 1 -type d -mtime +7 -exec rm -rf {} \;
+```
+
 详细技术分析请参考 [TECH-STACK.md](docs/TECH-STACK.md)。
 
 ---
