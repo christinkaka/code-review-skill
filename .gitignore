@@ -39,3 +39,6 @@ data/
 
 # 扫描输出（被扫描项目下）
 .code-review/
+
+# 扫描输出（被扫描项目下）
+.code-review/
