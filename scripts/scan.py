@@ -127,7 +127,7 @@ def load_harness_config(harness_config_path: str = None) -> dict:
 
 
 
-def create_workspace(base_dir: str = None) -> dict:
+def create_workspace(repo_path: str = None, base_dir: str = None) -> dict:
     """创建独立的工作空间
     
     每次扫描创建独立的工作空间目录，包含：
@@ -135,8 +135,12 @@ def create_workspace(base_dir: str = None) -> dict:
     - cache/: 规则编译缓存
     - decisions/: 决策日志
     
+    工作空间默认创建在被扫描项目的 .code-review/workspace/ 下，
+    避免污染 code-review-skill 项目本身。
+    
     Args:
-        base_dir: 工作空间基础目录，默认为项目根目录下的 workspace/
+        repo_path: 被扫描项目的路径（用于确定工作空间位置）
+        base_dir: 工作空间基础目录（如指定则覆盖 repo_path 的默认行为）
         
     Returns:
         {
@@ -150,8 +154,13 @@ def create_workspace(base_dir: str = None) -> dict:
     import hashlib
     
     if base_dir is None:
-        project_root = Path(__file__).parent.parent
-        base_dir = project_root / "workspace"
+        if repo_path:
+            # 默认：在被扫描项目下创建 .code-review/workspace/
+            base_dir = Path(repo_path).resolve() / ".code-review" / "workspace"
+        else:
+            # 回退：在 code-review-skill 项目下
+            project_root = Path(__file__).parent.parent
+            base_dir = project_root / ".code-review" / "workspace"
     
     base_dir = Path(base_dir)
     base_dir.mkdir(parents=True, exist_ok=True)
@@ -248,8 +257,8 @@ def run_scan(args):
     """执行完整扫描流程"""
     start_time = time.time()
 
-    # 0. 创建工作空间
-    workspace = create_workspace()
+    # 0. 创建工作空间（在被扫描项目下）
+    workspace = create_workspace(repo_path=args.repo)
     scan_id = workspace["scan_id"]
     output_dir = workspace["report_dir"]  # 报告输出到工作空间
     cache_dir = workspace["cache_dir"]

@@ -26,15 +26,22 @@
 
 ### 工作空间机制
 
-每次扫描创建独立工作空间，避免并行冲突：
+每次扫描在被扫描项目下创建独立工作空间，避免污染 code-review-skill 项目：
 
 ```
-workspace/
-├── {scan_id}/                    # 扫描ID: 时间戳_随机后缀
-│   ├── report/                   # 扫描报告
-│   ├── cache/                    # 规则编译缓存
-│   └── decisions/                # 决策日志
+<被扫描项目>/
+└── .code-review/
+    └── workspace/
+        └── {scan_id}/            # 扫描ID: 时间戳_随机后缀
+            ├── report/           # 扫描报告
+            ├── cache/            # 规则编译缓存
+            └── decisions/        # 决策日志
 ```
+
+**输出路径规范**：
+- 工作空间默认创建在 `<被扫描项目>/.code-review/workspace/`
+- 不会污染 code-review-skill 项目本身
+- 每次扫描有独立的 scan_id，支持并行扫描
 
 ## 工作流程
 
