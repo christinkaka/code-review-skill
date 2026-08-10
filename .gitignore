@@ -3,6 +3,8 @@
 __pycache__/
 *.pyc
 .trae/
+!.trae/skills/
+!.trae/skills/**
 .sisyphus/
 reports/
 report/
@@ -14,11 +16,5 @@ semgrep-offline-packages/semgrep-*.whl
 # Harness 数据
 data/
 
-# Harness 数据
-data/
 
-# Harness 数据
-data/
 
-# Harness 数据
-data/
