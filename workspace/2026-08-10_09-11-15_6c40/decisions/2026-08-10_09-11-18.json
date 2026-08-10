@@ -1,12 +1,12 @@
 {
-  "scan_id": "2026-08-10_09-06-44",
-  "timestamp": "2026-08-10T09:06:44.740374",
+  "scan_id": "2026-08-10_09-11-18",
+  "timestamp": "2026-08-10T09:11:18.099317",
   "repo": "test-validation/",
   "workflow": "comprehensive",
   "total_issues": 69,
   "decisions": [
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0000",
+      "issue_id": "2026-08-10_09-11-15_6c40-0000",
       "rule_id": "crypto-hardcoded-key-java",
       "file": "java/path-traversal/Safe.java",
       "line": 18,
@@ -23,7 +23,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0001",
+      "issue_id": "2026-08-10_09-11-15_6c40-0001",
       "rule_id": "path-read-traversal",
       "file": "java/path-traversal/Safe.java",
       "line": 25,
@@ -40,7 +40,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0002",
+      "issue_id": "2026-08-10_09-11-15_6c40-0002",
       "rule_id": "path-write-traversal",
       "file": "java/path-traversal/Safe.java",
       "line": 25,
@@ -57,7 +57,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0003",
+      "issue_id": "2026-08-10_09-11-15_6c40-0003",
       "rule_id": "path-config-traversal",
       "file": "java/path-traversal/Safe.java",
       "line": 32,
@@ -74,7 +74,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0004",
+      "issue_id": "2026-08-10_09-11-15_6c40-0004",
       "rule_id": "crypto-hardcoded-key-java",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 20,
@@ -91,7 +91,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0005",
+      "issue_id": "2026-08-10_09-11-15_6c40-0005",
       "rule_id": "path-read-traversal",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 27,
@@ -108,7 +108,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0006",
+      "issue_id": "2026-08-10_09-11-15_6c40-0006",
       "rule_id": "path-write-traversal",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 27,
@@ -125,7 +125,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0007",
+      "issue_id": "2026-08-10_09-11-15_6c40-0007",
       "rule_id": "path-config-traversal",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 28,
@@ -142,7 +142,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0008",
+      "issue_id": "2026-08-10_09-11-15_6c40-0008",
       "rule_id": "path-traversal-pattern",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 36,
@@ -159,7 +159,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0009",
+      "issue_id": "2026-08-10_09-11-15_6c40-0009",
       "rule_id": "path-read-traversal",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 37,
@@ -176,7 +176,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0010",
+      "issue_id": "2026-08-10_09-11-15_6c40-0010",
       "rule_id": "path-write-traversal",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 37,
@@ -193,7 +193,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0011",
+      "issue_id": "2026-08-10_09-11-15_6c40-0011",
       "rule_id": "path-config-traversal",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 38,
@@ -210,7 +210,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0012",
+      "issue_id": "2026-08-10_09-11-15_6c40-0012",
       "rule_id": "crypto-hardcoded-key-java",
       "file": "java/sqli/Safe.java",
       "line": 30,
@@ -227,7 +227,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0013",
+      "issue_id": "2026-08-10_09-11-15_6c40-0013",
       "rule_id": "crypto-hardcoded-key-java",
       "file": "java/sqli/Safe.java",
       "line": 43,
@@ -244,7 +244,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0014",
+      "issue_id": "2026-08-10_09-11-15_6c40-0014",
       "rule_id": "sqli-java-statement-concat",
       "file": "java/sqli/Vulnerable.java",
       "line": 30,
@@ -261,7 +261,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0015",
+      "issue_id": "2026-08-10_09-11-15_6c40-0015",
       "rule_id": "sqli-java-string-concat",
       "file": "java/sqli/Vulnerable.java",
       "line": 33,
@@ -278,7 +278,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0016",
+      "issue_id": "2026-08-10_09-11-15_6c40-0016",
       "rule_id": "sqli-java-statement-concat",
       "file": "java/sqli/Vulnerable.java",
       "line": 42,
@@ -295,7 +295,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0017",
+      "issue_id": "2026-08-10_09-11-15_6c40-0017",
       "rule_id": "sqli-java-string-concat",
       "file": "java/sqli/Vulnerable.java",
       "line": 45,
@@ -312,7 +312,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0018",
+      "issue_id": "2026-08-10_09-11-15_6c40-0018",
       "rule_id": "xss-java-servlet-output",
       "file": "java/xss/Vulnerable.java",
       "line": 28,
@@ -329,7 +329,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0019",
+      "issue_id": "2026-08-10_09-11-15_6c40-0019",
       "rule_id": "xss-java-servlet-output",
       "file": "java/xss/Vulnerable.java",
       "line": 42,
@@ -346,7 +346,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0020",
+      "issue_id": "2026-08-10_09-11-15_6c40-0020",
       "rule_id": "xxe-deep-detection",
       "file": "java/xxe/Safe.java",
       "line": 19,
@@ -363,7 +363,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0021",
+      "issue_id": "2026-08-10_09-11-15_6c40-0021",
       "rule_id": "xxe-deep-detection",
       "file": "java/xxe/Safe.java",
       "line": 31,
@@ -380,7 +380,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0022",
+      "issue_id": "2026-08-10_09-11-15_6c40-0022",
       "rule_id": "xxe-java-document-builder",
       "file": "java/xxe/Vulnerable.java",
       "line": 22,
@@ -397,7 +397,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0023",
+      "issue_id": "2026-08-10_09-11-15_6c40-0023",
       "rule_id": "xxe-deep-detection",
       "file": "java/xxe/Vulnerable.java",
       "line": 22,
@@ -414,7 +414,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0024",
+      "issue_id": "2026-08-10_09-11-15_6c40-0024",
       "rule_id": "xxe-java-document-builder",
       "file": "java/xxe/Vulnerable.java",
       "line": 29,
@@ -431,7 +431,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0025",
+      "issue_id": "2026-08-10_09-11-15_6c40-0025",
       "rule_id": "xxe-deep-detection",
       "file": "java/xxe/Vulnerable.java",
       "line": 29,
@@ -448,7 +448,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0026",
+      "issue_id": "2026-08-10_09-11-15_6c40-0026",
       "rule_id": "priv-python-subprocess-run",
       "file": "python/command-injection/safe.py",
       "line": 30,
@@ -465,7 +465,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0027",
+      "issue_id": "2026-08-10_09-11-15_6c40-0027",
       "rule_id": "priv-python-subprocess-run",
       "file": "python/command-injection/vulnerable.py",
       "line": 22,
@@ -482,7 +482,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0028",
+      "issue_id": "2026-08-10_09-11-15_6c40-0028",
       "rule_id": "priv-python-os-system",
       "file": "python/command-injection/vulnerable.py",
       "line": 30,
@@ -499,7 +499,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0029",
+      "issue_id": "2026-08-10_09-11-15_6c40-0029",
       "rule_id": "priv-python-subprocess-popen",
       "file": "python/command-injection/vulnerable.py",
       "line": 37,
@@ -516,7 +516,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0030",
+      "issue_id": "2026-08-10_09-11-15_6c40-0030",
       "rule_id": "priv-python-check-output-shell-true",
       "file": "python/command-injection/vulnerable.py",
       "line": 46,
@@ -533,7 +533,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0031",
+      "issue_id": "2026-08-10_09-11-15_6c40-0031",
       "rule_id": "path-read-traversal",
       "file": "python/path-traversal/safe.py",
       "line": 26,
@@ -550,7 +550,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0032",
+      "issue_id": "2026-08-10_09-11-15_6c40-0032",
       "rule_id": "path-read-traversal",
       "file": "python/path-traversal/safe.py",
       "line": 39,
@@ -567,7 +567,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0033",
+      "issue_id": "2026-08-10_09-11-15_6c40-0033",
       "rule_id": "path-read-traversal",
       "file": "python/path-traversal/safe.py",
       "line": 52,
@@ -584,7 +584,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0034",
+      "issue_id": "2026-08-10_09-11-15_6c40-0034",
       "rule_id": "path-write-traversal",
       "file": "python/path-traversal/safe.py",
       "line": 52,
@@ -601,7 +601,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0035",
+      "issue_id": "2026-08-10_09-11-15_6c40-0035",
       "rule_id": "path-read-traversal",
       "file": "python/path-traversal/vulnerable.py",
       "line": 23,
@@ -618,7 +618,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0036",
+      "issue_id": "2026-08-10_09-11-15_6c40-0036",
       "rule_id": "path-read-traversal",
       "file": "python/path-traversal/vulnerable.py",
       "line": 32,
@@ -635,7 +635,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0037",
+      "issue_id": "2026-08-10_09-11-15_6c40-0037",
       "rule_id": "path-read-traversal",
       "file": "python/path-traversal/vulnerable.py",
       "line": 40,
@@ -652,7 +652,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0038",
+      "issue_id": "2026-08-10_09-11-15_6c40-0038",
       "rule_id": "path-write-traversal",
       "file": "python/path-traversal/vulnerable.py",
       "line": 40,
@@ -669,7 +669,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0039",
+      "issue_id": "2026-08-10_09-11-15_6c40-0039",
       "rule_id": "xxe-python-lxml-parser",
       "file": "python/xxe/vulnerable.py",
       "line": 14,
@@ -686,7 +686,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0040",
+      "issue_id": "2026-08-10_09-11-15_6c40-0040",
       "rule_id": "xxe-python-lxml",
       "file": "python/xxe/vulnerable.py",
       "line": 14,
@@ -703,7 +703,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0041",
+      "issue_id": "2026-08-10_09-11-15_6c40-0041",
       "rule_id": "xxe-python-lxml-parse",
       "file": "python/xxe/vulnerable.py",
       "line": 14,
@@ -720,7 +720,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0042",
+      "issue_id": "2026-08-10_09-11-15_6c40-0042",
       "rule_id": "xxe-python-lxml-resolve-entities",
       "file": "python/xxe/vulnerable.py",
       "line": 14,
@@ -737,7 +737,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0043",
+      "issue_id": "2026-08-10_09-11-15_6c40-0043",
       "rule_id": "xxe-deep-detection",
       "file": "python/xxe/vulnerable.py",
       "line": 28,
@@ -754,7 +754,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0044",
+      "issue_id": "2026-08-10_09-11-15_6c40-0044",
       "rule_id": "ssrf-deep-detection",
       "file": "typescript/ssrf/safe.ts",
       "line": 28,
@@ -771,7 +771,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0045",
+      "issue_id": "2026-08-10_09-11-15_6c40-0045",
       "rule_id": "ssrf-deep-detection",
       "file": "typescript/ssrf/safe.ts",
       "line": 40,
@@ -788,7 +788,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0046",
+      "issue_id": "2026-08-10_09-11-15_6c40-0046",
       "rule_id": "ssrf-js-fetch",
       "file": "typescript/ssrf/safe.ts",
       "line": 40,
@@ -805,7 +805,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0047",
+      "issue_id": "2026-08-10_09-11-15_6c40-0047",
       "rule_id": "ssrf-deep-detection",
       "file": "typescript/ssrf/safe.ts",
       "line": 64,
@@ -822,7 +822,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0048",
+      "issue_id": "2026-08-10_09-11-15_6c40-0048",
       "rule_id": "ssrf-deep-detection",
       "file": "typescript/ssrf/safe.ts",
       "line": 82,
@@ -839,7 +839,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0049",
+      "issue_id": "2026-08-10_09-11-15_6c40-0049",
       "rule_id": "ssrf-js-fetch",
       "file": "typescript/ssrf/safe.ts",
       "line": 82,
@@ -856,7 +856,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0050",
+      "issue_id": "2026-08-10_09-11-15_6c40-0050",
       "rule_id": "ssrf-deep-detection",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 22,
@@ -873,7 +873,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0051",
+      "issue_id": "2026-08-10_09-11-15_6c40-0051",
       "rule_id": "ssrf-js-fetch",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 22,
@@ -890,7 +890,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0052",
+      "issue_id": "2026-08-10_09-11-15_6c40-0052",
       "rule_id": "ssrf-js-http-get",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 31,
@@ -907,7 +907,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0053",
+      "issue_id": "2026-08-10_09-11-15_6c40-0053",
       "rule_id": "ssrf-js-fetch",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 44,
@@ -924,7 +924,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0054",
+      "issue_id": "2026-08-10_09-11-15_6c40-0054",
       "rule_id": "ssrf-js-fetch-weak-filter",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 56,
@@ -941,7 +941,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0055",
+      "issue_id": "2026-08-10_09-11-15_6c40-0055",
       "rule_id": "ssrf-deep-detection",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 59,
@@ -958,7 +958,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0056",
+      "issue_id": "2026-08-10_09-11-15_6c40-0056",
       "rule_id": "ssrf-js-fetch",
       "file": "typescript/ssrf/vulnerable.ts",
       "line": 59,
@@ -975,7 +975,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0057",
+      "issue_id": "2026-08-10_09-11-15_6c40-0057",
       "rule_id": "xss-js-innerhtml",
       "file": "typescript/xss/safe.ts",
       "line": 68,
@@ -992,7 +992,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0058",
+      "issue_id": "2026-08-10_09-11-15_6c40-0058",
       "rule_id": "xss-js-innerhtml",
       "file": "typescript/xss/vulnerable.ts",
       "line": 21,
@@ -1009,7 +1009,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0059",
+      "issue_id": "2026-08-10_09-11-15_6c40-0059",
       "rule_id": "xss-js-document-write",
       "file": "typescript/xss/vulnerable.ts",
       "line": 30,
@@ -1026,7 +1026,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0060",
+      "issue_id": "2026-08-10_09-11-15_6c40-0060",
       "rule_id": "xss-js-outerhtml",
       "file": "typescript/xss/vulnerable.ts",
       "line": 40,
@@ -1043,7 +1043,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0061",
+      "issue_id": "2026-08-10_09-11-15_6c40-0061",
       "rule_id": "xss-js-dangerouslysetinnerhtml",
       "file": "typescript/xss/vulnerable.ts",
       "line": 50,
@@ -1060,7 +1060,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0062",
+      "issue_id": "2026-08-10_09-11-15_6c40-0062",
       "rule_id": "path-traversal-pattern",
       "file": "python/path-traversal/vulnerable.py",
       "line": 6,
@@ -1077,7 +1077,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0063",
+      "issue_id": "2026-08-10_09-11-15_6c40-0063",
       "rule_id": "path-traversal-pattern",
       "file": "python/path-traversal/vulnerable.py",
       "line": 28,
@@ -1094,7 +1094,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0064",
+      "issue_id": "2026-08-10_09-11-15_6c40-0064",
       "rule_id": "path-traversal-pattern",
       "file": "python/path-traversal/vulnerable.py",
       "line": 29,
@@ -1111,7 +1111,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0065",
+      "issue_id": "2026-08-10_09-11-15_6c40-0065",
       "rule_id": "path-traversal-pattern",
       "file": "python/path-traversal/vulnerable.py",
       "line": 30,
@@ -1128,7 +1128,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0066",
+      "issue_id": "2026-08-10_09-11-15_6c40-0066",
       "rule_id": "path-traversal-pattern",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 11,
@@ -1145,7 +1145,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0067",
+      "issue_id": "2026-08-10_09-11-15_6c40-0067",
       "rule_id": "path-traversal-pattern",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 26,
@@ -1162,7 +1162,7 @@
       "verdict_at": null
     },
     {
-      "issue_id": "2026-08-10_09-06-42_2727-0068",
+      "issue_id": "2026-08-10_09-11-15_6c40-0068",
       "rule_id": "path-traversal-pattern",
       "file": "java/path-traversal/Vulnerable.java",
       "line": 35,

@@ -64,6 +64,7 @@ if [ "$PLATFORM" = "macosx_11_0_arm64" ]; then
 elif [ "$PLATFORM" = "macosx_10_9_x86_64" ]; then
     pip3 install --no-index --find-links="$OFFLINE_DIR" \
         "PyYAML-6.0.2-cp310-cp310-macosx_10_9_x86_64.whl" \
+        "markupsafe-3.0.3-cp310-cp310-macosx_10_9_x86_64.whl" \
         "numpy-2.2.6-cp310-cp310-macosx_10_9_x86_64.whl" \
         "pandas-2.3.3-cp310-cp310-macosx_10_9_x86_64.whl" \
         "tree_sitter-0.26.0-cp310-cp310-macosx_10_9_x86_64.whl" \
@@ -74,6 +75,7 @@ elif [ "$PLATFORM" = "macosx_10_9_x86_64" ]; then
 elif [ "$PLATFORM" = "manylinux" ]; then
     pip3 install --no-index --find-links="$OFFLINE_DIR" \
         "pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl" \
+        "markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl" \
         "numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" \
         "pandas-2.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" \
         "tree_sitter-0.26.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl" \
@@ -84,6 +86,7 @@ elif [ "$PLATFORM" = "manylinux" ]; then
 elif [ "$PLATFORM" = "win_amd64" ]; then
     pip3 install --no-index --find-links="$OFFLINE_DIR" \
         "pyyaml-6.0.3-cp310-cp310-win_amd64.whl" \
+        "markupsafe-3.0.3-cp310-cp310-win_amd64.whl" \
         "numpy-2.2.6-cp310-cp310-win_amd64.whl" \
         "pandas-2.3.3-cp310-cp310-win_amd64.whl" \
         "tree_sitter-0.26.0-cp310-cp310-win_amd64.whl" \
