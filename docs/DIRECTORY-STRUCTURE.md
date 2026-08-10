@@ -1,6 +1,31 @@
 # 代码评审工程 - 目录结构说明
 
+## 重要：目录关系
+
+工具项目（code-review-skill）**不会**存放扫描输出。所有扫描结果都存储在**被扫描项目**下，避免污染工具项目本身。
+
+### 输出位置关系
+
+```
+code-review-skill/                          # 工具项目（只读，不存放扫描输出）
+├── scripts/scan.py                         # 主扫描入口
+└── ...
+
+<被扫描项目>/                               # 用户的目标项目
+└── .code-review/                            # code-review 工具的输出目录（自动创建）
+    └── workspace/
+        └── {scan_id}/                       # 每次扫描的独立工作空间
+            ├── report/                      # 扫描报告
+            ├── cache/                       # 规则编译缓存
+            ├── decisions/                   # 决策日志
+            ├── feedbacks.json               # Harness 反馈数据
+            └── stats_cache.json             # 质量监控缓存
+```
+
+---
+
 ## 目录结构
+
 
 ```
 code-review-skill/
@@ -70,14 +95,26 @@ code-review-skill/
 │       ├── security/               # 安全规约测试
 │       └── README.md               # 测试案例说明
 │
+├── harness/                        # Harness 系统
+│   ├── __init__.py
+│   ├── decision_logger.py          # 决策日志记录器
+│   ├── feedback_manager.py         # 反馈管理器
+│   ├── quality_monitor.py          # 质量监控器
+│   └── cli.py                      # Harness CLI 工具
+│
+├── config/                         # 配置目录
+│   └── harness.yaml                # Harness 系统配置
+│
 ├── scripts/                        # Python 脚本
 │   ├── ai_reviewer.py              # AI 增强评审
 │   ├── builtin_engine_v2.py        # 内置规则引擎 v2
 │   ├── call_graph.py               # 调用图构建
 │   ├── diff_analyzer.py            # 差异分析
 │   ├── dual_engine.py              # 双引擎并行扫描
+│   ├── harness.py                  # Harness 脚本
 │   ├── notifier.py                 # 通知器
 │   ├── report_generator.py         # 报告生成器
+│   ├── rule_compiler.py            # 规则预编译器
 │   ├── rule_engine.py              # 规则引擎
 │   ├── scan.py                     # 主扫描入口
 │   ├── scheduler.py                # 调度器
@@ -135,12 +172,29 @@ code-review-skill/
 - **rules/**: 自定义规则模板
 - **test-cases/**: 测试案例
 
+### harness/ - Harness 系统
+AI 评审质量管控系统：
+- **decision_logger.py**: 记录每个问题的 AI 决策、理由、证据
+- **feedback_manager.py**: 管理用户反馈，支持批量反馈
+- **quality_monitor.py**: 计算质量指标，监控评审准确率
+- **cli.py**: Harness 命令行工具
+
+### config/ - 配置目录
+- **harness.yaml**: Harness 系统的配置文件
+
 ### scripts/ - Python 脚本
 存放所有 Python 脚本：
 - **scan.py**: 主扫描入口
-- **rule_engine.py**: 规则引擎
+- **rule_engine.py**: 规则引擎（Semgrep）
+- **builtin_engine_v2.py**: 内置规则引擎（AST + 正则）
+- **rule_compiler.py**: 规则预编译器
+- **diff_analyzer.py**: 差异分析
+- **call_graph.py**: 调用图构建
 - **dual_engine.py**: 双引擎并行扫描
-- **ai_reviewer.py**: AI 增强评审
+- **ai_reviewer.py**: AI 评审任务生成
+- **report_generator.py**: 报告生成器
+- **scheduler.py**: 定时调度器
+- **notifier.py**: 通知器
 - 其他辅助脚本
 
 ### test-validation/ - 测试验证数据

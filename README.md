@@ -256,26 +256,33 @@ $ python3 scripts/scan.py --repo test-validation/ --full-scan --output report/mu
 
 为避免并行扫描时的文件冲突，每次扫描都会创建独立的工作空间。
 
-### 工作空间结构
+**重要**：工作空间默认创建在**被扫描项目下**，而不是在 code-review-skill 项目内，避免污染工具项目本身。
+
+### 目录关系
 
 ```
-workspace/
-├── {scan_id}/                    # 扫描ID: 时间戳_随机后缀
-│   ├── report/                   # 扫描报告
-│   │   ├── report.json
-│   │   ├── report.md
-│   │   ├── summary.json
-│   │   └── subagent-review-task.md
-│   ├── cache/                    # 规则编译缓存（本次扫描专用）
-│   │   └── compiled/
-│   └── decisions/                # 决策日志
-│       └── {scan_id}.json
+<被扫描项目>/                           # 用户的目标项目
+└── .code-review/                      # code-review 工具的输出目录（自动创建）
+    └── workspace/                     # 工作空间根目录
+        └── {scan_id}/                 # 扫描ID: 时间戳_随机后缀
+            ├── report/                # 扫描报告
+            │   ├── report.json
+            │   ├── report.md
+            │   ├── summary.json
+            │   └── subagent-review-task.md
+            ├── cache/                 # 规则编译缓存（本次扫描专用）
+            │   └── compiled/
+            ├── decisions/             # 决策日志
+            │   └── {scan_id}.json
+            ├── feedbacks.json         # Harness 反馈数据
+            └── stats_cache.json       # 质量监控缓存
 ```
 
 ### 优势
 
 | 特性 | 说明 |
 |------|------|
+| **不污染工具项目** | 所有输出都在被扫描项目下，code-review-skill 项目保持干净 |
 | **完全隔离** | 每次扫描的所有输出都在独立目录，互不干扰 |
 | **可追溯** | 通过 scan_id 可以追踪完整的扫描历史 |
 | **支持并行** | 多个扫描可以同时运行，不会冲突 |
@@ -284,26 +291,119 @@ workspace/
 ### 使用示例
 
 ```bash
-# 扫描 1
-$ python3 scripts/scan.py --repo /path/to/project1 --full-scan
-工作空间已创建: workspace/2026-08-10_09-06-42_2727
+# 扫描 test-validation 项目
+$ python3 scripts/scan.py --repo test-validation/ --full-scan
+工作空间已创建: test-validation/.code-review/workspace/2026-08-10_14-45-11_044a
 
-# 扫描 2（同时运行）
-$ python3 scripts/scan.py --repo /path/to/project2 --full-scan
-工作空间已创建: workspace/2026-08-10_09-06-43_a3f2
+# 扫描 Jenkins 项目（同时运行）
+$ python3 scripts/scan.py --repo /path/to/jenkins --full-scan
+工作空间已创建: /path/to/jenkins/.code-review/workspace/2026-08-10_14-45-12_ab12
 
-# 查看历史扫描
-$ ls workspace/
-2026-08-10_09-06-42_2727/
-2026-08-10_09-06-43_a3f2/
+# 查看扫描结果
+$ ls test-validation/.code-review/workspace/
+2026-08-10_14-45-11_044a/
+
+$ ls test-validation/.code-review/workspace/2026-08-10_14-45-11_044a/
+report/  cache/  decisions/  feedbacks.json  stats_cache.json
 ```
 
 ### 清理旧工作空间
 
 ```bash
-# 删除 7 天前的工作空间
-find workspace/ -maxdepth 1 -type d -mtime +7 -exec rm -rf {} \;
+# 删除被扫描项目下 7 天前的工作空间
+find test-validation/.code-review/workspace/ -maxdepth 1 -type d -mtime +7 -exec rm -rf {} \;
 ```
+
+## 项目目录结构
+
+code-review-skill 项目本身的目录结构：
+
+```
+code-review-skill/                    # 工具项目（不存放扫描输出）
+├── .trae/                            # Trae Skill 配置
+│   └── skills/
+│       └── code-review/
+│           └── SKILL.md              # Skill 定义文件
+├── .gitignore                        # Git 忽略规则
+├── README.md                         # 项目说明文档
+├── requirements.txt                  # Python 依赖声明
+├── config.yaml                       # 主配置文件
+├── config/
+│   └── harness.yaml                  # Harness 系统配置
+├── docs/                             # 详细文档
+│   ├── TECH-STACK.md                 # 技术栈说明
+│   ├── DIRECTORY-STRUCTURE.md        # 目录结构
+│   └── ...
+├── harness/                          # Harness 系统模块
+│   ├── __init__.py
+│   ├── decision_logger.py            # 决策日志记录器
+│   ├── feedback_manager.py           # 反馈管理器
+│   ├── quality_monitor.py            # 质量监控器
+│   └── cli.py                        # Harness CLI 工具
+├── scripts/                          # 扫描脚本
+│   ├── scan.py                       # 主扫描入口
+│   ├── diff_analyzer.py              # Git diff 分析
+│   ├── call_graph.py                 # 调用图构建
+│   ├── rule_engine.py                # 规则引擎（Semgrep）
+│   ├── builtin_engine_v2.py          # 内置规则引擎（AST + 正则）
+│   ├── rule_compiler.py              # 规则预编译器
+│   ├── ai_reviewer.py                # AI 评审任务生成
+│   ├── report_generator.py           # 报告生成器
+│   ├── scheduler.py                  # 定时调度器
+│   ├── notifier.py                   # 通知器
+│   ├── harness.py                    # Harness 脚本
+│   └── test_rules.py                 # 规则测试
+├── references/                       # 规则和提示词
+│   ├── RULE-GENERATOR-GUIDE.md       # 规则生成指南
+│   ├── compiled/                     # 预编译规则（自动生成）
+│   ├── profiles/                     # 扫描配置 Profile
+│   │   ├── default.yaml              # 默认配置
+│   │   ├── strict.yaml               # 严格配置
+│   │   └── minimal.yaml              # 最小配置
+│   ├── prompts/                      # AI 评审提示词
+│   │   ├── security-audit-prompt.md
+│   │   ├── code-quality-prompt.md
+│   │   └── ...
+│   ├── security/                     # 安全规则
+│   │   ├── authorization.yaml
+│   │   └── ...
+│   ├── implementation/               # 实现规则
+│   │   ├── null-safety.yaml
+│   │   └── ...
+│   ├── design/                       # 设计规则
+│   │   ├── api-design.yaml
+│   │   └── ...
+│   └── rules/                        # 自定义规则
+│       └── custom.yaml
+├── offline-packages/                 # Python 离线安装包
+│   └── *.whl                         # 多平台 wheel 文件
+├── semgrep-offline-packages/         # Semgrep 离线安装包
+├── tests/                            # 单元测试
+│   ├── test_scan.py                  # 扫描测试
+│   ├── test_rule_engine.py           # 规则引擎测试
+│   ├── test_harness.py               # Harness 测试
+│   └── ...
+├── test-validation/                  # 测试验证项目（用于演示）
+├── install-offline.sh                # 离线依赖安装脚本
+├── install-semgrep-offline.sh        # Semgrep 离线安装（Unix）
+├── install-semgrep-offline.ps1       # Semgrep 离线安装（Windows）
+└── download-offline-packages.sh      # 离线包下载脚本
+```
+
+### 目录职责说明
+
+| 目录 | 职责 | 是否会被扫描污染 |
+|------|------|------------------|
+| `.trae/` | Trae Skill 定义 | ❌ 不会 |
+| `config/` | 配置文件 | ❌ 不会 |
+| `docs/` | 项目文档 | ❌ 不会 |
+| `harness/` | Harness 系统代码 | ❌ 不会 |
+| `scripts/` | 扫描脚本代码 | ❌ 不会 |
+| `references/` | 规则和提示词 | ❌ 不会 |
+| `tests/` | 单元测试 | ❌ 不会 |
+| `offline-packages/` | Python 离线包 | ❌ 不会 |
+| `semgrep-offline-packages/` | Semgrep 离线包 | ❌ 不会 |
+| `<被扫描项目>/.code-review/` | **扫描输出** | ✅ 这是输出位置 |
 
 详细技术分析请参考 [TECH-STACK.md](docs/TECH-STACK.md)。
 
