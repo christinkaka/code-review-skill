@@ -343,6 +343,7 @@ def run_scan(args):
     # 覆盖 decisions_dir 为工作空间目录
     harness_config["harness"]["decision_logging"]["storage_dir"] = str(decisions_dir)
     harness_config["harness"]["feedback"]["storage_file"] = str(workspace["workspace_dir"] / "feedbacks.json")
+    harness_config["harness"]["quality_monitor"]["cache_file"] = str(workspace["workspace_dir"] / "stats_cache.json")
     harness_components = init_harness_components(harness_config)
     decision_logger = harness_components["decision_logger"]
     feedback_manager = harness_components["feedback_manager"]
