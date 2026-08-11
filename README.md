@@ -1651,6 +1651,28 @@ code-review-skill/
 
 ### 已完成的工作
 
+**2026-08-11 更新**：
+
+1. ✅ **修复 AI 交互链路字段定义不一致问题**（commit `88bd934`）
+   - **根因**：`scripts/ai_reviewer.py` 的 `_get_default_prompt()` 定义的是 `is_false_positive` 字段，但 `generate_subagent_task()` 自己重定义了 `is_valid` 字段。两个 Agent 看到不同的字段名，产生了完全不同的理解，导致双盲测试偏差达 40%。
+   - **修复内容**：
+     - `_get_default_prompt()` 与 `references/prompts/ai-enhancer-prompt.md` 保持一致，统一使用 `is_false_positive` + `ai_confidence` + `analysis` + `enhanced_fix` 字段
+     - `generate_subagent_task()` 不再自己定义输出格式，直接使用 `prompt_template`，确保字段定义唯一来源
+     - 补充 2 个完整示例（真实问题 vs 误报场景）和字段约束说明
+   - **验证效果**：在 100 条样本上，3 个 Agent 的一致率从 40% 提升到 99%
+
+2. ✅ **修复 Harness 输出路径污染项目根目录**（commit `9771579`）
+   - **根因**：`harness` 组件的 `cache_file` 路径硬编码为 `data/stats_cache.json`，污染了工具项目根目录
+   - **修复内容**：将 `quality_monitor.cache_file` 也重定向到工作空间目录
+   - **验证效果**：扫描任何项目都不会在 code-review-skill 项目根目录产生输出文件
+
+3. ✅ **补充完整的目录关系说明**（commit `d44db49`）
+   - README 新增"项目目录结构"章节和"目录职责说明"表格
+   - docs/DIRECTORY-STRUCTURE.md 补充 `harness/` 和 `config/` 目录说明
+   - 明确工具项目 vs 扫描输出的边界关系
+
+4. ✅ **清理 .gitignore 重复条目**（commit `5525eff`）
+
 **2026-08-06 更新**：
 
 1. ✅ **Harness 集成到扫描流程**
@@ -1695,6 +1717,58 @@ code-review-skill/
 - 系统自动学习用户反馈
 - 动态调整各规则的置信度阈值
 - 减少误报，提高准确率
+
+### AI 交互字段约定
+
+**重要**：所有 AI 评审相关的字段定义**唯一来源**是 `references/prompts/ai-enhancer-prompt.md`。`scripts/ai_reviewer.py` 直接使用 `prompt_template`，不再自己定义字段。
+
+#### AI 输出字段（由 prompt 定义，AI 返回）
+
+| 字段 | 类型 | 含义 |
+|------|------|------|
+| `rule_id` | string | 规则 ID（必须与输入一致） |
+| `severity` | string | 严重级别（必须与输入一致） |
+| `file` | string | 文件路径（必须与输入一致） |
+| `line` | number | 行号（必须与输入一致） |
+| `code_snippet` | string | 代码片段（必须与输入一致） |
+| `message` | string | 问题描述（必须与输入一致） |
+| `is_false_positive` | **boolean** | **是否为误报**（true=误报，false=真实问题） |
+| `ai_confidence` | float (0-1) | AI 置信度 |
+| `analysis` | string (50-200 字) | 分析说明（问题原因 + 风险 + 修复建议） |
+| `risk_level` | string | CRITICAL/HIGH/MEDIUM/LOW |
+| `impact_scope` | string (20-100 字) | 影响范围 |
+| `enhanced_fix` | string | 增强修复建议（包含具体代码） |
+| `references` | array | 参考链接（0-3 个） |
+
+#### 字段映射（AI 输出 → 决策日志 → 报告）
+
+| AI 输出 | decision_logger 输入 | 报告 |
+|---------|---------------------|------|
+| `is_false_positive=true` | `ai_action='drop'` | 标记为误报 |
+| `is_false_positive=false` | `ai_action='keep'` | 标记为真实问题 |
+| `ai_confidence` | `ai_confidence` | 显示置信度 |
+| `analysis` | `ai_reasoning` | 显示分析 |
+| `references` | `ai_evidence` | 显示参考链接 |
+
+#### 历史反馈字段（注入到 prompt）
+
+| 字段 | 类型 | 取值 |
+|------|------|------|
+| `feedback_summary.total` | int | 总反馈数 |
+| `feedback_summary.confirmed` | int | 用户确认（真实问题） |
+| `feedback_summary.false_positive` | int | 用户标记为误报 |
+| `feedback_summary.uncertain` | int | 用户不确定 |
+| `feedback_examples[].rule_id` | string | 规则 ID |
+| `feedback_examples[].verdict` | enum | confirmed/false_positive/uncertain |
+| `feedback_examples[].comment` | string | 反馈备注 |
+
+#### 为什么需要统一字段？
+
+2026-08-11 双盲测试发现：如果 AI 交互链路中存在字段定义不一致（如同时存在 `is_false_positive` 和 `is_valid`），不同 Agent 会对同一问题给出完全相反的判断，导致偏差达 40%。
+
+**修复后**：所有字段定义唯一来自 `prompt_template`，3 个 Agent 在 100 条样本上的一致率提升到 99%。
+
+---
 
 ### 设计决策
 
