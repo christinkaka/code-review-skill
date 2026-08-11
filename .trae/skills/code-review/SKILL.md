@@ -54,11 +54,45 @@ python scripts/scan.py --repo <path> --base <base> --target <target> --workflow 
 2. 区分"原始扫描结果"（确定性）和"AI 评审结论"（概率性）
 3. 输出最终报告给用户
 
+## 规则与缓存管理
+
+### 规则预编译机制
+
+`scan.py` 通过 `RuleEngine` 加载 `references/*.md` 规则文件。`RuleEngine` 内部会自动初始化 `RuleCompiler`，**优先从预编译缓存加载**：
+
+- 缓存目录：`references/compiled/`（含 `manifest.json`）
+- 工作原理：缓存记录每个 `.md` 文件的 hash，若 hash 与当前一致则直接加载 JSON，跳过 Markdown 解析
+
+### 何时需要重新编译缓存
+
+修改 `references/security/*.md`、`references/implementation/*.md`、`references/design/*.md` 等规则文件后：
+
+```bash
+# 强制重新编译所有规则
+python scripts/rule_compiler.py --compile --force
+
+# 检查编译状态
+python scripts/rule_compiler.py --status
+```
+
+**注意**：缓存 hash 不匹配时 `rule_engine.py` 会自动回退到直接解析 Markdown（`从缓存加载` → `缓存无效，重新解析`）。但主动编译可确保一致性。
+
+### 调试规则加载
+
+如需确认规则是否从缓存加载，启动 `scan.py` 时加 `--log-level DEBUG`：
+
+```bash
+python scripts/scan.py --repo <path> --full-scan --log-level DEBUG
+```
+
+日志中可见 "从缓存加载 X.md" 或 "缓存无效，重新解析"。
+
 ## 注意事项
 
 - **不要**自行修改 prompt 字段——所有 AI 评审字段定义唯一来源是 `references/prompts/ai-enhancer-prompt.md`
 - **不要**直接调用 Semgrep/AST——这些都由 `scan.py` 内部处理
 - **不要**让子 Agent 修改 `code-review-skill` 项目文件——所有输出在被扫描项目的 `.code-review/` 目录下
+- 修改规则后**必须**运行 `rule_compiler.py --compile`，否则缓存可能过期
 - 如果扫描失败或字段不一致，检查 `config.yaml` 和 `references/prompts/` 配置
 
 ## 详细文档
