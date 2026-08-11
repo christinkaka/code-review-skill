@@ -88,22 +88,107 @@ class AIReviewer:
             return self._get_default_prompt()
 
     def _get_default_prompt(self) -> str:
-        """获取默认提示词"""
-        return """你是一个专业的代码评审专家。请对以下代码扫描结果进行二次评审。
+        """获取默认提示词（与 references/prompts/ai-enhancer-prompt.md 保持一致）"""
+        return """你是一个专业的代码评审助手，专门负责增强代码扫描结果。
 
-## 任务
-1. 判断每个问题是否为真正的代码问题（排除误报）
-2. 评估问题的严重程度（0-1 之间的置信度分数）
-3. 如果问题确实存在，提供更具体的修复建议
+## 你的职责
 
-## 输出格式
-请以 JSON 数组格式返回，每个元素包含：
-- "rule_id": 规则 ID
-- "is_valid": true/false（是否为真正的问题）
-- "confidence": 0.0-1.0（置信度）
-- "enhanced_fix": 增强的修复建议（字符串）
+✅ 你可以做：
+- 标记误报（is_false_positive = true）
+- 补充分析说明（analysis）
+- 生成修复建议（enhanced_fix）
+- 评估风险等级（risk_level）
+- 分析影响范围（impact_scope）
 
-只返回 JSON 数组，不要其他内容。
+❌ 你不能做：
+- 删除确定性问题（rule_id 必须保留）
+- 改变问题的 severity（severity 由规则定义）
+- 改变问题的 rule_id（rule_id 由规则定义）
+
+## 示例 1：真实问题
+
+### 输入
+{
+  "rule_id": "xxe-java-document-builder",
+  "severity": "ERROR",
+  "file": "Parser.java",
+  "line": 42,
+  "code_snippet": "DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();",
+  "message": "DocumentBuilderFactory 未禁用外部实体"
+}
+
+### 期望输出
+{
+  "rule_id": "xxe-java-document-builder",
+  "severity": "ERROR",
+  "file": "Parser.java",
+  "line": 42,
+  "code_snippet": "DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();",
+  "message": "DocumentBuilderFactory 未禁用外部实体",
+  "is_false_positive": false,
+  "ai_confidence": 0.92,
+  "analysis": "该代码处理外部 XML 输入，未禁用外部实体，攻击者可构造恶意 XML 读取服务器文件。建议立即修复。",
+  "risk_level": "CRITICAL",
+  "impact_scope": "影响所有调用 parseXml() 方法的地方",
+  "enhanced_fix": "factory.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\nfactory.setFeature(\"http://xml.org/sax/features/external-general-entities\", false);",
+  "references": ["https://owasp.org/Top10/A05_2021-Security-Misconfiguration/"]
+}
+
+## 示例 2：误报场景
+
+### 输入
+{
+  "rule_id": "xss-java-servlet-output",
+  "severity": "WARNING",
+  "file": "TestController.java",
+  "line": 15,
+  "code_snippet": "response.getWriter().write(testData);",
+  "message": "Servlet 响应直接写入用户输入"
+}
+
+### 期望输出
+{
+  "rule_id": "xss-java-servlet-output",
+  "severity": "WARNING",
+  "file": "TestController.java",
+  "line": 15,
+  "code_snippet": "response.getWriter().write(testData);",
+  "message": "Servlet 响应直接写入用户输入",
+  "is_false_positive": true,
+  "ai_confidence": 0.85,
+  "analysis": "这是测试代码，testData 是硬编码的测试数据，不是用户输入，不存在 XSS 风险。",
+  "risk_level": "LOW",
+  "impact_scope": "无",
+  "enhanced_fix": "无需修复",
+  "references": []
+}
+
+## 输出格式要求
+
+你必须输出以下 JSON 格式，不要添加其他内容：
+{
+  "rule_id": "string (必须与输入一致)",
+  "severity": "string (必须与输入一致)",
+  "file": "string (必须与输入一致)",
+  "line": "number (必须与输入一致)",
+  "code_snippet": "string (必须与输入一致)",
+  "message": "string (必须与输入一致)",
+  "is_false_positive": "boolean",
+  "ai_confidence": "float (0-1)",
+  "analysis": "string (50-200 字)",
+  "risk_level": "string (CRITICAL/HIGH/MEDIUM/LOW)",
+  "impact_scope": "string (20-100 字)",
+  "enhanced_fix": "string (包含具体代码)",
+  "references": "array (0-3 个链接)"
+}
+
+## 字段约束
+
+- is_false_positive: 如果代码在特定上下文中是安全的（如测试代码、硬编码数据、Maven 属性占位符等非真实安全问题），标记为 true
+- ai_confidence: 0.9-1.0 非常确定；0.7-0.9 比较确定；0.5-0.7 需要人工确认；<0.5 建议跳过
+- enhanced_fix: 必须包含具体的代码修改，不能只是文字描述
+
+请以 JSON 数组格式返回评审结果，每个问题一条记录。只返回 JSON 数组，不要其他内容。
 """
 
     def generate_subagent_task(
@@ -158,38 +243,18 @@ class AIReviewer:
                         feedback_section += f"（{example['comment']}）"
                     feedback_section += "\n"
 
-        # 构建任务描述
-        task = f"""请对以下代码扫描结果进行评审：
+        # 构建任务描述（直接使用 prompt_template，确保字段定义一致）
+        task = f"""{self.prompt_template}
 
-## 工作流
-{workflow_config['description']}
+## 评审数据
 
-## 温度参数
-temperature: {temperature}
-
-## 扫描结果
+### 扫描结果（共 {len(issues)} 条）
 {json.dumps(issues, ensure_ascii=False, indent=2)}
 
-## 变更文件
+### 变更文件
 {json.dumps([f['path'] for f in diff_result.get('changed_files', [])[:10]], ensure_ascii=False)}
 {feedback_section}
-## 评审要求
-1. 分析每个问题的真实性（排除误报）
-2. 评估问题的严重程度（0-1 之间的置信度）
-3. 为真实问题生成具体的修复建议
-4. 使用严谨的评审标准（温度 {temperature}）
-5. 为每个判断提供决策理由和证据
-
-## 输出格式
-请以 JSON 数组格式返回评审结果，每个元素包含：
-- "rule_id": 规则 ID（必须与输入一致）
-- "is_valid": true/false（是否为真实问题）
-- "confidence": 0.0-1.0（置信度）
-- "enhanced_fix": 修复建议（包含具体代码）
-- "analysis": 分析说明（包含决策理由）
-- "evidence": 证据列表（引用具体代码行或上下文）
-
-只返回 JSON 数组，不要其他内容。
+请严格按照上述输出格式要求返回 JSON 数组。
 """
         
         return task
