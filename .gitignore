@@ -2,9 +2,10 @@
 .pytest_cache/
 __pycache__/
 *.pyc
-.trae/
+.trae/*
 !.trae/skills/
-!.trae/skills/**
+!.trae/skills/code-review/
+!.trae/skills/code-review/**
 .sisyphus/
 reports/
 report/
