@@ -49,7 +49,7 @@
 运行 `python -m pytest tests/` 验证全部模块：
 
 ```
-275 passed, 33 failed, 6 skipped in 10.17s
+274 passed, 34 failed, 6 skipped in 10.17s
 ```
 
 ### 稳定性验证
@@ -178,4 +178,7 @@ ps.setString(1, userId);
 ps.execute();
 ```
 
+---
 
+> **最后更新**：2026-08-12
+> **数据快照**：274 个测试已收集（274 passed, 34 failed, 6 skipped），最新数据请以 `pytest tests/ -q` 输出为准。

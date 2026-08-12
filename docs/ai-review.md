@@ -339,7 +339,7 @@ code-review-skill/
 | **scan.py 读取历史反馈** | ✅ 已实现 | build_feedback_examples() 提取反馈 |
 | **ai_reviewer.py 注入反馈** | ✅ 已实现 | 提示词包含历史反馈统计和示例 |
 | **提示词要求输出证据** | ✅ 已实现 | 5 个提示词文件已更新，要求 evidence 字段 |
-| **单元测试覆盖** | ⚠️ 部分通过 | 314 个测试（275 通过，33 失败，6 跳过） |
+| **单元测试覆盖** | ⚠️ 部分通过 | 314 个测试（274 通过，34 失败，6 跳过） |
 
 ### 已完成的工作
 
@@ -398,7 +398,7 @@ code-review-skill/
    - test_scheduler.py: 33 个测试
    - test_scheduler_e2e.py: 45 个测试
    - test_semgrep_integration.py: 46 个测试
-   - **总计 314 个测试（275 通过，33 失败，6 跳过）**
+   - **总计 314 个测试（274 通过，34 失败，6 跳过）**
 
 > 以上为完整 15 个测试文件的统计，可通过 `pytest tests/ --collect-only -q` 查看完整列表。
 
@@ -406,7 +406,7 @@ code-review-skill/
 
 5. ✅ **代码清理**
    - 保留并集成 scripts/builtin_engine_v2.py（Tree-sitter AST 引擎，已集成到 rule_engine.py 中，作为多引擎融合架构的 AST 引擎组件，参与生产扫描流程）
-   - 删除 scripts/dual_engine.py（依赖已删除的模块）
+   - 删除 scripts/dual_engine.py（依赖已删除的模块，已实际从仓库移除）
    - 删除 scripts/diff_analyzer.py.bak（备份文件）
 
 ### 待完成的工作
@@ -453,6 +453,8 @@ code-review-skill/
 | `ai_confidence` | `ai_confidence` | 显示置信度 |
 | `analysis` | `ai_reasoning` | 显示分析 |
 | `references` | `ai_evidence` | 显示参考链接 |
+
+> **注意**：当前 `scan.py` 在决策日志阶段硬编码 `ai_action="keep"`（不区分预过滤结果），完整字段映射（如 `drop`）由 Harness 系统在后续反馈阶段（`harness.py feedback --verdict false_positive`）通过 `quality_monitor.py` 完成。
 
 #### 历史反馈字段（注入到 prompt）
 

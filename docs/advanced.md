@@ -98,7 +98,7 @@ flowchart TD
 
     PARALLEL --> AGG["结果聚合
     ─────
-    dual_engine.py
+    rule_engine.py
     合并三类规约检出结果
     去重、排序
     输出: merged_issues[]"]
