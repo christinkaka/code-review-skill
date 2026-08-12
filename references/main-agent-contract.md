@@ -15,7 +15,8 @@
 5. **不能跳过预过滤步骤** — 必须让 `scan.py` 先做确定性过滤，再交给 AI 评审
 
 ## 你必须做的事
-1. **必须读取 `subagent-review-task.md`** — 这是子 Agent 评审任务的完整定义
+1. **必须参考 `.trae/skills/code-review/SKILL.md`** — 本 Skill 的入口文档定义了执行流程
+2. **必须读取 `subagent-review-task.md`** — 这是子 Agent 评审任务的完整定义
 2. **必须委派子 Agent 执行 AI 评审** — 用 Task 工具委派，不能跳过
 3. **必须验证子 Agent 输出** — 检查 JSON 是否包含所有必需字段
 4. **必须区分"原始扫描结果"和"AI 评审结论"** — 报告中分层展示
