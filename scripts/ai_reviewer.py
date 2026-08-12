@@ -188,6 +188,19 @@ class AIReviewer:
 - ai_confidence: 0.9-1.0 非常确定；0.7-0.9 比较确定；0.5-0.7 需要人工确认；<0.5 建议跳过
 - enhanced_fix: 必须包含具体的代码修改，不能只是文字描述
 
+## ⚠️ 强制要求：先读代码再判断
+
+**在评审每一条扫描结果之前，必须先用工具（如 Read）读取 file:line 处的实际代码片段。**
+
+- ✅ **正确流程**：先用 Read 工具读取代码 → 基于真实代码判断 is_false_positive
+- ❌ **错误流程**：直接根据 code_snippet 字段判断（该字段可能不完整或被屏蔽）
+
+**当代码不可读时**（文件不存在、无权限访问、code_snippet 为空或显示 "requires login"）：
+- 标记 `is_false_positive=false`（保守策略，宁可误报也不漏报）
+- 在 analysis 中说明 "代码不可读，建议人工审查"
+
+**为什么需要这一步**：扫描结果只提供位置信息，真实代码上下文必须主动获取。凭推测判断会导致 30%+ 的判定错误。
+
 请以 JSON 数组格式返回评审结果，每个问题一条记录。只返回 JSON 数组，不要其他内容。
 """
 
@@ -213,6 +226,14 @@ class AIReviewer:
 
         workflow_config = self.WORKFLOW_CONFIG.get(self.workflow, self.WORKFLOW_CONFIG["comprehensive"])
         temperature = workflow_config['temperature']
+        
+        # 加载子 Agent 规约
+        contract_path = Path(__file__).parent.parent / "references" / "subagent-contract.md"
+        if contract_path.exists():
+            with open(contract_path, 'r', encoding='utf-8') as f:
+                subagent_contract = f.read()
+        else:
+            subagent_contract = ""
         
         # 构建历史反馈部分
         feedback_section = ""
@@ -243,8 +264,12 @@ class AIReviewer:
                         feedback_section += f"（{example['comment']}）"
                     feedback_section += "\n"
 
-        # 构建任务描述（直接使用 prompt_template，确保字段定义一致）
-        task = f"""{self.prompt_template}
+        # 构建任务描述（注入子 Agent 规约 + prompt_template）
+        task = f"""{subagent_contract}
+
+---
+
+{self.prompt_template}
 
 ## 评审数据
 

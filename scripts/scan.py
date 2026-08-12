@@ -6,6 +6,7 @@
 
 import argparse
 import json
+import yaml
 import logging
 import os
 import sys
@@ -69,8 +70,93 @@ logger = logging.getLogger("code-review")
 # ============================================================
 def load_config(config_path: str = None) -> dict:
     """加载配置文件"""
-    import yaml
+    
+# ============================================================
+# 预过滤机制（可配置，可回退）
+# ============================================================
+def prefilter_issues(issues, config=None):
+    """预过滤：对显式误报规则用确定性引擎过滤
+    
+    Args:
+        issues: 扫描结果列表
+        config: 配置字典，包含 prefilter.enabled 和 prefilter.rules
+        
+    Returns:
+        (already_decided, to_review): 
+        - already_decided: 已预过滤的问题（is_false_positive 或 needs_review 已设置）
+        - to_review: 待 AI 评审的问题
+    """
+    # 检查是否启用预过滤
+    if config and config.get('prefilter', {}).get('enabled', False):
+        prefilter_config = config.get('prefilter', {})
+        rules = prefilter_config.get('rules', {})
+    else:
+        # 预过滤未启用，返回原始数据
+        return [], issues
+    
+    already_decided = []
+    to_review = []
+    
+    for issue in issues:
+        rule_id = issue.get('rule_id', '')
+        file = issue.get('file', '')
+        code_snippet = issue.get('code_snippet', '')
+        
+        filtered = False
+        
+        # 规则 1: sqli-mybatis-dollar
+        if rules.get('sqli-mybatis-dollar', {}).get('enabled', False):
+            if rule_id == 'sqli-mybatis-dollar':
+                if file.endswith('pom.xml') or file.endswith('.xml'):
+                    if '${' in code_snippet and '}' in code_snippet:
+                        issue['is_false_positive'] = True
+                        issue['ai_confidence'] = 0.99
+                        issue['analysis'] = 'Maven 属性占位符（如 ${project.version}），非 SQL 注入'
+                        issue['prefilter_reason'] = 'sqli-mybatis-dollar in pom.xml'
+                        already_decided.append(issue)
+                        filtered = True
+        
+        # 规则 2: crypto-hardcoded-key-java
+        if not filtered and rules.get('crypto-hardcoded-key-java', {}).get('enabled', False):
+            if rule_id == 'crypto-hardcoded-key-java':
+                if 'Constants' in file or 'constants' in file.lower():
+                    issue['is_false_positive'] = True
+                    issue['ai_confidence'] = 0.95
+                    issue['analysis'] = '常量类中的配置项 key（如 "password" 作为配置键名），非真实密钥'
+                    issue['prefilter_reason'] = 'crypto-hardcoded-key in Constants class'
+                    already_decided.append(issue)
+                    filtered = True
+        
+        # 规则 3: naming-* 规则
+        if not filtered and rules.get('naming-*', {}).get('enabled', False):
+            if rule_id.startswith('naming-'):
+                issue['is_false_positive'] = True
+                issue['ai_confidence'] = 0.90
+                issue['analysis'] = '命名风格偏好，非安全/质量缺陷'
+                issue['prefilter_reason'] = 'naming-* style rule'
+                already_decided.append(issue)
+                filtered = True
+        
+        # 规则 4: code_snippet 长度检查（只对需要上下文的规则生效）
+        # 只对以下规则生效：null-java-*, path-traversal-*, xss-*, sqli-*
+        context_aware_rules = ['null-java-', 'path-traversal-', 'xss-', 'sqli-']
+        if not filtered and rules.get('short-code-snippet', {}).get('enabled', False):
+            if any(rule_id.startswith(prefix) for prefix in context_aware_rules):
+                if len(code_snippet.split('\n')) < 5:
+                    issue['needs_review'] = True
+                    issue['analysis'] = '代码片段过短（< 5 行），上下文不足，建议人工审查'
+                    issue['prefilter_reason'] = 'code_snippet too short'
+                    already_decided.append(issue)
+                    filtered = True
+        
+        # 其他规则：交给 AI 评审
+        if not filtered:
+            to_review.append(issue)
+    
+    return already_decided, to_review
 
+def load_config(config_path: str = None) -> dict:
+    """加载配置文件"""
     if config_path is None:
         # 默认查找项目根目录的 config.yaml
         project_root = Path(__file__).parent.parent
@@ -368,8 +454,12 @@ def run_scan(args):
 
     ai_reviewer = AIReviewer(ai_config)
 
-    # 生成 subagent 任务描述
-    task = ai_reviewer.generate_subagent_task(raw_issues, diff_result, call_graph)
+    # 预过滤：对显式误报规则用确定性引擎过滤
+    already_decided, to_review = prefilter_issues(raw_issues, config)
+    logger.info(f"  预过滤: {len(already_decided)} 条已决定，{len(to_review)} 条待 AI 评审")
+    
+    # 生成 subagent 任务描述（只包含待 AI 评审的问题）
+    task = ai_reviewer.generate_subagent_task(to_review, diff_result, call_graph)
 
     # 保存任务到文件
     task_file = output_dir / "subagent-review-task.md"

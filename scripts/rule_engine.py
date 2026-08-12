@@ -481,6 +481,9 @@ class RuleEngine:
             yaml.dump(semgrep_rules, f, default_flow_style=False, allow_unicode=True)
             rules_file = f.name
 
+        # 记录 Semgrep 工作目录，用于后续解析相对路径
+        self.semgrep_cwd = repo_path
+        
         try:
             cmd = [
                 "semgrep",
@@ -540,15 +543,40 @@ class RuleEngine:
                                 if rule_id != raw_check_id:
                                     break
 
+                        # Semgrep 输出会被脱敏（"requires login"），从原始文件读取真实代码
+                        code_snippet = finding.get("extra", {}).get("lines", "")
+                        file_path = finding.get("path", "")
+                        line_no = finding.get("start", {}).get("line", 0)
+                        # 转换相对路径为绝对路径
+                        # Semgrep 输出相对路径，相对 semgrep_cwd（Dubbo 根目录）
+                        if file_path and not os.path.isabs(file_path):
+                            semgrep_cwd = getattr(self, 'semgrep_cwd', None)
+                            if semgrep_cwd:
+                                file_path = os.path.join(semgrep_cwd, file_path)
+                            else:
+                                file_path = os.path.abspath(file_path)
+                        if code_snippet == "requires login" or not code_snippet:
+                            import logging
+                            try:
+                                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                    lines = f.readlines()
+                                start = max(0, line_no - 2)
+                                end = min(len(lines), line_no + 2)
+                                code_snippet = ''.join(lines[start:end]).strip()[:300]
+                                logging.debug(f"Restored code_snippet from {file_path}:{line_no}")
+                            except Exception as e:
+                                logging.debug(f"Failed to read {file_path}:{line_no}: {e}")
+                                pass
+                        
                         issue = {
                             "rule_id": rule_id,
                             "category": self._get_category(rule_id),
                             "severity": finding.get("extra", {}).get("severity", "WARNING"),
-                            "file": finding.get("path", ""),
-                            "line": finding.get("start", {}).get("line", 0),
+                            "file": file_path,
+                            "line": line_no,
                             "end_line": finding.get("end", {}).get("line", 0),
                             "message": finding.get("extra", {}).get("message", ""),
-                            "code_snippet": finding.get("extra", {}).get("lines", ""),
+                            "code_snippet": code_snippet,
                         }
 
                         # 补充原始规则中的 fix 和 metadata
