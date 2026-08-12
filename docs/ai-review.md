@@ -36,7 +36,7 @@ sequenceDiagram
 **谁读取 harness.yaml？** - `scan.py` 在生成子 Agent 提示词时读取
 
 ```python
-# scan.py 中的逻辑（待实现）
+# scan.py 中的逻辑（示意代码，实际实现见 scan.py）
 def generate_subagent_prompt(issues, harness_config, feedbacks):
     prompt = "## 评审约束\n"
     
@@ -97,7 +97,7 @@ def generate_subagent_prompt(issues, harness_config, feedbacks):
 `scan.py` 接收到子 Agent 输出后，调用 `decision_logger.py` 保存：
 
 ```python
-# scan.py 中的逻辑（待实现）
+# scan.py 中的逻辑（示意代码，实际实现见 scan.py）
 from harness.decision_logger import DecisionLogger
 
 logger = DecisionLogger()
@@ -125,7 +125,7 @@ logger.save()
 **用户反馈如何影响 AI？** - 下一轮扫描时，历史反馈会被注入到提示词
 
 ```python
-# scan.py 中的逻辑（待实现）
+# scan.py 中的逻辑（示意代码，实际实现见 scan.py）
 from harness.feedback_manager import FeedbackManager
 
 fm = FeedbackManager()
@@ -164,7 +164,7 @@ flowchart TB
         输出: 约束规则"]
         C2["置信度阈值
         ─────
-        confidence_thresholds.yaml
+        config/harness.yaml
         按规则配置最低置信度
         输出: 过滤阈值"]
     end
@@ -190,10 +190,11 @@ flowchart TB
         输出: feedbacks.json"]
         F2["自动改进
         ─────
-        auto_improver.py
+        auto_improver.py（待实现）
         根据反馈调整阈值
         输出: adjustments.json"]
     end
+    style F2 fill:#ffe0e0,stroke:#ff6b6b,stroke-dasharray: 5 5
 
     C1 --> M1
     C2 --> M1
@@ -315,11 +316,11 @@ code-review-skill/
 │   └── cli.py                    # CLI 入口
 ├── scripts/
 │   └── harness.py                # 可执行脚本
-├── data/                         # 运行时数据（.gitignore）
-│   ├── decisions/                # 决策日志（按扫描批次）
-│   ├── feedbacks.json            # 用户反馈
-│   ├── adjustments.json          # 调整记录
-│   └── stats_cache.json          # 统计缓存
+├── data/                         # 默认回退路径（实际运行时被覆盖到工作空间）
+│   ├── decisions/                # 决策日志（按扫描批次，实际写到工作空间）
+│   ├── feedbacks.json            # 用户反馈（实际写到工作空间）
+│   ├── adjustments.json          # 调整记录（待实现，auto_improver.py 未创建前不会生成）
+│   └── stats_cache.json          # 统计缓存（实际写到工作空间）
 └── tests/
     └── test_harness.py           # 测试用例
 ```
@@ -338,7 +339,7 @@ code-review-skill/
 | **scan.py 读取历史反馈** | ✅ 已实现 | build_feedback_examples() 提取反馈 |
 | **ai_reviewer.py 注入反馈** | ✅ 已实现 | 提示词包含历史反馈统计和示例 |
 | **提示词要求输出证据** | ✅ 已实现 | 5 个提示词文件已更新，要求 evidence 字段 |
-| **单元测试覆盖** | ✅ 已实现 | 195 个测试全部通过 |
+| **单元测试覆盖** | ⚠️ 部分通过 | 314 个测试（275 通过，33 失败，6 跳过） |
 
 ### 已完成的工作
 
@@ -389,10 +390,22 @@ code-review-skill/
    - test_scan.py: 14 个测试
    - test_ai_reviewer.py: 19 个测试
    - test_profile_completeness.py: 4 个测试
-   - **总计 195 个测试全部通过**
+   - test_ai_reviewer_e2e.py: 28 个测试
+   - test_harness.py: 4 个测试
+   - test_markdown_parser.py: 28 个测试
+   - test_notifier.py: 15 个测试
+   - test_rule_engine.py: 49 个测试
+   - test_scheduler.py: 33 个测试
+   - test_scheduler_e2e.py: 45 个测试
+   - test_semgrep_integration.py: 46 个测试
+   - **总计 314 个测试（275 通过，33 失败，6 跳过）**
+
+> 以上为完整 15 个测试文件的统计，可通过 `pytest tests/ --collect-only -q` 查看完整列表。
+
+> 以上为主要测试文件的统计，完整 314 个测试分布在 15 个测试文件中，可通过 `pytest tests/ --collect-only -q` 查看完整列表。
 
 5. ✅ **代码清理**
-   - 删除 scripts/builtin_engine_v2.py（实验性 AST 引擎，从未集成）
+   - 保留并集成 scripts/builtin_engine_v2.py（Tree-sitter AST 引擎，已集成到 rule_engine.py 中，作为多引擎融合架构的 AST 引擎组件，参与生产扫描流程）
    - 删除 scripts/dual_engine.py（依赖已删除的模块）
    - 删除 scripts/diff_analyzer.py.bak（备份文件）
 

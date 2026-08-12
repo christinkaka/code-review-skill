@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 代码评审工具 - 主扫描入口
-用法: python scripts/scan.py --repo <repo-path> --base master --target release/1.0 --profile default --output report/
+用法: python scripts/scan.py --repo <repo-path> --base master --target release/1.0 --profile default
 """
 
 import argparse
@@ -559,7 +559,7 @@ def main():
   python scripts/scan.py --repo ./my-project --base master --target release/1.0
 
   # 指定 Profile 和输出目录
-  python scripts/scan.py --repo ./my-project --base master --target HEAD --profile strict --output report/
+  python scripts/scan.py --repo ./my-project --base master --target HEAD --profile strict
 
   # 使用配置文件
   python scripts/scan.py --repo ./my-project --base master --target HEAD --config config.yaml
@@ -573,7 +573,7 @@ def main():
     parser.add_argument("--base", required=False, default=None, help="基线分支（如 master）")
     parser.add_argument("--target", required=False, default=None, help="目标分支（如 release/1.0）")
     parser.add_argument("--profile", default="default", help="规约 Profile（default/strict/minimal）")
-    parser.add_argument("--output", default="report", help="报告输出目录")
+
     parser.add_argument("--config", default=None, help="配置文件路径")
     parser.add_argument("--specs-dir", default=None, help="规约库目录路径")
     parser.add_argument("--language", default="java", help="主要语言（java/python/javascript/go）")

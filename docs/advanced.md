@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt
-      - run: python scripts/scan.py --repo . --base master --target HEAD --output report/
+      - run: python scripts/scan.py --repo . --base master --target HEAD
       - run: python scripts/test_rules.py --output test-report.json
       - uses: actions/upload-artifact@v4
         with:

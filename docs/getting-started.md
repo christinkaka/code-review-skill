@@ -69,14 +69,14 @@
 pip install -r requirements.txt
 
 # 或手动安装核心依赖
-pip install pyyaml tree-sitter tree-sitter-java gitpython rich jinja2 pandas
+pip install pyyaml tree-sitter tree-sitter-java tree-sitter-python tree-sitter-javascript gitpython rich jinja2 pandas
 ```
 
 `requirements.txt` 中的依赖说明：
 - `pyyaml`、`jinja2` - 配置加载与报告模板
 - `gitpython` - Git 分支差异分析
 - `rich` - 终端输出美化
-- `tree-sitter`、`tree-sitter-java` - AST 解析（调用图）
+- `tree-sitter`、`tree-sitter-java`、`tree-sitter-python`、`tree-sitter-javascript` - AST 解析（调用图）
 - `pandas` - 报告数据处理
 
 ### 2. 可选依赖（推荐）
@@ -139,8 +139,8 @@ python scripts/scan.py --repo ~/my-project --full-scan --profile strict
 ├── cache/                       # 扫描缓存（下次扫描加速用）
 ├── decisions/                   # 决策日志（Harness 系统，按时间归档）
 │   └── 2026-08-12_13-39-17.json
-├── decision-log.jsonl           # 决策日志（旧版，按行追加）
-└── scan-config.yaml             # 本次扫描配置快照
+├── feedbacks.json               # 用户反馈记录（用户通过 harness.py feedback 添加反馈后生成）
+└── stats_cache.json             # 统计缓存（执行 harness.py stats 后生成）
 ```
 
 **关键文件说明**：

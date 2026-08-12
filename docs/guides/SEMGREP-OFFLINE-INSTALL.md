@@ -103,7 +103,7 @@ python scripts/scan.py \
   --repo D:\dev\Git\flyway \
   --base flyway-8.5.5 --target HEAD \
   --profile default \
-  --output report/ \
+  # --output 参数已废弃，报告输出到 .code-review/workspace/<scan_id>/report/ \
   --language java
 ```
 

@@ -146,7 +146,7 @@ Level 0: Git 差异分析（变更检测）
 #### 案例 1：test-validation/ 测试仓库
 
 ```bash
-$ python3 scripts/scan.py --repo test-validation/ --full-scan --output report/multi-engine/
+$ python3 scripts/scan.py --repo test-validation/ --full-scan
 ```
 
 **扫描结果**：
@@ -418,6 +418,8 @@ flowchart TB
 | **Semgrep 引擎** | 调用 Semgrep CLI，YAML 规则格式 | 跨行模式匹配，数据流分析 | Semgrep JSON 输出，精准度高 |
 | **双引擎合并** | `rule_engine.py` 内置合并逻辑，去重 | 结合两者优势，提高检出率 | 去重后的问题列表，标注检出引擎 |
 
+> **术语说明**：本文档中"双引擎"指规约引擎层的"内置正则 + Semgrep"。Tree-sitter AST 引擎同时参与差异分析层（提供调用图分析）和规约引擎层（作为 builtin_engine_v2.py 提供精确语法分析扫描），详见"多引擎融合架构"章节。
+
 ### Subagent 评审层
 
 | 模块 | 实现方式 | 效果 | 输出 |
@@ -509,12 +511,14 @@ code-review-skill/
 │   └── test_rules.py         # 规则测试脚本
 ├── test-validation/          # 测试验证数据
 ├── tests/                    # 单元测试
-├── offline-packages/         # 核心离线依赖包（41 个包，约 104MB，支持多平台）
+├── offline-packages/         # 核心离线依赖包（44 个包，约 104MB，支持多平台）
 ├── semgrep-offline-packages/ # Semgrep 离线依赖包（70 个包，约 76MB，可选）
-├── config.yaml               # 全局配置
-├── requirements.txt          # Python 依赖
-├── install-offline.sh        # 智能离线安装脚本（跨平台）
-├── download-offline-packages.sh  # 离线包下载脚本
+├── config.yaml                    # 全局配置
+├── requirements.txt               # Python 依赖
+├── install-offline.sh             # 智能离线安装脚本（跨平台）
+├── install-semgrep-offline.sh     # Semgrep 离线安装（Unix）
+├── install-semgrep-offline.ps1    # Semgrep 离线安装（Windows）
+├── download-offline-packages.sh   # 离线包下载脚本
 └── README.md
 ```
 

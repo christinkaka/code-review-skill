@@ -108,12 +108,19 @@ code-review-skill/
 ├── scripts/           # 扫描引擎（Python）
 ├── references/        # 规约与规约 Profile
 ├── harness/           # Harness 系统（决策日志、反馈闭环）
-├── config/            # 配置文件
+├── config/            # 配置文件（harness.yaml）
 ├── docs/              # 项目文档
 ├── tests/             # 单元测试
 ├── test-validation/   # 集成测试用例
-├── config.yaml        # 主配置
-└── .trae/skills/      # TRAE Skill 入口
+├── config.yaml                    # 主配置
+├── requirements.txt               # Python 依赖
+├── install-offline.sh             # 离线安装脚本
+├── install-semgrep-offline.sh     # Semgrep 离线安装（Unix）
+├── install-semgrep-offline.ps1    # Semgrep 离线安装（Windows）
+├── download-offline-packages.sh   # 离线包下载脚本
+├── offline-packages/              # 核心离线依赖包
+├── semgrep-offline-packages/      # Semgrep 离线依赖包
+└── .trae/skills/                  # TRAE Skill 入口
 ```
 
 详细结构：[docs/project-structure.md](docs/project-structure.md)

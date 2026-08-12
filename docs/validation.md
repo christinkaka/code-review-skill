@@ -49,7 +49,7 @@
 运行 `python -m pytest tests/` 验证全部模块：
 
 ```
-267 passed, 6 skipped in 10.17s
+275 passed, 33 failed, 6 skipped in 10.17s
 ```
 
 ### 稳定性验证
@@ -58,10 +58,10 @@
 
 ```bash
 # 第一轮扫描
-python scripts/scan.py --repo test-validation/ --full-scan --output report-round1/
+python scripts/scan.py --repo test-validation/ --full-scan
 
 # 第二轮扫描
-python scripts/scan.py --repo test-validation/ --full-scan --output report-round2/
+python scripts/scan.py --repo test-validation/ --full-scan
 ```
 
 **验证结果**：
