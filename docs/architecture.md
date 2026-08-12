@@ -311,7 +311,7 @@ flowchart TB
         输出: semgrep_result.json"]
         R3["双引擎合并
         ─────
-        dual_engine.py
+        rule_engine.py
         去重 + 置信度加权
         输出: merged_issues[]"]
     end
@@ -416,7 +416,7 @@ flowchart TB
 |------|----------|------|------|
 | **内置正则引擎** | `rule_engine.py` 将 Markdown pattern 转换为正则 | 快速模式匹配，离线可用 | 问题列表 `[{rule_id, file, line, severity}]` |
 | **Semgrep 引擎** | 调用 Semgrep CLI，YAML 规则格式 | 跨行模式匹配，数据流分析 | Semgrep JSON 输出，精准度高 |
-| **双引擎合并** | `dual_engine.py` 合并结果，去重 | 结合两者优势，提高检出率 | 去重后的问题列表，标注检出引擎 |
+| **双引擎合并** | `rule_engine.py` 内置合并逻辑，去重 | 结合两者优势，提高检出率 | 去重后的问题列表，标注检出引擎 |
 
 ### Subagent 评审层
 
@@ -499,10 +499,11 @@ code-review-skill/
 │   ├── diff_analyzer.py      # 分支差异分析与全库扫描
 │   ├── call_graph.py         # 调用图构建与血缘分析
 │   ├── rule_engine.py        # 规则引擎（Semgrep 集成，可选）
+│   ├── rule_compiler.py      # 规则预编译器（Markdown → JSON 缓存）
 │   ├── builtin_engine_v2.py  # 内置引擎 V2（基于 Tree-sitter）
-│   ├── dual_engine.py        # 双引擎并行扫描器
 │   ├── ai_reviewer.py        # AI 增强评审器（多工作流）
 │   ├── report_generator.py   # 报告生成（JSON + Markdown）
+│   ├── harness.py            # Harness 客户端（决策日志、反馈闭环）
 │   ├── scheduler.py          # Cron 定时调度器
 │   ├── notifier.py           # Webhook 通知器
 │   └── test_rules.py         # 规则测试脚本

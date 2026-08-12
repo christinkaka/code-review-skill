@@ -60,11 +60,24 @@
 
 ## 安装
 
-### 1. 必需依赖
+> **重要**：下面的命令需要在 **code-review-skill 仓库目录**下执行（脚本在 `scripts/` 子目录）。
+
+### 1. 一键安装所有依赖（推荐）
 
 ```bash
-pip install pyyaml tree-sitter tree-sitter-java
+# 安装全部 Python 依赖
+pip install -r requirements.txt
+
+# 或手动安装核心依赖
+pip install pyyaml tree-sitter tree-sitter-java gitpython rich jinja2 pandas
 ```
+
+`requirements.txt` 中的依赖说明：
+- `pyyaml`、`jinja2` - 配置加载与报告模板
+- `gitpython` - Git 分支差异分析
+- `rich` - 终端输出美化
+- `tree-sitter`、`tree-sitter-java` - AST 解析（调用图）
+- `pandas` - 报告数据处理
 
 ### 2. 可选依赖（推荐）
 
@@ -75,7 +88,7 @@ brew install semgrep  # macOS
 ### 3. 验证安装
 
 ```bash
-python -c "import yaml; print(yaml.__version__)"
+python -c "import yaml, git, jinja2, pandas; print('all ok')"
 semgrep --version
 ```
 
@@ -83,15 +96,22 @@ semgrep --version
 
 ## 执行扫描
 
+> **再次提醒**：下面的命令需要在 **code-review-skill 仓库目录**下执行（脚本在 `scripts/` 子目录）。
+
 ### 全库静态扫描
 
 ```bash
+# 先 cd 到 skill 仓库根目录
+cd /path/to/code-review-skill
+
 python scripts/scan.py --repo ~/my-project --full-scan --workflow comprehensive
 ```
 
 ### 分支差异扫描
 
 ```bash
+cd /path/to/code-review-skill
+
 python scripts/scan.py \
   --repo ~/my-project \
   --base master \
@@ -107,7 +127,7 @@ python scripts/scan.py --repo ~/my-project --full-scan --profile strict
 
 ## 查看报告
 
-扫描完成后报告输出到被扫描项目的 `.code-review/workspace/<scan_id>/report/`：
+扫描完成后报告输出到被扫描项目的 `.code-review/workspace/<scan_id>/`：
 
 ```
 .code-review/workspace/2026-08-12_10-19-16_c284/
@@ -116,9 +136,23 @@ python scripts/scan.py --repo ~/my-project --full-scan --profile strict
 │   ├── report.md                # Markdown 报告（推荐阅读）
 │   ├── summary.json             # 摘要（问题数、按规则/严重度分布）
 │   └── subagent-review-task.md  # 子 Agent 评审任务（主 Agent 读取）
-├── decision-log.jsonl           # 决策日志（Harness 系统）
-└── scan-config.yaml             # 本次扫描配置
+├── cache/                       # 扫描缓存（下次扫描加速用）
+├── decisions/                   # 决策日志（Harness 系统，按时间归档）
+│   └── 2026-08-12_13-39-17.json
+├── decision-log.jsonl           # 决策日志（旧版，按行追加）
+└── scan-config.yaml             # 本次扫描配置快照
 ```
+
+**关键文件说明**：
+
+| 文件 | 作用 |
+|------|------|
+| `report.md` | 人类阅读入口——按文件/规则分组的问题清单 |
+| `report.json` | 程序处理入口——所有问题详情 |
+| `summary.json` | 摘要统计——用于 CI/CD 阈值检查 |
+| `subagent-review-task.md` | 主 Agent 读取并委派给子 Agent 的任务定义 |
+| `decisions/` | Harness 系统决策日志（推荐，看时间归档更易追踪） |
+| `cache/` | 增量扫描缓存，加速下次扫描 |
 
 ## 运行测试
 

@@ -5,7 +5,21 @@
 本测试代码库用于验证代码评审工具的实际有效性。包含 Java、Python、TypeScript 三种语言的已知安全漏洞样本和对应的安全代码样本。
 
 - **漏洞文件（Vulnerable）**：包含真实的安全漏洞，应该被评审工具检出
-- **安全文件（Safe）**：使用正确的安全实践，不应该被评审工具检出
+- **安全文件（Safe）**：使用正确的安全实践，理想情况下不应被检出
+
+> **重要说明**：扫描器（Semgrep + Tree-sitter）基于**模式匹配**，无法理解完整业务语义。
+> 即使是 `Safe.java` 这种设计为"安全"的示例，仍可能被规则引擎命中（标记为可疑）。
+> 这是**正常的**——这些命中需要交给**子 Agent AI 二次评审**来识别是否为误报。
+> 
+> 因此：
+> - **扫描器命中数 ≠ 真实漏洞数**
+> - 真实漏洞数 = 命中数 - AI 评审判定的误报数
+> - 这个"两阶段评审"是本 Skill 的核心设计
+
+**使用方法**：
+1. 跑全库扫描：`python scripts/scan.py --repo test-validation --full-scan --workflow comprehensive`
+2. 委派子 Agent 读取 `report/subagent-review-task.md` 做 AI 评审
+3. 对比 `report.json` 中 `is_false_positive=true` 的数量与 `known-issues.json` 中的已知问题数
 
 ## 目录结构
 

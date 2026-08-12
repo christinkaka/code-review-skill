@@ -28,7 +28,9 @@
 
 ### 🤖 AI 评审
 
-- [docs/ai-review.md](docs/ai-review.md) - 子 Agent 规约、预过滤机制、Harness 系统、决策日志、反馈闭环
+- [docs/ai-review.md](docs/ai-review.md) - Harness 系统、决策日志、反馈闭环、AI 交互字段约定
+- [references/subagent-contract.md](references/subagent-contract.md) - 子 Agent 规约（职责/不能做/能做）
+- [.trae/skills/code-review/SKILL.md](.trae/skills/code-review/SKILL.md) - Skill 入口（含主 Agent 调度流程、预过滤机制说明）
 
 ### 📊 验证与效果
 
@@ -65,14 +67,16 @@
 ## 30 秒上手
 
 ```bash
-# 安装依赖
-pip install pyyaml tree-sitter tree-sitter-java
+# 1. 克隆并安装
+git clone https://github.com/christinkaka/code-review-skill.git
+cd code-review-skill
+pip install -r requirements.txt
 brew install semgrep  # macOS 可选
 
-# 扫描一个项目
+# 2. 扫描一个项目（注意：必须在 skill 仓库目录下执行）
 python scripts/scan.py --repo ~/my-project --full-scan --workflow comprehensive
 
-# 查看报告
+# 3. 查看报告（在被扫描项目的 .code-review/ 目录下）
 cat ~/my-project/.code-review/workspace/<scan_id>/report/report.md
 ```
 
