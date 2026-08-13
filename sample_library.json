@@ -1,0 +1,182 @@
+{
+  "macrozheng/mall (Java电商系统)": {
+    "path": "test-mall",
+    "category": "后端-Java",
+    "key_files": [
+      "test-mall/mall-admin/src/main/java/com/macro/mall/dto/BucketPolicyConfigDto.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/dto/OmsOrderQueryParam.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/dto/PmsProductQueryParam.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/dto/OmsReturnApplyQueryParam.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/config/GlobalCorsConfig.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/config/MallSecurityConfig.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/config/SpringDocConfig.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/config/MyBatisConfig.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/config/OssConfig.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/controller/CmsSubjectController.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/controller/OmsOrderReturnReasonController.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/controller/SmsFlashPromotionSessionController.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/controller/OmsOrderReturnApplyController.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/controller/UmsRoleController.java",
+      "test-mall/mall-admin/src/main/java/com/macro/mall/controller/UmsMemberLevelController.java"
+    ]
+  },
+  "eugenp/tutorials (Spring Boot教程)": {
+    "path": "test-tutorials",
+    "category": "后端-Java",
+    "key_files": [
+      "test-tutorials/web-modules/play-modules/introduction/app/controllers/HomeController.java",
+      "test-tutorials/web-modules/play-modules/websockets/app/controllers/HomeController.java",
+      "test-tutorials/web-modules/play-modules/routing-in-play/app/controllers/HomeController.java",
+      "test-tutorials/web-modules/play-modules/student-api/app/utils/Util.java",
+      "test-tutorials/web-modules/play-modules/student-api/app/controllers/StudentController.java",
+      "test-tutorials/web-modules/play-modules/async-http/app/controllers/HomeController.java"
+    ]
+  },
+  "YunaiV/ruoyi-vue-pro (权限管理系统)": {
+    "path": "test-ruoyi",
+    "category": "后端-Java",
+    "key_files": [
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/websocket/DemoWebSocketMessageListener.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/monitor/config/AdminServerConfiguration.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/utils/FileTypeUtils.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/utils/FilePathUtils.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/client/FileClientConfig.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/client/ftp/FtpFileClientConfig.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/client/s3/S3FileClientConfig.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/client/sftp/SftpFileClientConfig.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/client/local/LocalFileClientConfig.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/core/client/db/DBFileClientConfig.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/file/config/YudaoFileAutoConfiguration.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/security/config/SecurityConfiguration.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/web/config/InfraWebConfiguration.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/framework/codegen/config/CodegenConfiguration.java",
+      "test-ruoyi/yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/enums/config/ConfigTypeEnum.java"
+    ]
+  },
+  "vuejs/core (Vue.js 3)": {
+    "path": "test-vue",
+    "category": "前端-TypeScript",
+    "key_files": [
+      "test-vue/rollup.dts.config.js",
+      "test-vue/rollup.config.js",
+      "test-vue/eslint.config.js",
+      "test-vue/vitest.config.ts",
+      "test-vue/packages-private/global.d.ts",
+      "test-vue/packages-private/sfc-playground/vite.config.ts",
+      "test-vue/packages-private/sfc-playground/src/vue-dev-proxy-prod.ts",
+      "test-vue/packages-private/sfc-playground/src/main.ts",
+      "test-vue/packages-private/sfc-playground/src/vue-server-renderer-dev-proxy.ts",
+      "test-vue/packages-private/sfc-playground/src/vue-dev-proxy.ts",
+      "test-vue/packages-private/sfc-playground/src/download/download.ts",
+      "test-vue/packages-private/template-explorer/src/theme.ts",
+      "test-vue/packages-private/template-explorer/src/options.ts",
+      "test-vue/packages-private/dts-test/defineComponent.test-d.tsx",
+      "test-vue/packages-private/dts-test/ref.test-d.ts"
+    ]
+  },
+  "facebook/react (React)": {
+    "path": "test-react",
+    "category": "前端-TypeScript",
+    "key_files": [
+      "test-react/babel.config-react-compiler.js",
+      "test-react/dangerfile.js",
+      "test-react/babel.config.js",
+      "test-react/babel.config-ts.js",
+      "test-react/ReactVersions.js",
+      "test-react/.prettierrc.js",
+      "test-react/.eslintrc.js",
+      "test-react/scripts/bench/runner.js",
+      "test-react/scripts/bench/server.js",
+      "test-react/scripts/bench/build.js",
+      "test-react/scripts/bench/benchmark.js",
+      "test-react/scripts/bench/stats.js",
+      "test-react/scripts/bench/benchmarks/hacker-news/top-stories.js",
+      "test-react/scripts/bench/benchmarks/hacker-news/build.js",
+      "test-react/scripts/bench/benchmarks/hacker-news/generate.js"
+    ]
+  },
+  "shadcn-ui/ui (UI组件库)": {
+    "path": "test-shadcn",
+    "category": "前端-TypeScript",
+    "key_files": [
+      "test-shadcn/vitest.workspace.ts",
+      "test-shadcn/vitest.config.ts",
+      "test-shadcn/packages/shadcn/tsup.config.ts",
+      "test-shadcn/packages/shadcn/vitest.config.ts",
+      "test-shadcn/packages/shadcn/src/colors.ts",
+      "test-shadcn/packages/shadcn/src/migrations/migrate-radix.ts",
+      "test-shadcn/packages/shadcn/src/migrations/migrate-rtl.ts",
+      "test-shadcn/packages/shadcn/src/migrations/migrate-icons.ts",
+      "test-shadcn/packages/shadcn/src/preset/defaults.ts",
+      "test-shadcn/packages/shadcn/src/preset/preset.ts",
+      "test-shadcn/packages/shadcn/src/preset/presets.ts",
+      "test-shadcn/packages/shadcn/src/preset/resolve.ts",
+      "test-shadcn/packages/shadcn/src/utils/env-loader.ts",
+      "test-shadcn/packages/shadcn/src/utils/registries.ts",
+      "test-shadcn/packages/shadcn/src/utils/handle-error.ts"
+    ]
+  },
+  "typeorm/typeorm (TypeORM)": {
+    "path": "test-typeorm",
+    "category": "SQL-Node.js",
+    "key_files": [
+      "test-typeorm/packages/codemod/src/transforms/v1/repository-find-one-by-id.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-builder-on-conflict.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-builder-replace-property-names.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-runner-loaded-tables-views.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/datasource-sqlite-type.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/connection-manager.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/repository-find-by-ids.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-builder-where-expression.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-builder-or-update.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/repository-abstract.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-builder-print-sql.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/datasource-sqlite-options.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/repository-exist.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/query-builder-native-parameters.ts",
+      "test-typeorm/packages/codemod/src/transforms/v1/datasource-mysql-connector.ts"
+    ]
+  },
+  "prisma/prisma (Prisma ORM)": {
+    "path": "test-prisma",
+    "category": "SQL-Node.js",
+    "key_files": [
+      "test-prisma/projects/facade-import-surface-completion/manual-qa-reports/artefacts/S4-probe/probe-mongoquery.ts",
+      "test-prisma/examples/prisma-8-cloudflare-worker/scripts/setup-schema.ts",
+      "test-prisma/examples/prisma-8-demo/src/prisma/slow-query-warning.ts",
+      "test-prisma/examples/prisma-8-demo/src/queries/raw-sql-demo.ts",
+      "test-prisma/packages/3-targets/3-targets/sqlite/test/sqlite-built-in-codec-descriptors.test-d.ts",
+      "test-prisma/packages/3-targets/3-targets/sqlite/test/sqlite-codec-descriptor.test-d.ts",
+      "test-prisma/packages/3-targets/3-targets/sqlite/test/sqlite-migration.test-d.ts",
+      "test-prisma/packages/3-targets/3-targets/sqlite/test/sqlite-contract-view.test-d.ts",
+      "test-prisma/packages/3-targets/6-adapters/sqlite/test/sqlite-adapter-options.test-d.ts",
+      "test-prisma/packages/3-targets/6-adapters/postgres-codec-testkit/test/aggregate-sql.ts",
+      "test-prisma/packages/3-targets/6-adapters/sqlite-codec-testkit/test/aggregate-sql.ts",
+      "test-prisma/packages/3-targets/7-drivers/sqlite/test/sql-queryable-test-utils.ts",
+      "test-prisma/packages/3-targets/7-drivers/sqlite/src/sqlite-driver.ts",
+      "test-prisma/packages/3-targets/7-drivers/postgres/test/sql-queryable-test-utils.ts",
+      "test-prisma/packages/3-targets/7-drivers/postgres/src/postgres-driver.ts"
+    ]
+  },
+  "sequelize/sequelize (Sequelize)": {
+    "path": "test-sequelize",
+    "category": "SQL-Node.js",
+    "key_files": [
+      "test-sequelize/packages/core/src/sql-string.ts",
+      "test-sequelize/packages/core/src/model-repository.ts",
+      "test-sequelize/packages/core/src/model-repository.types.ts",
+      "test-sequelize/packages/core/src/expression-builders/json-sql-null.ts",
+      "test-sequelize/packages/core/src/expression-builders/sql.ts",
+      "test-sequelize/packages/core/src/expression-builders/base-sql-expression.ts",
+      "test-sequelize/packages/core/src/utils/sql.ts",
+      "test-sequelize/packages/core/src/utils/connection-options.ts",
+      "test-sequelize/packages/core/src/utils/join-sql-fragments.ts",
+      "test-sequelize/packages/core/src/utils/query-builder-utils.ts",
+      "test-sequelize/packages/core/src/abstract-dialect/query-generator-typescript.ts",
+      "test-sequelize/packages/core/src/abstract-dialect/query-interface.js",
+      "test-sequelize/packages/core/src/abstract-dialect/query-interface-typescript.ts",
+      "test-sequelize/packages/core/src/abstract-dialect/query-generator.types.ts",
+      "test-sequelize/packages/core/src/abstract-dialect/query-generator.internal-types.ts"
+    ]
+  }
+}
