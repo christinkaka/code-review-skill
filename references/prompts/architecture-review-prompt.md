@@ -156,9 +156,11 @@ ARCHITECTURE_REVIEW_PROMPT = """
 
 ```python
 ARCHITECTURE_API_PARAMS = {
+    # 与 WORKFLOW_CONFIG["architecture"] 保持一致
     "temperature": 0.2,
     "max_tokens": 2048,
     "top_p": 0.9,
+    "model": "gpt-4",
 }
 ```
 

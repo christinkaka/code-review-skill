@@ -158,9 +158,10 @@ COMPREHENSIVE_AI_PROMPT = """
 
 ```python
 API_PARAMS = {
-    "temperature": 0.1,  # 降低温度，减少随机性
+    "temperature": 0.1,  # 与 WORKFLOW_CONFIG["comprehensive"] 保持一致
     "max_tokens": 1024,
     "top_p": 0.9,
+    "model": "gpt-4",
     "frequency_penalty": 0.0,
     "presence_penalty": 0.0,
 }

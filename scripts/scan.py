@@ -458,6 +458,31 @@ def run_scan(args):
         ai_config["feedback_summary"] = feedback_manager.get_feedback_summary()
         ai_config["feedback_examples"] = build_feedback_examples(feedback_manager)
 
+    # 修复: 解析 LLM 参数覆盖（CLI 优先级 > YAML 文件 > WORKFLOW_CONFIG 默认值）
+    llm_params = {}
+    # 1) 加载 YAML 文件
+    if hasattr(args, "llm_params_file") and args.llm_params_file:
+        import yaml
+        try:
+            with open(args.llm_params_file, 'r') as f:
+                yaml_params = yaml.safe_load(f) or {}
+                llm_params.update(yaml_params)
+                logger.info(f"已加载 LLM 参数文件: {args.llm_params_file}")
+        except Exception as e:
+            logger.error(f"LLM 参数文件加载失败: {e}")
+    # 2) CLI 参数优先级最高
+    if hasattr(args, "temperature") and args.temperature is not None:
+        llm_params["temperature"] = args.temperature
+    if hasattr(args, "max_tokens") and args.max_tokens is not None:
+        llm_params["max_tokens"] = args.max_tokens
+    if hasattr(args, "top_p") and args.top_p is not None:
+        llm_params["top_p"] = args.top_p
+    if hasattr(args, "model") and args.model is not None:
+        llm_params["model"] = args.model
+    if llm_params:
+        ai_config["llm_params"] = llm_params
+        logger.info(f"用户覆盖 LLM 参数: {llm_params}")
+
     ai_reviewer = AIReviewer(ai_config)
 
     # 预过滤：对显式误报规则用确定性引擎过滤
@@ -658,6 +683,12 @@ def main():
         "--full-scan", action="store_true", default=False,
         help="全库静态分析模式（扫描仓库中所有源文件，无需指定 --base 和 --target）",
     )
+    # LLM 参数覆盖（修复：之前 WORKFLOW_CONFIG 里的 temperature 等参数未实际生效）
+    parser.add_argument("--temperature", type=float, default=None, help="LLM temperature (0.0-2.0)")
+    parser.add_argument("--max-tokens", type=int, default=None, help="LLM max_tokens")
+    parser.add_argument("--top-p", type=float, default=None, help="LLM top_p (0.0-1.0)")
+    parser.add_argument("--model", default=None, help="LLM 模型名称（如 gpt-4/gpt-3.5-turbo/claude-3-opus）")
+    parser.add_argument("--llm-params-file", default=None, help="LLM 参数 YAML 配置文件路径")
 
     args = parser.parse_args()
 

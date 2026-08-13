@@ -156,9 +156,10 @@ PERFORMANCE_REVIEW_PROMPT = """
 
 ```python
 PERFORMANCE_API_PARAMS = {
-    "temperature": 0.1,
+    "temperature": 0.1,  # 与 WORKFLOW_CONFIG["performance"] 保持一致
     "max_tokens": 2048,
     "top_p": 0.9,
+    "model": "gpt-4",
 }
 ```
 

@@ -17,31 +17,57 @@ logger = logging.getLogger("code-review.ai")
 class AIReviewer:
     """AI 评审任务生成器"""
 
-    # 工作流配置（低温度参数确保严谨性和一致性）
+    # 工作流配置（包含完整 LLM 参数：temperature/max_tokens/top_p/model）
+    # 这些参数会被序列化到 subagent 任务描述中，由 TRAE Agent 读取后应用到 LLM 调用
     WORKFLOW_CONFIG = {
         "security": {
             "prompt_file": "security-audit-prompt.md",
-            "temperature": 0.1,  # 安全审计需要最高严谨性
+            "llm_params": {
+                "temperature": 0.1,  # 安全审计需要最高严谨性
+                "max_tokens": 2048,
+                "top_p": 0.9,
+                "model": "gpt-4",
+            },
             "description": "安全审计工作流",
         },
         "quality": {
             "prompt_file": "code-quality-prompt.md",
-            "temperature": 0.2,  # 代码质量评审需要较高一致性
+            "llm_params": {
+                "temperature": 0.2,  # 代码质量评审需要较高一致性
+                "max_tokens": 2048,
+                "top_p": 0.9,
+                "model": "gpt-4",
+            },
             "description": "代码质量工作流",
         },
         "performance": {
             "prompt_file": "performance-review-prompt.md",
-            "temperature": 0.1,  # 性能分析需要严谨性
+            "llm_params": {
+                "temperature": 0.1,  # 性能分析需要严谨性
+                "max_tokens": 2048,
+                "top_p": 0.9,
+                "model": "gpt-4",
+            },
             "description": "性能优化工作流",
         },
         "architecture": {
             "prompt_file": "architecture-review-prompt.md",
-            "temperature": 0.2,  # 架构评审需要一致性
+            "llm_params": {
+                "temperature": 0.2,  # 架构评审需要一致性
+                "max_tokens": 2048,
+                "top_p": 0.9,
+                "model": "gpt-4",
+            },
             "description": "架构审查工作流",
         },
         "comprehensive": {
             "prompt_file": "ai-enhancer-prompt.md",
-            "temperature": 0.1,  # 综合评审需要严谨性
+            "llm_params": {
+                "temperature": 0.1,  # 综合评审需要严谨性
+                "max_tokens": 1024,
+                "top_p": 0.9,
+                "model": "gpt-4",
+            },
             "description": "综合评审工作流",
         },
     }
@@ -51,13 +77,30 @@ class AIReviewer:
         self.workflow = config.get("workflow", "comprehensive")
         self.feedback_summary = config.get("feedback_summary")
         self.feedback_examples = config.get("feedback_examples", [])
-        
+        # LLM 参数：CLI/配置文件覆盖 > WORKFLOW_CONFIG 默认值
+        self.user_llm_params = config.get("llm_params")
+        self.llm_params = self._resolve_llm_params()
         # 加载工作流提示词
         self.prompt_template = self._load_prompt_template()
-        
         logger.info(f"AI 评审任务生成器初始化，工作流: {self.workflow}")
+        logger.info(f"  LLM 参数: {self.llm_params}")
         if self.feedback_summary:
             logger.info(f"  历史反馈: {self.feedback_summary}")
+
+    def _resolve_llm_params(self) -> Dict:
+        """
+        解析 LLM 参数（合并 WORKFLOW_CONFIG 默认值 + 用户覆盖）
+        优先级：用户覆盖 > WORKFLOW_CONFIG 默认
+        """
+        workflow_config = self.WORKFLOW_CONFIG.get(self.workflow, self.WORKFLOW_CONFIG["comprehensive"])
+        params = dict(workflow_config.get("llm_params", {}))
+        if self.user_llm_params:
+            params.update(self.user_llm_params)
+        return params
+
+    def get_llm_params(self) -> Dict:
+        """返回当前 LLM 参数（供外部查询和验证）"""
+        return self.llm_params.copy()
 
     def _load_prompt_template(self) -> str:
         """加载工作流对应的提示词模板"""
@@ -225,7 +268,7 @@ class AIReviewer:
             return ""
 
         workflow_config = self.WORKFLOW_CONFIG.get(self.workflow, self.WORKFLOW_CONFIG["comprehensive"])
-        temperature = workflow_config['temperature']
+        # 完整 LLM 参数（修复：之前 temperature 计算后未使用，现序列化到 task 中）
         
         # 加载子 Agent 规约
         contract_path = Path(__file__).parent.parent / "references" / "subagent-contract.md"
@@ -234,7 +277,17 @@ class AIReviewer:
                 subagent_contract = f.read()
         else:
             subagent_contract = ""
-        
+
+        # 修复: 序列化 LLM 参数（让 TRAE Agent 知道用什么 LLM 参数调用）
+        llm_params_block = f"""
+## LLM 调用参数（必须使用以下参数调用 LLM）
+```json
+{json.dumps(self.llm_params, ensure_ascii=False, indent=2)}
+```
+
+**重要**: 调用 LLM 时必须使用上述 `temperature`、`max_tokens`、`top_p`、`model` 参数。温度越低，输出越稳定；温度越高，输出越有创造性。
+"""
+
         # 构建历史反馈部分
         feedback_section = ""
         if self.feedback_summary and self.feedback_summary.get("total", 0) > 0:
@@ -264,9 +317,9 @@ class AIReviewer:
                         feedback_section += f"（{example['comment']}）"
                     feedback_section += "\n"
 
-        # 构建任务描述（注入子 Agent 规约 + prompt_template）
+        # 构建任务描述（注入子 Agent 规约 + LLM 参数 + prompt_template）
         task = f"""{subagent_contract}
-
+{llm_params_block}
 ---
 
 {self.prompt_template}
@@ -274,6 +327,8 @@ class AIReviewer:
 ## 评审数据
 
 ### 扫描结果（共 {len(issues)} 条）
+⚠️ **每个 issue 已包含 `code_snippet`（命中位置源码）和 `call_chain`（调用链）字段。必须先读取这些字段，再做判断！**
+
 {json.dumps(issues, ensure_ascii=False, indent=2)}
 
 ### 变更文件
