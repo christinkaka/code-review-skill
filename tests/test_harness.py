@@ -226,9 +226,9 @@ def test_end_to_end():
         
         # 用户确认 AI 的判断
         fm.add_feedback("issue-001", scan_id, "confirmed")  # AI keep → 用户确认 ✓
-        fm.add_feedback("issue-002", scan_id, "false_positive")  # AI filter → 用户确认 ✓
+        fm.add_feedback("issue-002", scan_id, "false_positive")  # AI drop → 用户确认 ✓
         fm.add_feedback("issue-003", scan_id, "false_positive")  # AI keep → 用户说误报 ✗
-        fm.add_feedback("issue-004", scan_id, "confirmed")  # AI filter → 用户说确认 ✗
+        fm.add_feedback("issue-004", scan_id, "confirmed")  # AI drop → 用户说确认 ✗
         # issue-005 没有反馈
         
         print(f"  ✓ 添加了 4 个反馈")
@@ -270,3 +270,65 @@ if __name__ == "__main__":
     print("=" * 60)
     print("所有测试通过！")
     print("=" * 60)
+
+
+def test_decision_logger_update():
+    """测试 update_decision 方法（P1 修复 3 配套测试）"""
+    print("=== 测试 DecisionLogger.update_decision ===")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        logger = DecisionLogger(storage_dir=tmpdir)
+        scan_id = logger.start_scan(repo="/test/repo", workflow="comprehensive", total_issues=2)
+
+        # 记录初始决策
+        logger.log_decision(
+            issue_id="issue-001",
+            rule_id="xss",
+            file="A.java",
+            line=1,
+            severity="ERROR",
+            original_message="xss issue",
+            ai_action="pending_review",
+            ai_confidence=None,
+            ai_reasoning="待 AI 评审",
+        )
+        logger.log_decision(
+            issue_id="issue-002",
+            rule_id="sqli",
+            file="B.java",
+            line=10,
+            severity="HIGH",
+            original_message="sqli issue",
+            ai_action="pending_review",
+            ai_confidence=None,
+            ai_reasoning="待 AI 评审",
+        )
+        logger.save()
+
+        # 重新加载并更新
+        logger2 = DecisionLogger(storage_dir=tmpdir)
+        logger2.current_scan_id = scan_id
+        loaded = logger2.load(scan_id)
+        logger2.decisions = loaded["decisions"]
+
+        # 更新 issue-001
+        result = logger2.update_decision("issue-001", ai_action="drop", ai_confidence=0.2, ai_reasoning="二审判定为误报")
+        assert result is True, "✅ update_decision 成功"
+        assert logger2.decisions[0]["ai_action"] == "drop", f"✅ ai_action 已更新: {logger2.decisions[0]['ai_action']}"
+        assert logger2.decisions[0]["ai_confidence"] == 0.2, f"✅ ai_confidence 已更新: {logger2.decisions[0]['ai_confidence']}"
+        assert "updated_at" in logger2.decisions[0], "✅ updated_at 字段已写入"
+        print("✓ 已知 issue_id 更新成功")
+
+        # 更新不存在的 issue_id
+        result = logger2.update_decision("nonexistent", ai_action="keep")
+        assert result is False, "✅ 不存在 issue_id 返回 False"
+        print("✓ 不存在 issue_id 返回 False")
+
+        # 部分更新（仅 ai_action）
+        result = logger2.update_decision("issue-002", ai_action="keep")
+        assert result is True
+        assert logger2.decisions[1]["ai_action"] == "keep"
+        assert logger2.decisions[1]["ai_confidence"] is None, "ai_confidence 保持不变"
+        print("✓ 部分更新正常")
+
+        print("=== test_decision_logger_update 通过 ===")

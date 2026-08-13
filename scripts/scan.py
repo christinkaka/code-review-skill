@@ -5,7 +5,6 @@
 """
 
 import argparse
-import json
 import yaml
 import logging
 import os
@@ -501,11 +500,20 @@ def run_scan(args):
         for idx, issue in enumerate(raw_issues):
             # 修复问题 1: ai_confidence 不再默认 0.8
             # 修复问题 2: ai_action 根据置信度动态决策
+            # P3 修复 1: 优先尊重 prefilter 的决定
             ai_conf = issue.get("ai_confidence")
             ai_action = issue.get("ai_action")
             ai_reasoning = issue.get("analysis", "规则引擎检出，待 AI 二次评审")
-            
-            if ai_conf is None:
+
+            if issue.get("is_false_positive") is True:
+                # P3 修复 1: prefilter 已决定为误报 → 强制映射为 drop
+                ai_action = "drop"
+                ai_reasoning = issue.get("prefilter_reason", "预过滤判定为误报")
+            elif issue.get("needs_review") is True:
+                # prefilter 已标记需人工确认
+                ai_action = "needs_review"
+                ai_reasoning = issue.get("prefilter_reason", "预过滤建议人工确认")
+            elif ai_conf is None:
                 # 未经过 AI 评审：标记为待评审，置信度留空
                 ai_action = "pending_review"
                 ai_conf = None
@@ -730,10 +738,8 @@ def main():
                 logger.info("扫描结果已通过 Webhook 通知")
             else:
                 logger.warning("Webhook 通知发送失败")
-        if report:
-            sys.exit(0)
-        else:
-            sys.exit(0)  # 无变更也是正常退出
+        # 正常完成
+        sys.exit(0)
     except Exception as e:
         logger.error(f"扫描失败: {e}", exc_info=True)
         # 扫描失败，发送告警
