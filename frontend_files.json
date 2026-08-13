@@ -1,0 +1,53 @@
+{
+  "vuejs/core": [
+    "test-vue/packages-private/sfc-playground/src/vue-server-renderer-dev-proxy.ts",
+    "test-vue/packages/compiler-core/src/tokenizer.ts",
+    "test-vue/packages/compiler-core/src/parser.ts",
+    "test-vue/packages/compiler-sfc/src/parse.ts",
+    "test-vue/packages/compiler-sfc/src/template/transformAssetUrl.ts",
+    "test-vue/packages/shared/src/escapeHtml.ts",
+    "test-vue/packages/server-renderer/src/renderToStream.ts",
+    "test-vue/packages/server-renderer/src/renderToString.ts",
+    "test-vue/packages/server-renderer/src/render.ts",
+    "test-vue/packages/server-renderer/src/helpers/ssrRenderList.ts",
+    "test-vue/packages/server-renderer/src/helpers/ssrRenderAttrs.ts",
+    "test-vue/packages/server-renderer/src/helpers/ssrRenderSlot.ts",
+    "test-vue/packages/server-renderer/src/helpers/ssrRenderTeleport.ts",
+    "test-vue/packages/server-renderer/src/helpers/ssrRenderSuspense.ts",
+    "test-vue/packages/server-renderer/src/helpers/ssrRenderComponent.ts"
+  ],
+  "facebook/react": [
+    "test-react/scripts/release/shared-commands/parse-params.js",
+    "test-react/scripts/release/publish-commands/parse-params.js",
+    "test-react/scripts/jest/ReactDOMServerIntegrationEnvironment.js",
+    "test-react/scripts/jest/ReactJSDOMEnvironment.js",
+    "test-react/packages/dom-event-testing-library/domEventSequences.js",
+    "test-react/packages/dom-event-testing-library/domEvents.js",
+    "test-react/packages/dom-event-testing-library/domEnvironment.js",
+    "test-react/packages/react-flight-server-fb/src/server/react-flight-dom-server.node.js",
+    "test-react/packages/react-flight-server-fb/src/server/ReactFlightDOMServerNode.js",
+    "test-react/packages/react-flight-server-fb/src/client/ReactFlightDOMClientBrowser.js",
+    "test-react/packages/react-server-dom-turbopack/src/server/react-flight-dom-server.browser.js",
+    "test-react/packages/react-server-dom-turbopack/src/server/react-flight-dom-server.node.js",
+    "test-react/packages/react-server-dom-turbopack/src/server/ReactFlightDOMServerEdge.js",
+    "test-react/packages/react-server-dom-turbopack/src/server/ReactFlightDOMServerBrowser.js",
+    "test-react/packages/react-server-dom-turbopack/src/server/ReactFlightDOMServerNode.js"
+  ],
+  "shadcn-ui/ui": [
+    "test-shadcn/packages/shadcn/src/utils/transformers/transform-render.ts",
+    "test-shadcn/packages/shadcn/src/registry/fetcher.ts",
+    "test-shadcn/packages/shadcn/src/registry/parser.ts",
+    "test-shadcn/apps/v4/components/site-header.tsx",
+    "test-shadcn/apps/v4/components/nav-header.tsx",
+    "test-shadcn/apps/v4/components/page-header.tsx",
+    "test-shadcn/apps/v4/components/cards/cookie-settings.tsx",
+    "test-shadcn/apps/v4/examples/aria/message-header-footer.tsx",
+    "test-shadcn/apps/v4/examples/aria/button-render.tsx",
+    "test-shadcn/apps/v4/examples/aria/item-header.tsx",
+    "test-shadcn/apps/v4/examples/aria/sidebar-header.tsx",
+    "test-shadcn/apps/v4/examples/radix/message-header-footer.tsx",
+    "test-shadcn/apps/v4/examples/radix/item-header.tsx",
+    "test-shadcn/apps/v4/examples/radix/sidebar-header.tsx",
+    "test-shadcn/apps/v4/examples/base/message-header-footer.tsx"
+  ]
+}
