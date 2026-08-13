@@ -83,6 +83,54 @@ class ReviewMerger:
 
         return True
 
+    def _update_decision_log(
+        self,
+        issue_id: str,
+        ai_action: str,
+        ai_confidence: Optional[float],
+        ai_reasoning: str,
+    ) -> bool:
+        """
+        更新决策日志中对应 issue_id 的条目（P1 修复 3）
+
+        Args:
+            issue_id: 问题 ID（如 {scan_id}-{idx:04d}）
+            ai_action: 新的 ai_action（drop/needs_review/keep）
+            ai_confidence: 新的 ai_confidence
+            ai_reasoning: 新的 ai_reasoning
+
+        Returns:
+            True 如果成功更新
+        """
+        # 决策日志文件在 workspace/decisions/{scan_id}.json（与 report/ 同级）
+        decisions_dir = self.output_dir / "decisions"
+        if not decisions_dir.exists():
+            logger.debug(f"决策日志目录不存在: {decisions_dir}")
+            return False
+
+        # 找到对应的决策日志文件
+        for decision_file in decisions_dir.glob("*.json"):
+            try:
+                with open(decision_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                decisions = data.get("decisions", [])
+                for d in decisions:
+                    if d.get("issue_id") == issue_id:
+                        d["ai_action"] = ai_action
+                        if ai_confidence is not None:
+                            d["ai_confidence"] = ai_confidence
+                        d["ai_reasoning"] = ai_reasoning
+                        d["updated_at"] = __import__("datetime").datetime.now().isoformat()
+                        # 写回
+                        with open(decision_file, "w", encoding="utf-8") as fp:
+                            json.dump(data, fp, ensure_ascii=False, indent=2)
+                        logger.debug(f"决策日志已更新: {issue_id} → {ai_action}")
+                        return True
+            except (json.JSONDecodeError, OSError) as e:
+                logger.debug(f"决策日志读取失败 {decision_file}: {e}")
+                continue
+        return False
+
     def merge_into_report(self) -> Tuple[int, int, int]:
         """
         将二审结果合并到主报告
@@ -150,6 +198,14 @@ class ReviewMerger:
                 issue["ai_action"] = "needs_review"
             else:
                 issue["ai_action"] = "keep"
+
+            # P1 修复 3: 同步覆写决策日志（保持主报告与决策日志一致）
+            self._update_decision_log(
+                issue_id=issue["issue_id"],
+                ai_action=issue["ai_action"],
+                ai_confidence=issue.get("ai_confidence"),
+                ai_reasoning=issue.get("ai_reasoning", "二审合并覆写"),
+            )
 
             merged_count += 1
 

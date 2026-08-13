@@ -578,11 +578,19 @@ def run_scan(args):
             chain = best if best is not None else []
         issue["call_chain"] = chain or []
 
-    # 修复问题 5: 在调用链关联后生成 subagent 任务（含 code_snippet + call_chain）
-    task = ai_reviewer.generate_subagent_task(to_review, diff_result, call_graph)
+    # 修复问题 5 + P1 修复 1: 在调用链关联后生成 subagent 任务
+    # P1 修复 1: 过滤掉 ai_action="drop" 的 issue（不发给 subagent 节省 token）
+    to_review_filtered = [
+        i for i in to_review if i.get("ai_action") != "drop"
+    ]
+    if len(to_review_filtered) < len(to_review):
+        logger.info(
+            f"  ai_action=drop 过滤: 移除 {len(to_review) - len(to_review_filtered)} 条"
+        )
+    task = ai_reviewer.generate_subagent_task(to_review_filtered, diff_result, call_graph)
     task_file = output_dir / "subagent-review-task.md"
     ai_reviewer.save_task_to_file(task, str(task_file))
-    logger.info(f"  Subagent 任务已保存: {task_file} (含 {len(to_review)} 个问题 + call_chain)")
+    logger.info(f"  Subagent 任务已保存: {task_file} (含 {len(to_review_filtered)} 个问题 + call_chain)")
 
     # 7. 生成报告
     logger.info("[5/5] 生成评审报告...")

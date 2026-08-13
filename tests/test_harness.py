@@ -50,7 +50,7 @@ def test_decision_logger():
             line=15,
             severity="ERROR",
             original_message="XXE - DocumentBuilder 解析 XML 未禁用外部实体",
-            ai_action="filter_false_positive",
+            ai_action="drop",
             ai_confidence=0.72,
             ai_reasoning="已在第 10 行禁用外部实体",
             ai_evidence=["第 10 行：factory.setFeature(...)"],
@@ -152,7 +152,7 @@ def test_quality_monitor():
         logger.log_decision(
             issue_id="issue-002", rule_id="xxe-java", file="b.java", line=2,
             severity="ERROR", original_message="XXE",
-            ai_action="filter_false_positive", ai_confidence=0.72, ai_reasoning="误报",
+            ai_action="drop", ai_confidence=0.72, ai_reasoning="误报",
         )
         logger.log_decision(
             issue_id="issue-003", rule_id="xss-js", file="c.js", line=3,
@@ -212,7 +212,7 @@ def test_end_to_end():
                 line=i * 10,
                 severity="ERROR",
                 original_message=f"问题 {i}",
-                ai_action="keep" if i % 2 == 1 else "filter_false_positive",
+                ai_action="keep" if i % 2 == 1 else "drop",
                 ai_confidence=0.7 + i * 0.05,
                 ai_reasoning=f"AI 分析理由 {i}",
                 ai_evidence=[f"证据 {i}"],

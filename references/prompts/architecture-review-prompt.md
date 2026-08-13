@@ -152,18 +152,6 @@ ARCHITECTURE_REVIEW_PROMPT = """
 """
 ```
 
-## API 调用参数
-
-```python
-ARCHITECTURE_API_PARAMS = {
-    # 与 WORKFLOW_CONFIG["architecture"] 保持一致
-    "temperature": 0.2,
-    "max_tokens": 2048,
-    "top_p": 0.9,
-    "model": "gpt-4",
-}
-```
-
 ## 决策证据要求
 
 每个评审结论必须提供证据（evidence 字段），引用具体的代码行号和上下文。

@@ -67,7 +67,7 @@ class QualityMonitor:
                 # AI 判断为 filter，用户确认为 false_positive → 正确
                 if decision["ai_action"] == "keep" and feedback["verdict"] == "confirmed":
                     correct_count += 1
-                elif decision["ai_action"] == "filter_false_positive" and feedback["verdict"] == "false_positive":
+                elif decision["ai_action"] == "drop" and feedback["verdict"] == "false_positive":
                     correct_count += 1
                 else:
                     incorrect_count += 1
@@ -104,7 +104,7 @@ class QualityMonitor:
                     
                     if decision["ai_action"] == "keep" and feedback["verdict"] == "confirmed":
                         rule_stats[rule_id]["correct"] += 1
-                    elif decision["ai_action"] == "filter_false_positive" and feedback["verdict"] == "false_positive":
+                    elif decision["ai_action"] == "drop" and feedback["verdict"] == "false_positive":
                         rule_stats[rule_id]["correct"] += 1
                     else:
                         rule_stats[rule_id]["incorrect"] += 1

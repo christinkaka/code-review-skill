@@ -66,6 +66,38 @@ class DecisionLogger:
         }
         self.decisions.append(decision)
     
+    def update_decision(
+        self,
+        issue_id: str,
+        ai_action: Optional[str] = None,
+        ai_confidence: Optional[float] = None,
+        ai_reasoning: Optional[str] = None,
+    ) -> bool:
+        """
+        更新指定 issue_id 的决策日志条目（P1 修复 3: review_merger 同步覆写）
+
+        Args:
+            issue_id: 问题 ID
+            ai_action: 新的 ai_action
+            ai_confidence: 新的 ai_confidence
+            ai_reasoning: 新的 ai_reasoning
+
+        Returns:
+            True 如果成功更新，False 如果未找到
+        """
+        for d in self.decisions:
+            if d.get("issue_id") == issue_id:
+                if ai_action is not None:
+                    d["ai_action"] = ai_action
+                if ai_confidence is not None:
+                    d["ai_confidence"] = ai_confidence
+                if ai_reasoning is not None:
+                    d["ai_reasoning"] = ai_reasoning
+                # 记录更新时间
+                d["updated_at"] = datetime.now().isoformat()
+                return True
+        return False
+
     def save(self):
         """保存决策日志到文件"""
         if not self.current_scan_id:

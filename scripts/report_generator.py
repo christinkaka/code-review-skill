@@ -108,6 +108,10 @@ class ReportGenerator:
         summary["by_file"] = dict(file_counter.most_common(20))
         summary["by_rule"] = dict(rule_counter.most_common(20))
 
+        # P1 修复 2: by_action 统计（让用户看到 drop/needs_review/keep 分布）
+        action_counter = Counter(issue.get("ai_action", "pending_review") for issue in issues)
+        summary["by_action"] = dict(action_counter)
+
         return summary
 
     def _generate_markdown(self, report: Dict) -> str:
@@ -194,12 +198,28 @@ class ReportGenerator:
                 "INFO": "🔵",
             }.get(issue.get("severity", "WARNING"), "⚪")
 
-            lines.append(f"### {i}. {severity_icon} [{issue.get('rule_id', 'N/A')}]")
+            # P1 修复 2b: ai_action 徽章
+            ai_action = issue.get("ai_action", "pending_review")
+            action_badge = {
+                "drop": "🚫 已丢弃（误报）",
+                "needs_review": "⚠️ 待人工确认",
+                "pending_review": "🤖 待 AI 评审",
+                "keep": "✅ 保留",
+            }.get(ai_action, ai_action)
+            action_style = {
+                "drop": " (灰色背景)",
+                "needs_review": " (黄色高亮)",
+                "pending_review": "",
+                "keep": "",
+            }.get(ai_action, "")
+
+            lines.append(f"### {i}. {severity_icon} [{issue.get('rule_id', 'N/A')}] {action_badge}")
             lines.append("")
             lines.append(f"- **文件**: `{issue.get('file', 'N/A')}`")
             lines.append(f"- **行号**: {issue.get('line', 'N/A')}")
             lines.append(f"- **严重等级**: {issue.get('severity', 'N/A')}")
             lines.append(f"- **类别**: {issue.get('category', 'N/A')}")
+            lines.append(f"- **AI 决策**: {action_badge}{action_style}")
             lines.append(f"- **描述**: {issue.get('message', 'N/A')}")
 
             if issue.get("code_snippet"):
