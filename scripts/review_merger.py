@@ -42,6 +42,10 @@ class ReviewMerger:
                 data = json.load(f)
             if isinstance(data, list):
                 return data
+            # 修复: dict 但无 results 字段时给出 warning
+            if isinstance(data, dict) and "results" not in data:
+                logger.warning(f"二审结果文件 {review_file} 是 dict 但无 'results' 字段")
+                return []
             return data.get("results", [])
         except json.JSONDecodeError as e:
             logger.error(f"二审结果 JSON 解析失败: {e}")
@@ -58,6 +62,11 @@ class ReviewMerger:
         for field in required_fields:
             if field not in result:
                 logger.warning(f"二审结果缺少必填字段: {field}")
+                return False
+            # 修复: 增加非空校验
+            value = result.get(field)
+            if value is None or (isinstance(value, str) and not value.strip()):
+                logger.warning(f"二审结果字段 {field} 为空")
                 return False
 
         # ai_confidence 范围校验

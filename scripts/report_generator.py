@@ -212,7 +212,14 @@ class ReportGenerator:
                 lines.append(f"- **修复建议**: {issue['fix']}")
 
             if issue.get("call_chain"):
-                chain_str = " → ".join(issue["call_chain"])
+                # 兼容 str 列表（新格式是 dict 列表）
+                chain_items = []
+                for c in issue["call_chain"]:
+                    if isinstance(c, dict):
+                        chain_items.append(f"{c.get('name', '?')}@{c.get('file', '?')}:{c.get('line', '?')}")
+                    else:
+                        chain_items.append(str(c))
+                chain_str = " → ".join(chain_items)
                 lines.append(f"- **调用链**: {chain_str}")
 
             metadata = issue.get("metadata", {})

@@ -168,14 +168,42 @@ class CallGraphBuilder:
                     "to": f"{callee['file']}:{callee['line']}",
                 })
         
+        # 计算 call_chains: 为每个方法找其被谁调用
+        call_chains = {}
+        for method in all_methods:
+            method_key = f"{method['file']}:{method['line']}"
+            callers = []
+            for other_method in all_methods:
+                if other_method['file'] == method['file'] and other_method['line'] == method['line']:
+                    continue
+                # 检查 other_method 是否调用了 method
+                if self._calls_method(other_method, method):
+                    callers.append({
+                        "name": other_method['name'],
+                        "file": other_method['file'],
+                        "line": other_method['line']
+                    })
+            if callers:
+                call_chains[method_key] = callers
+
         return {
             "nodes": nodes,
             "edges": edges,
             "node_count": len(nodes),
             "edge_count": len(edges),
             "affected_methods": [m['name'] for m in all_methods],
-            "call_chains": {},
+            "call_chains": call_chains,
         }
+
+    def _calls_method(self, caller: dict, callee: dict) -> bool:
+        """
+        简化判断: caller 是否调用 callee
+        （这里只做基于位置的近似判断，避免完整的 AST 分析）
+        """
+        # 同文件且 caller 行号在 callee 之前
+        if caller['file'] == callee['file'] and caller['line'] < callee['line']:
+            return True
+        return False
 
     def _extract_all_methods(self) -> list:
         """

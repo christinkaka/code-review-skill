@@ -497,8 +497,15 @@ def run_scan(args):
                 # 高置信度：保留
                 ai_action = "keep"
             
+            # 写回 issue 字典（修复 Alpha 复核发现的 P0 缺陷：决策日志正确但主报告无 ai_action 字段）
+            issue["ai_action"] = ai_action
+            issue["ai_confidence"] = ai_conf
+            issue["ai_reasoning"] = ai_reasoning
+            issue["issue_id"] = f"{scan_id}-{idx:04d}"
+            issue["ai_reviewed"] = False  # 仅经过决策日志，二审待定
+
             decision_logger.log_decision(
-                issue_id=f"{scan_id}-{idx:04d}",
+                issue_id=issue["issue_id"],
                 rule_id=issue.get("rule_id", "unknown"),
                 file=issue.get("file", ""),
                 line=issue.get("line", 0),
@@ -512,13 +519,39 @@ def run_scan(args):
         decision_logger.save()
         logger.info(f"  决策日志已记录 ({len(raw_issues)} 条，scan_id={scan_id})")
 
-    # 6. 关联调用链
+    # 6. 关联调用链（修复 Beta 复核发现的问题：模糊匹配）
+    call_chains_dict = call_graph.get("call_chains", {})
+    # 预构建 file -> list of (line, callers) 索引
+    call_chains_by_file = {}
+    for key, callers in call_chains_dict.items():
+        if ":" in key:
+            fpath, line_str = key.rsplit(":", 1)
+            try:
+                fpath = fpath.strip()
+                line = int(line_str)
+                call_chains_by_file.setdefault(fpath, []).append((line, callers))
+            except (ValueError, AttributeError):
+                continue
+
     for issue in issues:
         file_path = issue.get("file", "")
         line = issue.get("line", 0)
-        issue["call_chain"] = call_graph.get("call_chains", {}).get(
-            f"{file_path}:{line}", []
-        )
+        # 1) 精确匹配
+        chain = call_chains_dict.get(f"{file_path}:{line}")
+        if chain is None and file_path in call_chains_by_file:
+            # 2) 模糊匹配：找该文件中 line 之前最近的方法
+            candidates = call_chains_by_file[file_path]
+            # 找 line 之前最近的方法（允许行号偏差）
+            best = None
+            best_diff = float("inf")
+            for method_line, callers in candidates:
+                diff = abs(method_line - line)
+                # 接受 line 前后 5 行内的方法
+                if diff <= 5 and diff < best_diff:
+                    best = callers
+                    best_diff = diff
+            chain = best if best is not None else []
+        issue["call_chain"] = chain or []
 
     # 修复问题 5: 在调用链关联后生成 subagent 任务（含 code_snippet + call_chain）
     task = ai_reviewer.generate_subagent_task(to_review, diff_result, call_graph)
