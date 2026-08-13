@@ -302,11 +302,12 @@ def init_harness_components(harness_config: dict) -> dict:
             storage_dir=dl_config.get("storage_dir", "data/decisions")
         )
 
-    # 初始化反馈管理
+    # 初始化反馈管理（全局路径 + workspace 路径）
     fb_config = harness.get("feedback", {})
     if fb_config.get("enabled", False) and FeedbackManager is not None:
         result["feedback_manager"] = FeedbackManager(
-            storage_file=fb_config.get("storage_file", "data/feedbacks.json")
+            storage_file=fb_config.get("storage_file", "data/feedbacks.json"),
+            workspace_storage_file=fb_config.get("workspace_storage_file")
         )
 
     # 初始化质量监控（依赖前两个组件）
@@ -428,7 +429,12 @@ def run_scan(args):
     harness_config = load_harness_config()
     # 覆盖 decisions_dir 为工作空间目录
     harness_config["harness"]["decision_logging"]["storage_dir"] = str(decisions_dir)
-    harness_config["harness"]["feedback"]["storage_file"] = str(workspace["workspace_dir"] / "feedbacks.json")
+    # 修复问题 4: feedback 同时维护全局路径 + workspace 副本
+    # 全局路径用于跨扫描复用，workspace 路径用于本次扫描归档
+    global_feedback_path = Path("data/feedbacks.json").resolve()
+    global_feedback_path.parent.mkdir(parents=True, exist_ok=True)
+    harness_config["harness"]["feedback"]["storage_file"] = str(global_feedback_path)
+    harness_config["harness"]["feedback"]["workspace_storage_file"] = str(workspace["workspace_dir"] / "feedbacks.json")
     harness_config["harness"]["quality_monitor"]["cache_file"] = str(workspace["workspace_dir"] / "stats_cache.json")
     harness_components = init_harness_components(harness_config)
     decision_logger = harness_components["decision_logger"]
@@ -458,18 +464,8 @@ def run_scan(args):
     already_decided, to_review = prefilter_issues(raw_issues, config)
     logger.info(f"  预过滤: {len(already_decided)} 条已决定，{len(to_review)} 条待 AI 评审")
     
-    # 生成 subagent 任务描述（只包含待 AI 评审的问题）
-    task = ai_reviewer.generate_subagent_task(to_review, diff_result, call_graph)
-
-    # 保存任务到文件
-    task_file = output_dir / "subagent-review-task.md"
-    ai_reviewer.save_task_to_file(task, str(task_file))
-
-    logger.info(f"  工作流: {ai_reviewer.get_current_workflow()}")
-    logger.info(f"  Subagent 任务已保存到: {task_file}")
-    logger.info(f"  请 TRAE Agent 委派 subagent 读取该文件并执行评审")
-
-    # 7. 记录决策日志
+    # 修复问题 5: subagent 任务生成移到调用链关联之后（先关联 call_chain 再生成任务）
+    # 7. 记录决策日志（保持原位置）
     if decision_logger:
         # 使用工作空间的 scan_id
         decision_logger.start_scan(
@@ -478,6 +474,29 @@ def run_scan(args):
             total_issues=len(raw_issues),
         )
         for idx, issue in enumerate(raw_issues):
+            # 修复问题 1: ai_confidence 不再默认 0.8
+            # 修复问题 2: ai_action 根据置信度动态决策
+            ai_conf = issue.get("ai_confidence")
+            ai_action = issue.get("ai_action")
+            ai_reasoning = issue.get("analysis", "规则引擎检出，待 AI 二次评审")
+            
+            if ai_conf is None:
+                # 未经过 AI 评审：标记为待评审，置信度留空
+                ai_action = "pending_review"
+                ai_conf = None
+                ai_reasoning = "规则引擎检出，未经过 AI 二次评审（置信度未确定）"
+            elif ai_conf < 0.3:
+                # 极低置信度：直接标记为误报丢弃
+                ai_action = "drop"
+                ai_reasoning = f"AI 置信度仅 {ai_conf:.2f}，判定为误报丢弃"
+            elif ai_conf < 0.7:
+                # 中等置信度：需要人工确认
+                ai_action = "needs_review"
+                ai_reasoning = f"AI 置信度 {ai_conf:.2f}，建议人工确认"
+            else:
+                # 高置信度：保留
+                ai_action = "keep"
+            
             decision_logger.log_decision(
                 issue_id=f"{scan_id}-{idx:04d}",
                 rule_id=issue.get("rule_id", "unknown"),
@@ -485,9 +504,9 @@ def run_scan(args):
                 line=issue.get("line", 0),
                 severity=issue.get("severity", "UNKNOWN"),
                 original_message=issue.get("message", ""),
-                ai_action="keep",
-                ai_confidence=issue.get("ai_confidence", 0.8),
-                ai_reasoning=issue.get("analysis", "规则引擎检出，待 AI 二次评审"),
+                ai_action=ai_action,
+                ai_confidence=ai_conf,
+                ai_reasoning=ai_reasoning,
                 ai_evidence=[issue.get("code_snippet", "")] if issue.get("code_snippet") else [],
             )
         decision_logger.save()
@@ -501,8 +520,22 @@ def run_scan(args):
             f"{file_path}:{line}", []
         )
 
+    # 修复问题 5: 在调用链关联后生成 subagent 任务（含 code_snippet + call_chain）
+    task = ai_reviewer.generate_subagent_task(to_review, diff_result, call_graph)
+    task_file = output_dir / "subagent-review-task.md"
+    ai_reviewer.save_task_to_file(task, str(task_file))
+    logger.info(f"  Subagent 任务已保存: {task_file} (含 {len(to_review)} 个问题 + call_chain)")
+
     # 7. 生成报告
     logger.info("[5/5] 生成评审报告...")
+    # 修复问题 3: 尝试合并二审结果（如果 subagent 已经完成）
+    try:
+        from scripts.review_merger import merge_review_results
+        merged, invalid, no_report = merge_review_results(str(output_dir))
+        if merged > 0:
+            logger.info(f"  二审结果合并: {merged} 个问题已更新")
+    except Exception as e:
+        logger.debug(f"  无二审结果或合并失败（正常）: {e}")
     generator = ReportGenerator(output_dir=str(output_dir))
     
     # 构建扫描信息
