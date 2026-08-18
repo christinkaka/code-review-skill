@@ -64,7 +64,7 @@ class QualityMonitor:
                 feedback = feedback_map[issue_id]
                 
                 # AI 判断为 keep，用户确认 → 正确
-                # AI 判断为 filter，用户确认为 false_positive → 正确
+                # AI 判断为 drop，用户确认为 false_positive → 正确
                 if decision["ai_action"] == "keep" and feedback["verdict"] == "confirmed":
                     correct_count += 1
                 elif decision["ai_action"] == "drop" and feedback["verdict"] == "false_positive":
