@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import time
+import fnmatch
 from datetime import datetime
 from pathlib import Path
 
@@ -88,12 +89,28 @@ def prefilter_issues(issues: list, config: dict) -> list:
         # 检查文件路径模式
         is_whitelisted = False
         for pattern in file_patterns:
-            # 简单的通配符匹配
+            # 使用 fnmatch 进行 glob 模式匹配
             if pattern.startswith("**/"):
-                if pattern[3:] in file_path or f"/{pattern[3:]}" in file_path:
+                # **/ 表示任意目录层级
+                # 检查完整路径
+                if fnmatch.fnmatch(file_path, pattern):
                     is_whitelisted = True
                     break
-            elif pattern in file_path:
+                # 检查文件名部分（不带路径）
+                filename = os.path.basename(file_path)
+                if fnmatch.fnmatch(filename, pattern[3:]):
+                    is_whitelisted = True
+                    break
+                # 检查路径中的任何部分
+                parts = file_path.split(os.sep)
+                for i in range(len(parts)):
+                    partial_path = os.sep.join(parts[i:])
+                    if fnmatch.fnmatch(partial_path, pattern[3:]):
+                        is_whitelisted = True
+                        break
+                if is_whitelisted:
+                    break
+            elif fnmatch.fnmatch(file_path, pattern):
                 is_whitelisted = True
                 break
         
