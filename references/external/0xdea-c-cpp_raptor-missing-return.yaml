@@ -1,0 +1,34 @@
+rules:
+- id: raptor-missing-return
+  languages:
+  - c
+  - cpp
+  message: A non-void function does not have a return statement. Hence, its return
+    value can be considered undefined.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: LOW
+    cwe:
+    - 'CWE-393: Return of Wrong Status Code'
+    - 'CWE-394: Unexpected Status Code or Return Value'
+    impact: LOW
+    likelihood: LOW
+    owasp:
+    - A08:2025 - Software or Data Integrity Failures
+    references:
+    - https://stackoverflow.com/questions/10858391/why-do-programs-in-c-compile-even-when-the-return-statement-is-missing
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Other Security
+  patterns:
+  - pattern: $_ $FUN(...) { ... }
+  - pattern-not: $_ $FUN(...);
+  - pattern-not: $_ $FUN(...) { ... return $_; }
+  - pattern-not: int main(...) { ... }
+  - pattern-not: void $FUN(...) { ... }
+  - focus-metavariable: $FUN
+  severity: INFO

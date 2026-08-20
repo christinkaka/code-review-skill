@@ -1,0 +1,72 @@
+rules:
+- id: raptor-memory-address-exposure
+  languages:
+  - c
+  - cpp
+  message: The software generates an error message that includes sensitive information
+    about its environment, users, or associated data. In particular, exposure of memory
+    addresses might defeat ASLR.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: LOW
+    cwe:
+    - 'CWE-209: Generation of Error Message Containing Sensitive Information'
+    - 'CWE-497: Exposure of Sensitive System Information to an Unauthorized Control
+      Sphere'
+    impact: MEDIUM
+    likelihood: LOW
+    owasp:
+    - A04:2025 - Cryptographic Failures
+    references:
+    - https://github.com/struct/mms
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Mishandled Sensitive Information
+  patterns:
+  - pattern-either:
+    - pattern: printf($FMT, ...)
+    - pattern: vprintf($FMT, ...)
+    - pattern: wprintf($FMT, ...)
+    - pattern: vwprintf($FMT, ...)
+    - pattern: vcprintf($FMT, ...)
+    - pattern: vcwprintf($FMT, ...)
+    - pattern: vscprintf($FMT, ...)
+    - pattern: vscwprintf($FMT, ...)
+    - pattern: printk($FMT, ...)
+    - pattern: warn($FMT, ...)
+    - pattern: vwarn($FMT, ...)
+    - pattern: warnx($FMT, ...)
+    - pattern: vwarnx($FMT, ...)
+    - pattern: fprintf($_, $FMT, ...)
+    - pattern: vfprintf($_, $FMT, ...)
+    - pattern: fwprintf($_, $FMT, ...)
+    - pattern: vfwprintf($_, $FMT, ...)
+    - pattern: sprintf($_, $FMT, ...)
+    - pattern: vsprintf($_, $FMT, ...)
+    - pattern: asprintf($_, $FMT, ...)
+    - pattern: vasprintf($_, $FMT, ...)
+    - pattern: dprintf($_, $FMT, ...)
+    - pattern: vdprintf($_, $FMT, ...)
+    - pattern: wsprintf($_, $FMT, ...)
+    - pattern: syslog($_, $FMT, ...)
+    - pattern: vsyslog($_, $FMT, ...)
+    - pattern: err($_, $FMT, ...)
+    - pattern: verr($_, $FMT, ...)
+    - pattern: errx($_, $FMT, ...)
+    - pattern: verrx($_, $FMT, ...)
+    - pattern: warnc($_, $FMT, ...)
+    - pattern: vwarnc($_, $FMT, ...)
+    - pattern: snprintf($_, $_, $FMT, ...)
+    - pattern: vsnprintf($_, $_, $FMT, ...)
+    - pattern: swprintf($_, $_, $FMT, ...)
+    - pattern: vswprintf($_, $_, $FMT, ...)
+    - pattern: errc($_, $_, $FMT, ...)
+    - pattern: verrc($_, $_, $FMT, ...)
+  - metavariable-regex:
+      metavariable: $FMT
+      regex: (".*%\w*x.*"|".*%\w*X.*"|".*%\w*p.*")
+  severity: INFO

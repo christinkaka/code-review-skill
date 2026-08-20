@@ -1,0 +1,12 @@
+rules:
+- id: xxe-documentbuilder-xml
+  languages:
+  - java
+  message: XXE - DocumentBuilder 解析 XML 未禁用外部实体
+  metadata:
+    compiled_at: '2026-08-19T15:46:42.478390'
+    safe_approach: ''
+    source_file: XXE - DocumentBuilder 解析 XML 未禁用外部实体
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

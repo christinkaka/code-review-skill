@@ -1,0 +1,24 @@
+rules:
+- id: xxe----documentbuilder-
+  languages:
+  - java
+  message: XXE 漏洞 - DocumentBuilder 未禁用外部实体
+  metadata:
+    compiled_at: '2026-08-19T15:46:19.179290'
+    safe_approach: '在创建 DocumentBuilderFactory 后，立即调用：
+
+      - factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl",
+      true)
+
+      - factory.setFeature("http://xml.org/sax/features/external-general-entities",
+      false)'
+    source_file: XXE 漏洞 - DocumentBuilder 未禁用外部实体
+    violation_scenario: '- 创建了 DocumentBuilderFactory 实例
+
+      - 没有调用 setFeature() 禁用外部实体
+
+      - 使用该 Factory 创建了 DocumentBuilder
+
+      - 调用了 parse() 方法解析输入'
+  pattern: $VAR $VAR = $VAR.$VAR($VAR);
+  severity: ERROR

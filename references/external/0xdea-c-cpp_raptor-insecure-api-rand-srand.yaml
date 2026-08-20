@@ -1,0 +1,39 @@
+rules:
+- id: raptor-insecure-api-rand-srand
+  languages:
+  - c
+  - cpp
+  message: The rand() PRNG should not be used in applications intended to be  portable
+    when good randomness is needed. Instead, the use of random()  is recommended.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: HIGH
+    cwe:
+    - 'CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)'
+    - 'CWE-330: Use of Insufficiently Random Values'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A04:2025 - Cryptographic Failures
+    references:
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Cryptographic Issues
+  pattern-either:
+  - pattern: rand(...)
+  - pattern: srand(...)
+  - pattern: drand48(...)
+  - pattern: erand48(...)
+  - pattern: lrand48(...)
+  - pattern: nrand48(...)
+  - pattern: mrand48(...)
+  - pattern: jrand48(...)
+  - pattern: lcong48(...)
+  - pattern: srand48(...)
+  - pattern: seed48(...)
+  severity: WARNING

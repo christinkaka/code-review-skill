@@ -1,0 +1,64 @@
+rules:
+- id: raptor-missing-break-in-switch
+  languages:
+  - c
+  - cpp
+  message: The software omits a break statement within a switch or similar construct,
+    causing code associated with multiple conditions to execute. This can cause problems
+    when the programmer only intended to execute code associated with one condition.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: LOW
+    cwe:
+    - 'CWE-484: Omitted Break Statement in Switch'
+    impact: LOW
+    likelihood: LOW
+    owasp:
+    - A08:2025 - Software or Data Integrity Failures
+    references:
+    - https://g.co/kgs/PCHQjJ
+    - https://github.com/struct/mms
+    - https://github.com/returntocorp/semgrep/issues/4939
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Other Security
+  patterns:
+  - pattern: 'switch ($VAR) { case $VAL1: ... case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: ... break; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: break; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: ... exit($_); case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: exit($_); case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: ... return; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: return; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: ... return $_; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: return $_; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: ... goto $_; case $VAL2: ... }
+
+      '
+  - pattern-not: 'switch ($VAR) { case $VAL1: goto $_; case $VAL2: ... }
+
+      '
+  - focus-metavariable: $VAR
+  severity: INFO

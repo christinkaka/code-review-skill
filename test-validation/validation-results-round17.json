@@ -1,0 +1,110 @@
+{
+  "round": 17,
+  "methodology": "many-to-many matching consistent with round 16 - one scan result can cover multiple known issues in same file",
+  "metrics": {
+    "recall": 1.0,
+    "recall_pct": "100.0%",
+    "recall_detail": "26/26",
+    "precision": 0.8966,
+    "precision_pct": "89.7%",
+    "precision_detail": "26/29",
+    "fpr": 0.2759,
+    "fpr_pct": "27.6%",
+    "fnr": 0.0,
+    "fnr_pct": "0.0%",
+    "f1": 0.9455,
+    "f1_pct": "94.5%"
+  },
+  "comparison_with_round16": {
+    "recall_change": "+7.7pp",
+    "precision_change": "+0.8pp",
+    "f1_change": "+4.0pp"
+  },
+  "targets": {
+    "recall_target": "100%",
+    "recall_pass": true,
+    "precision_target": "85%+",
+    "precision_pass": true,
+    "f1_target": "92%+",
+    "f1_pass": true
+  },
+  "true_positives": 26,
+  "false_negatives": 0,
+  "false_positives": 8,
+  "fn_details": [],
+  "safe_file_fps": [
+    {
+      "scan_idx": 7,
+      "file": "python/command-injection/safe.py",
+      "line": 30,
+      "rule_id": "priv-python-subprocess-run",
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。"
+    },
+    {
+      "scan_idx": 8,
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "rule_id": "priv-python-subprocess-popen",
+      "message": "subprocess.Popen() 使用用户输入，存在命令注入风险。"
+    },
+    {
+      "scan_idx": 18,
+      "file": "typescript/ssrf/safe.ts",
+      "line": 40,
+      "rule_id": "ssrf-js-fetch",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。"
+    },
+    {
+      "scan_idx": 19,
+      "file": "typescript/ssrf/safe.ts",
+      "line": 82,
+      "rule_id": "ssrf-js-fetch",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。"
+    },
+    {
+      "scan_idx": 24,
+      "file": "typescript/xss/safe.ts",
+      "line": 20,
+      "rule_id": "xss-js-innerhtml",
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。"
+    },
+    {
+      "scan_idx": 25,
+      "file": "typescript/xss/safe.ts",
+      "line": 68,
+      "rule_id": "xss-js-innerhtml",
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。"
+    }
+  ],
+  "non_safe_fps": [
+    {
+      "scan_idx": 16,
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "rule_id": "xxe-python-lxml-parse",
+      "message": "lxml.etree.parse() 未传入安全解析器，使用默认配置解析 XML 文件，存在 XXE 漏洞。"
+    },
+    {
+      "scan_idx": 17,
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "rule_id": "xxe-python-lxml-resolve-entities",
+      "message": "显式设置 resolve_entities=True，主动启用了外部实体解析，存在 XXE 漏洞。"
+    }
+  ],
+  "newly_detected_vs_round16": [
+    {
+      "known_idx": 2,
+      "file": "java/xss/Vulnerable.java",
+      "line": 30,
+      "rule_id": "xss-java-servlet-output"
+    },
+    {
+      "known_idx": 3,
+      "file": "java/xss/Vulnerable.java",
+      "line": 44,
+      "rule_id": "xss-java-servlet-output"
+    }
+  ],
+  "new_fn_vs_round16": []
+}

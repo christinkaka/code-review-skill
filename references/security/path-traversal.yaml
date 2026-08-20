@@ -1,0 +1,184 @@
+# 安全规约 - 目录穿越 (Path Traversal)
+# CWE-22: Improper Limitation of a Pathname to a Restricted Directory
+# OWASP: A01:2021 - Broken Access Control
+
+rules:
+  # ===== Java =====
+  - id: path-java-file-input
+    languages: [java]
+    patterns:
+      - pattern: |
+          new File($USER_INPUT)
+      - pattern-not: |
+          new File($BASE_DIR, $SANITIZED)
+      - pattern-not: |
+          $FILE.getCanonicalPath()
+      - pattern-not: |
+          $FILE.getCanonicalFile()
+      - pattern-not: |
+          $PATH.normalize()
+      - pattern-not: |
+          if (!$PATH.startsWith($BASE_DIR)) { ... }
+      - metavariable-regex:
+          metavariable: $USER_INPUT
+          regex: (?!.*getCanonicalPath)(?!.*getCanonicalFile)(?!.*\.normalize\(\)).*
+    message: >
+      [目录穿越] File 构造使用用户输入未做路径规范化，攻击者可通过 ../ 访问受限目录。
+      建议使用 Path.normalize() + 白名单目录校验。
+    severity: ERROR
+    category: security
+    fix: |
+      Path path = Paths.get(baseDir, userInput).normalize();
+      if (!path.startsWith(baseDir)) { throw new SecurityException("Path traversal detected"); }
+    metadata:
+      cwe: CWE-22
+      owasp: "A01:2021"
+
+  - id: path-java-nio-read
+    languages: [java]
+    pattern: |
+      Files.readAllBytes(Paths.get($USER_INPUT))
+    message: "[目录穿越] NIO 文件读取使用用户输入路径，存在目录穿越风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-22
+
+  - id: path-java-resource-stream
+    languages: [java]
+    pattern: |
+      getClass().getResourceAsStream($USER_INPUT)
+    message: "[目录穿越] getResourceAsStream 使用用户输入，可能读取 JAR 外资源。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-22
+
+  - id: path-traversal-java-file
+    languages: [java]
+    patterns:
+      - pattern: new File($DIR, $USER_INPUT)
+      - pattern-not: |
+          $FILE.getCanonicalPath()
+      - pattern-not: |
+          $FILE.getCanonicalFile()
+      - pattern-not: |
+          $PATH.normalize()
+      - pattern-not: |
+          if (!$PATH.startsWith($BASE_DIR)) { ... }
+    message: "路径穿越风险：File 构造使用用户输入"
+    severity: ERROR
+    category: security
+    fix: |
+      Path path = Paths.get(baseDir, userInput).normalize();
+      if (!path.startsWith(baseDir)) { throw new SecurityException("Path traversal detected"); }
+    metadata:
+      cwe: CWE-22
+      owasp: "A01:2021"
+
+  - id: path-traversal-java-weak-filter
+    languages: [java]
+    patterns:
+      - pattern: |
+          $VAR.replace("../", "")
+      - pattern-not: |
+          $VAR.replace("../", "").replace("..\\", "")
+    message: "[目录穿越] 仅使用 replace(\"../\", \"\") 过滤路径穿越字符，可被 ..\\ 或 URL 编码绕过。使用路径规范化（canonicalize）后验证前缀。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-22
+
+  # ===== Python =====
+  - id: path-python-open
+    languages: [python]
+    patterns:
+      - pattern: |
+          open($USER_INPUT, ...)
+      - pattern-not: |
+          open(os.path.join($BASE_DIR, os.path.basename($USER_INPUT)), ...)
+      - pattern-not: |
+          os.path.realpath($PATH)
+      - pattern-not: |
+          os.path.abspath($PATH)
+      - pattern-not: |
+          pathlib.Path($PATH).resolve()
+      - pattern-not: |
+          if not $PATH.startswith($BASE_DIR): ...
+      - metavariable-regex:
+          metavariable: $USER_INPUT
+          regex: (?!.*os\.path\.realpath)(?!.*os\.path\.abspath)(?!.*\.resolve\(\)).*
+    message: "[目录穿越] open() 使用用户输入路径，存在目录穿越风险。使用 os.path.basename() + 白名单校验。"
+    severity: ERROR
+    category: security
+    fix: |
+      safe_path = os.path.join(BASE_DIR, os.path.basename(user_input))
+      if not os.path.commonpath([safe_path, BASE_DIR]) == BASE_DIR:
+          raise ValueError("Path traversal detected")
+    metadata:
+      cwe: CWE-22
+
+  - id: path-python-send-file
+    languages: [python]
+    pattern: |
+      send_file($USER_INPUT, ...)
+    message: "[目录穿越] Flask send_file 使用用户输入路径，存在目录穿越风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-22
+
+  - id: path-traversal-python-os-path-join
+    languages: [python]
+    patterns:
+      - pattern: |
+          os.path.join($BASE_DIR, $USER_INPUT)
+      - pattern-not: |
+          os.path.join($BASE_DIR, os.path.basename($USER_INPUT))
+      - metavariable-regex:
+          metavariable: $USER_INPUT
+          regex: (?!.*os\.path\.realpath)(?!.*\.resolve\(\)).*
+    message: "[目录穿越] os.path.join() 使用用户输入构造文件路径，未校验路径穿越（如 ../），攻击者可访问受限目录。使用 os.path.realpath() 规范化后验证。"
+    severity: ERROR
+    category: security
+    fix: |
+      safe_path = os.path.realpath(os.path.join(BASE_DIR, os.path.basename(user_input)))
+      if not safe_path.startswith(os.path.realpath(BASE_DIR)):
+          raise ValueError("Path traversal detected")
+    metadata:
+      cwe: CWE-22
+      owasp: "A01:2021"
+
+  - id: path-traversal-python-weak-filter
+    languages: [python]
+    patterns:
+      - pattern: |
+          $VAR.replace("../", "")
+      - pattern-not: |
+          $VAR.replace("../", "").replace("..\\", "")
+    message: "[目录穿越] 仅使用 replace('../', '') 过滤路径穿越字符，可被 ..\\ 或 URL 编码绕过。使用 os.path.realpath() 规范化后验证前缀。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-22
+
+  # ===== JavaScript / Node.js =====
+  - id: path-js-readfile
+    languages: [javascript, typescript]
+    pattern: |
+      fs.readFile($USER_INPUT, ...)
+    message: "[目录穿越] fs.readFile 使用用户输入路径，存在目录穿越风险。使用 path.resolve() + 白名单校验。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-22
+
+  - id: path-js-express-static
+    languages: [javascript, typescript]
+    pattern: |
+      express.static($USER_INPUT)
+    message: "[目录穿越] express.static 使用用户可控路径，存在目录穿越风险。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-22

@@ -1,0 +1,191 @@
+rules:
+- id: raptor-ret-stack-address
+  languages:
+  - c
+  - cpp
+  message: A function returns the address of a stack variable, which will cause unintended
+    program behavior, typically in the form of a crash.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-562: Return of Stack Variable Address'
+    impact: MEDIUM
+    likelihood: LOW
+    owasp:
+    - A06:2025 - Insecure Design
+    references:
+    - https://github.com/struct/mms
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    - https://docs.microsoft.com/en-us/cpp/sanitizers/asan-error-examples
+    - https://rules.sonarsource.com/c/type/Bug/RSPEC-946
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  pattern-either:
+  - patterns:
+    - pattern: return $PTR;
+    - pattern-either:
+      - patterns:
+        - pattern-inside: '$_ $PTR[$_];
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $PTR[$_];
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $PTR[$_] = ...;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $PTR[$_] = ...;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $PTR[] = ...;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $PTR[] = ...;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $ARR[$_];
+
+            ...
+
+            $PTR = $ARR;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $ARR[$_];
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $ARR[$_] = ...;
+
+            ...
+
+            $PTR = $ARR;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $ARR[$_] = ...;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $ARR[] = ...;
+
+            ...
+
+            $PTR = $ARR;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $ARR[] = ...;
+
+            ...
+
+            '
+  - patterns:
+    - pattern: return &$VAR;
+    - pattern-either:
+      - patterns:
+        - pattern-inside: '$_ $VAR;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $VAR;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $VAR = ...;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $VAR = ...;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $VAR[$_];
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $VAR[$_];
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $VAR[$_] = ...;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $VAR[$_] = ...;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ $VAR[] = ...;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ $VAR[] = ...;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ * $VAR;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ * $VAR;
+
+            ...
+
+            '
+      - patterns:
+        - pattern-inside: '$_ * $VAR = ...;
+
+            ...
+
+            '
+        - pattern-not-inside: 'static $_ * $VAR = ...;
+
+            ...
+
+            '
+  severity: INFO

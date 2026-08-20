@@ -1,0 +1,12 @@
+rules:
+- id: '---'
+  languages:
+  - java
+  message: 目录穿越 - 文件读取使用用户输入（读穿越）
+  metadata:
+    compiled_at: '2026-08-19T15:46:19.186310'
+    safe_approach: ''
+    source_file: 目录穿越 - 文件读取使用用户输入（读穿越）
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

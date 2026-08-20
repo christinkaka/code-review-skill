@@ -1,0 +1,56 @@
+rules:
+- id: raptor-double-free
+  languages:
+  - c
+  - cpp
+  message: The software calls free() twice on the same memory address, potentially  leading
+    to memory corruption. This corruption can cause the program to  crash or cause
+    two later calls to malloc() to return the same pointer.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-415: Double Free'
+    impact: HIGH
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://github.com/struct/mms
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    - https://docs.microsoft.com/en-us/cpp/sanitizers/asan-error-examples
+    - https://dustri.org/b/playing-with-weggli.html
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  patterns:
+  - pattern: '$FREE1($PTR);
+
+      ...
+
+      $FREE2($PTR);
+
+      '
+  - pattern-not: '$FREE1($PTR);
+
+      ...
+
+      $PTR = ...;
+
+      ...
+
+      $FREE2($PTR);
+
+      '
+  - metavariable-pattern:
+      metavariable: $FREE1
+      pattern: free
+  - metavariable-pattern:
+      metavariable: $FREE2
+      pattern: free
+  - focus-metavariable: $FREE2
+  severity: ERROR

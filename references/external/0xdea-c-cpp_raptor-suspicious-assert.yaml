@@ -1,0 +1,37 @@
+rules:
+- id: raptor-suspicious-assert
+  languages:
+  - c
+  - cpp
+  message: Most codebases define assertion macros which compile to a no-op on non-debug
+    builds. If assertions are the only line of defense against untrusted input, the
+    software may be exposed to attacks that leverage the lack of proper input checks.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-754: Improper Check for Unusual or Exceptional Conditions'
+    impact: HIGH
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://legends2k.github.io/note/assert_vs_if/
+    - https://github.com/struct/mms
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Other Security
+  patterns:
+  - pattern-either:
+    - pattern: $ASSERT(..., <... $_ < $_ ...>, ...)
+    - pattern: $ASSERT(..., <... $_ <= $_ ...>, ...)
+    - pattern: $ASSERT(..., <... $_ > $_ ...>, ...)
+    - pattern: $ASSERT(..., <... $_ >= $_ ...>, ...)
+  - metavariable-regex:
+      metavariable: $ASSERT
+      regex: (?i)^\w*assert\w*\s*$
+  severity: WARNING

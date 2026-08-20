@@ -1,0 +1,325 @@
+{
+  "meta": {
+    "description": "测试代码库已知问题清单 - 用于验证代码评审工具的检出能力",
+    "version": "1.0.0",
+    "total_issues": 26,
+    "languages": ["java", "python", "typescript"],
+    "vulnerability_types": [
+      "xxe", "xss", "sqli", "path-traversal",
+      "command-injection", "ssrf"
+    ]
+  },
+  "java": [
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "column": 9,
+      "rule_id": "xxe-java-document-builder",
+      "severity": "ERROR",
+      "description": "DocumentBuilderFactory.newInstance() 未禁用外部实体（disallow-doctype-decl / external-general-entities），导致 XXE 漏洞",
+      "code_snippet": "DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();",
+      "remediation": "设置 factory.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true) 等安全特性"
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "column": 9,
+      "rule_id": "xxe-java-document-builder",
+      "severity": "ERROR",
+      "description": "第二个方法同样未禁用外部实体，存在 XXE 漏洞",
+      "code_snippet": "DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();",
+      "remediation": "设置 factory.setFeature() 禁用外部实体和 DTD"
+    },
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 28,
+      "column": 9,
+      "rule_id": "xss-java-servlet-output",
+      "severity": "ERROR",
+      "description": "Servlet doGet 方法将 request.getParameter() 获取的用户输入直接拼接到 HTML 响应中，未进行 HTML 编码，存在反射型 XSS 漏洞",
+      "code_snippet": "out.println(\"<h1>Welcome, \" + userName + \"</h1>\");",
+      "remediation": "对用户输入进行 HTML 实体编码后再输出，或使用模板引擎的自动转义功能"
+    },
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 42,
+      "column": 9,
+      "rule_id": "xss-java-servlet-output",
+      "severity": "ERROR",
+      "description": "Servlet doPost 方法将用户输入直接拼接到 HTML 响应中，存在反射型 XSS 漏洞",
+      "code_snippet": "out.println(\"<div class='comment'>\" + comment + \"</div>\");",
+      "remediation": "对用户输入进行 HTML 实体编码后再输出"
+    },
+    {
+      "file": "java/sqli/Vulnerable.java",
+      "line": 30,
+      "column": 9,
+      "rule_id": "sqli-java-statement-concat",
+      "severity": "ERROR",
+      "description": "使用字符串拼接将用户输入直接嵌入 SQL 语句，通过 Statement.executeQuery() 执行，存在 SQL 注入漏洞",
+      "code_snippet": "String sql = \"SELECT * FROM users WHERE name = '\" + userName + \"'\";",
+      "remediation": "使用 PreparedStatement 参数化查询替代字符串拼接"
+    },
+    {
+      "file": "java/sqli/Vulnerable.java",
+      "line": 42,
+      "column": 9,
+      "rule_id": "sqli-java-statement-concat",
+      "severity": "ERROR",
+      "description": "认证方法中将用户名和密码直接拼接到 SQL 语句中，存在 SQL 注入漏洞，可能导致认证绕过",
+      "code_snippet": "String sql = \"SELECT * FROM users WHERE username='\" + user + \"' AND password='\" + pass + \"'\";",
+      "remediation": "使用 PreparedStatement 参数化查询"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 27,
+      "column": 9,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "description": "直接使用用户输入的 fileName 参数构造文件路径，未校验路径穿越（如 ../），攻击者可读取系统任意文件",
+      "code_snippet": "File file = new File(BASE_DIR, fileName);",
+      "remediation": "使用 File.getCanonicalPath() 规范化路径后验证是否在允许的基目录内"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 36,
+      "column": 9,
+      "rule_id": "path-traversal-pattern",
+      "severity": "ERROR",
+      "description": "仅使用 replace(\"../\", \"\") 过滤路径穿越字符，可被 ..\\ 或 URL 编码的 ../ 绕过，属于不完整的过滤",
+      "code_snippet": "String sanitized = fileName.replace(\"../\", \"\");",
+      "remediation": "使用路径规范化（canonicalize）后验证前缀，而非简单的字符串替换"
+    }
+  ],
+  "python": [
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "column": 5,
+      "rule_id": "xxe-python-lxml-parser",
+      "severity": "ERROR",
+      "description": "lxml.etree.XMLParser() 使用默认配置，未禁用外部实体解析（resolve_entities 默认为 True），存在 XXE 漏洞",
+      "code_snippet": "parser = etree.XMLParser()",
+      "remediation": "设置 resolve_entities=False, no_network=True, dtd_validation=False, load_dtd=False"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "column": 5,
+      "rule_id": "xxe-python-lxml-parse",
+      "severity": "ERROR",
+      "description": "etree.parse() 未传入安全解析器，使用默认配置解析 XML 文件，存在 XXE 漏洞",
+      "code_snippet": "tree = etree.parse(file_path)",
+      "remediation": "创建禁用外部实体的 XMLParser 并传入 etree.parse(file_path, parser)"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "column": 5,
+      "rule_id": "xxe-python-lxml-resolve-entities",
+      "severity": "ERROR",
+      "description": "显式设置 resolve_entities=True，主动启用了外部实体解析，存在 XXE 漏洞",
+      "code_snippet": "parser = etree.XMLParser(resolve_entities=True)",
+      "remediation": "设置 resolve_entities=False"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 22,
+      "column": 5,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "description": "subprocess.run() 使用 shell=True 且命令字符串中拼接了用户输入，攻击者可注入任意系统命令",
+      "code_snippet": "result = subprocess.run(cmd, shell=True, capture_output=True, text=True)",
+      "remediation": "使用列表形式传递参数（shell=False），如 subprocess.run(['echo', user_input])"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 30,
+      "column": 5,
+      "rule_id": "priv-python-os-system",
+      "severity": "ERROR",
+      "description": "os.system() 总是通过 shell 执行命令，且命令中拼接了用户输入，存在命令注入漏洞",
+      "code_snippet": "return os.system(cmd)",
+      "remediation": "使用 subprocess.run() 配合参数列表替代 os.system()"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 37,
+      "column": 5,
+      "rule_id": "priv-python-subprocess-popen",
+      "severity": "ERROR",
+      "description": "subprocess.Popen() 使用 shell=True 且拼接用户输入，存在命令注入漏洞",
+      "code_snippet": "process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)",
+      "remediation": "使用列表形式传递参数（shell=False）"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 46,
+      "column": 5,
+      "rule_id": "priv-python-check-output-shell-true",
+      "severity": "ERROR",
+      "description": "subprocess.check_output() 使用 shell=True 且拼接用户输入，存在命令注入漏洞",
+      "code_snippet": "result = subprocess.check_output(cmd, shell=True, text=True)",
+      "remediation": "使用列表形式传递参数（shell=False）"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 23,
+      "column": 5,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "description": "os.path.join() 使用用户输入的 filename 构造文件路径，未校验路径穿越（如 ../），攻击者可读取系统任意文件",
+      "code_snippet": "filepath = os.path.join(BASE_DIR, filename)",
+      "remediation": "使用 os.path.realpath() 规范化路径后验证是否在允许的基目录内"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "column": 5,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "description": "仅使用 replace('../', '') 过滤路径穿越字符，可被 ..\\ 或 URL 编码绕过，属于不完整的过滤",
+      "code_snippet": "sanitized = filename.replace('../', '')",
+      "remediation": "使用 os.path.realpath() 规范化路径后验证前缀"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 40,
+      "column": 5,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "description": "写入文件时直接使用用户输入构造路径，未校验路径穿越，攻击者可写入系统任意文件",
+      "code_snippet": "filepath = os.path.join(BASE_DIR, filename)",
+      "remediation": "使用 os.path.realpath() 或 pathlib.Path.resolve() 验证路径"
+    }
+  ],
+  "typescript": [
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 21,
+      "column": 5,
+      "rule_id": "xss-js-innerhtml",
+      "severity": "ERROR",
+      "description": "将用户输入通过模板字符串直接赋值给 innerHTML，未进行 HTML 编码或消毒，存在 DOM 型 XSS 漏洞",
+      "code_snippet": "container.innerHTML = `<h1>Welcome, ${input}</h1>`;",
+      "remediation": "使用 textContent 替代 innerHTML，或使用 DOMPurify 进行 HTML 消毒"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 30,
+      "column": 3,
+      "rule_id": "xss-js-document-write",
+      "severity": "ERROR",
+      "description": "使用 document.write() 直接输出用户输入，未进行任何编码或消毒，存在 XSS 漏洞",
+      "code_snippet": "document.write(`<div class=\"comment\">${comment}</div>`);",
+      "remediation": "使用 DOM API（createElement + textContent）替代 document.write()"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 40,
+      "column": 5,
+      "rule_id": "xss-js-outerhtml",
+      "severity": "ERROR",
+      "description": "将用户输入直接赋值给 outerHTML，未进行消毒，存在 XSS 漏洞",
+      "code_snippet": "el.outerHTML = `<section>${userContent}</section>`;",
+      "remediation": "使用 DOM API 创建和替换元素"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 48,
+      "column": 5,
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "severity": "ERROR",
+      "description": "使用 dangerouslySetInnerHTML 直接设置用户输入，未进行消毒，存在 React XSS 漏洞",
+      "code_snippet": "dangerouslySetInnerHTML: { __html: userInput },",
+      "remediation": "使用 DOMPurify.sanitize() 对输入进行消毒后再设置"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 22,
+      "column": 3,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "ERROR",
+      "description": "fetch() 直接使用用户输入的 URL 发起请求，未校验目标地址，攻击者可让服务器访问内网资源（如 http://169.254.169.254/）",
+      "code_snippet": "const response = await fetch(url);",
+      "remediation": "使用域名白名单校验 URL，并验证 DNS 解析结果不指向内网 IP"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 31,
+      "column": 3,
+      "rule_id": "ssrf-js-http-get",
+      "severity": "ERROR",
+      "description": "http.get() 直接使用用户输入的 URL 发起请求，存在 SSRF 漏洞",
+      "code_snippet": "http.get(targetUrl, (res) => {",
+      "remediation": "使用域名白名单校验 URL"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 44,
+      "column": 3,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "ERROR",
+      "description": "fetch() 直接使用用户输入的 URL 发起请求，存在 SSRF 漏洞",
+      "code_snippet": "const response = await fetch(apiUrl, {",
+      "remediation": "使用域名白名单校验 URL"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 59,
+      "column": 3,
+      "rule_id": "ssrf-js-fetch-weak-filter",
+      "severity": "ERROR",
+      "description": "仅使用 includes('localhost') 进行简单字符串过滤，可被 127.0.0.1、0.0.0.0、[::1] 等绕过，属于不完整的过滤",
+      "code_snippet": "return await fetch(url);",
+      "remediation": "使用 URL 解析 + 域名白名单 + DNS 解析校验的组合防护"
+    }
+  ],
+  "safe_files": [
+    {
+      "file": "java/xxe/Safe.java",
+      "expected_issues": 0,
+      "description": "已设置 disallow-doctype-decl、external-general-entities、external-parameter-entities 等安全特性"
+    },
+    {
+      "file": "java/xss/Safe.java",
+      "expected_issues": 0,
+      "description": "使用自定义 encodeHtml() 方法对用户输入进行 HTML 实体编码后再输出"
+    },
+    {
+      "file": "java/sqli/Safe.java",
+      "expected_issues": 0,
+      "description": "使用 PreparedStatement 参数化查询，用户输入作为参数绑定"
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "expected_issues": 0,
+      "description": "使用 File.getCanonicalPath() 和 Path.normalize() 规范化路径后验证是否在基目录内"
+    },
+    {
+      "file": "python/xxe/safe.py",
+      "expected_issues": 0,
+      "description": "使用 resolve_entities=False、no_network=True 等参数配置安全解析器，或使用 defusedxml 库"
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "expected_issues": 0,
+      "description": "使用列表形式传递参数（shell=False），或使用 shlex.quote() 进行转义"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "expected_issues": 0,
+      "description": "使用 os.path.realpath() 和 pathlib.Path.resolve() 规范化路径后验证是否在基目录内"
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "expected_issues": 0,
+      "description": "使用 textContent 替代 innerHTML，使用 DOM API 创建元素，或使用 encodeHtml() 编码后再输出"
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "expected_issues": 0,
+      "description": "使用域名白名单校验 URL，验证协议为 HTTPS，并进行 DNS 解析后校验 IP 不为内网地址"
+    }
+  ]
+}

@@ -1,0 +1,714 @@
+{
+  "scan_info": {
+    "timestamp": "2026-07-28T16:24:48",
+    "engine": "dual",
+    "engine_detail": {
+      "builtin_available": true,
+      "semgrep_available": true,
+      "semgrep_version": "1.171.0",
+      "rules_loaded": 83,
+      "rules_with_errors": 25
+    },
+    "repo": "test-validation/",
+    "profile": "default",
+    "file_count": 18,
+    "issue_count": 48,
+    "scan_duration_seconds": 1.8
+  },
+  "stats": {
+    "total": 48,
+    "builtin": 10,
+    "semgrep": 43,
+    "both_engines": 3,
+    "builtin_only": 5,
+    "semgrep_only": 40
+  },
+  "issues": [
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 24,
+      "end_line": 24,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      22 |      */\n      23 |     public InputStream readFile(String fileName) throws IOException {\n>>>   24 |         File baseDir = new File(BASE_DIR).getCanonicalFile();\n      25 |         File file = new File(baseDir, fileName);\n      26 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 25,
+      "end_line": 25,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "category": "security",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "      23 |     public InputStream readFile(String fileName) throws IOException {\n      24 |         File baseDir = new File(BASE_DIR).getCanonicalFile();\n>>>   25 |         File file = new File(baseDir, fileName);\n      26 | \n      27 |         // 安全：规范化后检查路径是否在基目录内",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 32,
+      "end_line": 32,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      30 |         }\n      31 | \n>>>   32 |         return new FileInputStream(file);\n      33 |     }\n      34 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 47,
+      "end_line": 47,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      45 |         }\n      46 | \n>>>   47 |         return new FileInputStream(filePath.toFile());\n      48 |     }\n      49 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 11,
+      "end_line": 15,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "       9 |  * 问题说明：\n      10 |  * 直接使用用户输入的文件名构造文件路径，未做任何校验，\n>>>   11 |  * 攻击者可以通过 \"../\" 等路径遍历字符访问系统任意文件。\n      12 |  *\n      13 |  * 预期检出：",
+      "engine": "builtin",
+      "engines": [
+        "builtin"
+      ],
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 26,
+      "end_line": 30,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "      24 |      */\n      25 |     public InputStream readFile(String fileName) throws IOException {\n>>>   26 |         // 漏洞：直接拼接用户输入，未过滤 \"../\" 等路径穿越字符\n      27 |         File file = new File(BASE_DIR, fileName);  // 第 24 行 - 路径穿越漏洞点\n      28 |         return new FileInputStream(file);",
+      "engine": "builtin",
+      "engines": [
+        "builtin"
+      ],
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 27,
+      "end_line": 27,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "category": "security",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "      25 |     public InputStream readFile(String fileName) throws IOException {\n      26 |         // 漏洞：直接拼接用户输入，未过滤 \"../\" 等路径穿越字符\n>>>   27 |         File file = new File(BASE_DIR, fileName);  // 第 24 行 - 路径穿越漏洞点\n      28 |         return new FileInputStream(file);\n      29 |     }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 28,
+      "end_line": 28,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      26 |         // 漏洞：直接拼接用户输入，未过滤 \"../\" 等路径穿越字符\n      27 |         File file = new File(BASE_DIR, fileName);  // 第 24 行 - 路径穿越漏洞点\n>>>   28 |         return new FileInputStream(file);\n      29 |     }\n      30 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 35,
+      "end_line": 39,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "      33 |      */\n      34 |     public InputStream readFileWeakFilter(String fileName) throws IOException {\n>>>   35 |         // 漏洞：仅过滤 \"../\" 但不过滤 \"..\\\" 或 URL 编码的 \"../\"\n      36 |         String sanitized = fileName.replace(\"../\", \"\");  // 第 32 行 - 不完整的过滤\n      37 |         File file = new File(BASE_DIR, sanitized);  // 第 33 行 - 仍可被绕过",
+      "engine": "builtin",
+      "engines": [
+        "builtin"
+      ],
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 36,
+      "end_line": 40,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "      34 |     public InputStream readFileWeakFilter(String fileName) throws IOException {\n      35 |         // 漏洞：仅过滤 \"../\" 但不过滤 \"..\\\" 或 URL 编码的 \"../\"\n>>>   36 |         String sanitized = fileName.replace(\"../\", \"\");  // 第 32 行 - 不完整的过滤\n      37 |         File file = new File(BASE_DIR, sanitized);  // 第 33 行 - 仍可被绕过\n      38 |         return new FileInputStream(file);",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0,
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 37,
+      "end_line": 37,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "category": "security",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "      35 |         // 漏洞：仅过滤 \"../\" 但不过滤 \"..\\\" 或 URL 编码的 \"../\"\n      36 |         String sanitized = fileName.replace(\"../\", \"\");  // 第 32 行 - 不完整的过滤\n>>>   37 |         File file = new File(BASE_DIR, sanitized);  // 第 33 行 - 仍可被绕过\n      38 |         return new FileInputStream(file);\n      39 |     }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 38,
+      "end_line": 38,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      36 |         String sanitized = fileName.replace(\"../\", \"\");  // 第 32 行 - 不完整的过滤\n      37 |         File file = new File(BASE_DIR, sanitized);  // 第 33 行 - 仍可被绕过\n>>>   38 |         return new FileInputStream(file);\n      39 |     }\n      40 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "end_line": 23,
+      "rule_id": "xxe-java-document-builder",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "XML 解析器未禁用外部实体，攻击者可通过构造恶意 XML 读取服务器文件或发起 SSRF 攻击。",
+      "code_snippet": "      20 |     public Document parseXml(InputStream input) throws Exception {\n      21 |         // 漏洞：未禁用外部实体，直接创建解析器\n>>>   22 |         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();\n      23 |         DocumentBuilder builder = factory.newDocumentBuilder();\n      24 |         return builder.parse(input);  // 第 23 行 - XXE 漏洞点",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "end_line": 24,
+      "rule_id": "xxe-java-document-builder-usage",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "      20 |     public Document parseXml(InputStream input) throws Exception {\n      21 |         // 漏洞：未禁用外部实体，直接创建解析器\n>>>   22 |         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();\n      23 |         DocumentBuilder builder = factory.newDocumentBuilder();\n      24 |         return builder.parse(input);  // 第 23 行 - XXE 漏洞点",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "end_line": 30,
+      "rule_id": "xxe-java-document-builder",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "XML 解析器未禁用外部实体，攻击者可通过构造恶意 XML 读取服务器文件或发起 SSRF 攻击。",
+      "code_snippet": "      27 |     public Document parseXmlFromFile(String filePath) throws Exception {\n      28 |         // 漏洞：同样未禁用外部实体\n>>>   29 |         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();\n      30 |         DocumentBuilder builder = factory.newDocumentBuilder();\n      31 |         return builder.parse(new java.io.File(filePath));  // 第 29 行 - XXE 漏洞点",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "end_line": 31,
+      "rule_id": "xxe-java-document-builder-usage",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "      27 |     public Document parseXmlFromFile(String filePath) throws Exception {\n      28 |         // 漏洞：同样未禁用外部实体\n>>>   29 |         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();\n      30 |         DocumentBuilder builder = factory.newDocumentBuilder();\n      31 |         return builder.parse(new java.io.File(filePath));  // 第 29 行 - XXE 漏洞点",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 18,
+      "end_line": 22,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "      16 |     \"\"\"安全：使用列表形式传递参数，避免 shell=True\"\"\"\n      17 |     # 安全：shell=False（默认值），参数以列表形式传递\n>>>   18 |     result = subprocess.run(\n      19 |         [\"echo\", user_input],\n      20 |         capture_output=True,",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 30,
+      "end_line": 35,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "      28 |     # 安全：shlex.quote 对用户输入进行 shell 转义\n      29 |     safe_input = shlex.quote(user_input)\n>>>   30 |     result = subprocess.run(\n      31 |         f\"echo {safe_input}\",\n      32 |         shell=True,",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 42,
+      "end_line": 46,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "      40 |     \"\"\"安全：使用列表形式传递 find 命令参数\"\"\"\n      41 |     # 安全：参数列表传递，不使用 shell\n>>>   42 |     result = subprocess.run(\n      43 |         [\"find\", \"/var/log\", \"-name\", search_term],\n      44 |         capture_output=True,",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "end_line": 56,
+      "rule_id": "priv-python-subprocess-popen",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "subprocess.Popen() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "      51 |     \"\"\"安全：使用列表形式传递 grep 命令参数\"\"\"\n      52 |     # 安全：参数列表传递，不使用 shell\n>>>   53 |     process = subprocess.Popen(\n      54 |         [\"grep\", \"-r\", pattern, \"/var/log/\"],\n      55 |         stdout=subprocess.PIPE,",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 22,
+      "end_line": 22,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "      20 |     # 漏洞：shell=True 且拼接用户输入，可执行任意命令\n      21 |     cmd = f\"echo {user_input}\"\n>>>   22 |     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)  # 第 19 行 - 命令注入漏洞点\n      23 |     return result.stdout\n      24 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 30,
+      "end_line": 34,
+      "rule_id": "priv-python-os-system",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "os.system() 执行用户可控命令，存在命令注入风险。",
+      "code_snippet": "      28 |     # 漏洞：os.system 总是通过 shell 执行\n      29 |     cmd = f\"cat /tmp/{filename}\"\n>>>   30 |     return os.system(cmd)  # 第 27 行 - 命令注入漏洞点\n      31 | \n      32 | ",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0,
+      "cwe": "CWE-78"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 37,
+      "end_line": 37,
+      "rule_id": "priv-python-subprocess-popen",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "subprocess.Popen() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "      35 |     # 漏洞：Popen 配合 shell=True 同样危险\n      36 |     cmd = f\"grep -r '{user_input}' /var/log/\"\n>>>   37 |     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)  # 第 35 行 - 命令注入漏洞点\n      38 |     stdout, _ = process.communicate()\n      39 |     return stdout.decode()",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "end_line": 26,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      24 |         raise ValueError(f\"Path traversal detected: {filename}\")\n      25 | \n>>>   26 |     with open(filepath, \"r\") as f:\n      27 |         return f.read()\n      28 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "end_line": 26,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      24 |         raise ValueError(f\"Path traversal detected: {filename}\")\n      25 | \n>>>   26 |     with open(filepath, \"r\") as f:\n      27 |         return f.read()\n      28 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "end_line": 39,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      37 |         raise ValueError(f\"Path traversal detected: {filename}\")\n      38 | \n>>>   39 |     with open(filepath, \"r\") as f:\n      40 |         return f.read()\n      41 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "end_line": 39,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      37 |         raise ValueError(f\"Path traversal detected: {filename}\")\n      38 | \n>>>   39 |     with open(filepath, \"r\") as f:\n      40 |         return f.read()\n      41 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "end_line": 52,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      50 |         raise ValueError(f\"Path traversal detected: {filename}\")\n      51 | \n>>>   52 |     with open(filepath, \"w\") as f:\n      53 |         f.write(content)",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "end_line": 52,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "category": "security",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "      50 |         raise ValueError(f\"Path traversal detected: {filename}\")\n      51 | \n>>>   52 |     with open(filepath, \"w\") as f:\n      53 |         f.write(content)",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 6,
+      "end_line": 10,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "       4 | 问题说明：\n       5 | 直接使用用户输入构造文件路径，未做任何校验，\n>>>    6 | 攻击者可以通过 \"../\" 等路径遍历字符访问系统任意文件。\n       7 | \n       8 | 预期检出：",
+      "engine": "builtin",
+      "engines": [
+        "builtin"
+      ],
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 23,
+      "end_line": 23,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      21 |     # 漏洞：直接拼接用户输入，未校验路径穿越\n      22 |     filepath = os.path.join(BASE_DIR, filename)  # 第 19 行 - 路径穿越漏洞点\n>>>   23 |     with open(filepath, \"r\") as f:  # 第 20 行 - 打开未校验的文件\n      24 |         return f.read()\n      25 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 23,
+      "end_line": 23,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      21 |     # 漏洞：直接拼接用户输入，未校验路径穿越\n      22 |     filepath = os.path.join(BASE_DIR, filename)  # 第 19 行 - 路径穿越漏洞点\n>>>   23 |     with open(filepath, \"r\") as f:  # 第 20 行 - 打开未校验的文件\n      24 |         return f.read()\n      25 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 29,
+      "end_line": 33,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "      27 | def read_file_weak_filter(filename: str) -> str:\n      28 |     \"\"\"漏洞：仅简单替换 '../'，可被绕过\"\"\"\n>>>   29 |     # 漏洞：仅过滤 \"../\"，不过滤 \"..\\\\\" 或 URL 编码\n      30 |     sanitized = filename.replace(\"../\", \"\")  # 第 28 行 - 不完整的过滤\n      31 |     filepath = os.path.join(BASE_DIR, sanitized)  # 第 29 行 - 仍可被绕过",
+      "engine": "builtin",
+      "engines": [
+        "builtin"
+      ],
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 30,
+      "end_line": 34,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "      28 |     \"\"\"漏洞：仅简单替换 '../'，可被绕过\"\"\"\n      29 |     # 漏洞：仅过滤 \"../\"，不过滤 \"..\\\\\" 或 URL 编码\n>>>   30 |     sanitized = filename.replace(\"../\", \"\")  # 第 28 行 - 不完整的过滤\n      31 |     filepath = os.path.join(BASE_DIR, sanitized)  # 第 29 行 - 仍可被绕过\n      32 |     with open(filepath, \"r\") as f:",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0,
+      "cwe": "CWE-22"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "end_line": 32,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "category": "security",
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "      30 |     sanitized = filename.replace(\"../\", \"\")  # 第 28 行 - 不完整的过滤\n      31 |     filepath = os.path.join(BASE_DIR, sanitized)  # 第 29 行 - 仍可被绕过\n>>>   32 |     with open(filepath, \"r\") as f:\n      33 |         return f.read()\n      34 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "end_line": 32,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      30 |     sanitized = filename.replace(\"../\", \"\")  # 第 28 行 - 不完整的过滤\n      31 |     filepath = os.path.join(BASE_DIR, sanitized)  # 第 29 行 - 仍可被绕过\n>>>   32 |     with open(filepath, \"r\") as f:\n      33 |         return f.read()\n      34 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 40,
+      "end_line": 40,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "      38 |     # 漏洞：直接拼接用户输入写文件\n      39 |     filepath = os.path.join(BASE_DIR, filename)  # 第 37 行 - 路径穿越漏洞点\n>>>   40 |     with open(filepath, \"w\") as f:\n      41 |         f.write(content)",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 40,
+      "end_line": 40,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "category": "security",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "      38 |     # 漏洞：直接拼接用户输入写文件\n      39 |     filepath = os.path.join(BASE_DIR, filename)  # 第 37 行 - 路径穿越漏洞点\n>>>   40 |     with open(filepath, \"w\") as f:\n      41 |         f.write(content)",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "end_line": 29,
+      "rule_id": "xxe-python-lxml",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "lxml.etree.parse() 默认可能解析外部实体，建议使用 defusedxml 替代。",
+      "code_snippet": "      12 | \"\"\"\n      13 | \n>>>   14 | from lxml import etree\n      15 | \n      16 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "line": 40,
+      "end_line": 40,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "      38 |   }\n      39 | \n>>>   40 |   const response = await fetch(url);\n      41 |   return response;\n      42 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "line": 82,
+      "end_line": 82,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "      80 |   }\n      81 | \n>>>   82 |   await fetch(targetUrl);\n      83 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 22,
+      "end_line": 22,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "      20 | async function fetchUserData(url: string): Promise<Response> {\n      21 |   // 漏洞：直接使用用户输入的 URL 发起请求，未校验目标地址\n>>>   22 |   const response = await fetch(url); // 第 22 行 - SSRF 漏洞点\n      23 |   return response;\n      24 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 44,
+      "end_line": 47,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "      42 | async function fetchData(apiUrl: string): Promise<unknown> {\n      43 |   // 漏洞：直接使用用户输入的 URL\n>>>   44 |   const response = await fetch(apiUrl, { // 第 44 行 - SSRF 漏洞点\n      45 |     method: \"GET\",\n      46 |     headers: { \"Content-Type\": \"application/json\" },",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 59,
+      "end_line": 59,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "category": "security",
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "      57 |     throw new Error(\"Blocked\");\n      58 |   }\n>>>   59 |   return await fetch(url); // 第 59 行 - SSRF 漏洞点（不完整的过滤）\n      60 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "line": 20,
+      "end_line": 20,
+      "rule_id": "xss-js-innerhtml",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "      18 |     const heading = document.createElement(\"h1\");\n      19 |     heading.textContent = `Welcome, ${input}`;\n>>>   20 |     container.innerHTML = \"\";\n      21 |     container.appendChild(heading);\n      22 |   }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "line": 68,
+      "end_line": 68,
+      "rule_id": "xss-js-innerhtml",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "      66 |   if (container) {\n      67 |     // 安全：先编码再赋值 innerHTML\n>>>   68 |     container.innerHTML = `<h1>Welcome, ${encodeHtml(input)}</h1>`;\n      69 |   }\n      70 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 21,
+      "end_line": 21,
+      "rule_id": "xss-js-innerhtml",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "      19 |   if (container) {\n      20 |     // 漏洞：直接将用户输入赋值给 innerHTML，未进行消毒\n>>>   21 |     container.innerHTML = `<h1>Welcome, ${input}</h1>`; // 第 21 行 - XSS 漏洞点\n      22 |   }\n      23 | }",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 30,
+      "end_line": 30,
+      "rule_id": "xss-js-document-write",
+      "severity": "ERROR",
+      "category": "security",
+      "message": "document.write() 直接写入用户输入，存在 XSS 风险。",
+      "code_snippet": "      28 | function renderComment(comment: string): void {\n      29 |   // 漏洞：document.write 直接输出用户输入\n>>>   30 |   document.write(`<div class=\"comment\">${comment}</div>`); // 第 30 行 - XSS 漏洞点\n      31 | }\n      32 | ",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    }
+  ]
+}

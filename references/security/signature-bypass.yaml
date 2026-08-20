@@ -1,0 +1,141 @@
+# 安全规约 - 签名绕过
+# CWE-345: Insufficient Verification of Data Authenticity
+# CWE-347: Improper Verification of Cryptographic Signature
+
+rules:
+  - id: sig-java-weak-algorithm
+    languages: [java]
+    pattern: |
+      Signature.getInstance("MD5withRSA")
+    message: "[签名绕过] 使用 MD5withRSA 签名算法，MD5 已被证明不安全。使用 SHA256withRSA 替代。"
+    severity: ERROR
+    category: security
+    fix: 'Signature.getInstance("SHA256withRSA")'
+    metadata:
+      cwe: CWE-328
+
+  - id: sig-java-verify-skip
+    languages: [java]
+    patterns:
+      - pattern: |
+          Signature $SIG = ...;
+          ...
+          $SIG.initVerify(...);
+          ...
+          $SIG.update(...);
+      - pattern-not: |
+          Signature $SIG = ...;
+          ...
+          $SIG.initVerify(...);
+          ...
+          $SIG.update(...);
+          ...
+          if (!$SIG.verify(...)) { ... }
+    message: "[签名绕过] 签名验证流程不完整，缺少 verify() 调用或结果检查。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-345
+
+  - id: sig-bypass-version-skip
+    languages: [java]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              if ($VAR == 1) {
+                ...
+              }
+          - pattern: |
+              if ($VAR < 2) {
+                ...
+              }
+          - pattern: |
+              if ($VAR <= 1) {
+                ...
+              }
+          - pattern: |
+              if ($VAR != 2) {
+                ...
+              }
+      - pattern-not: |
+          if ($VAR == 1) {
+            ...
+            verifySignature(...);
+            ...
+          }
+      - pattern-not: |
+          if ($VAR < 2) {
+            ...
+            verifySignature(...);
+            ...
+          }
+      - pattern-not: |
+          if ($VAR < 2) {
+            ...
+            checkHeaderSign(...);
+            ...
+          }
+    message: >
+      [签名绕过] 基于协议版本的条件分支可能跳过签名验证。
+      低版本路径（如 V1）跳过签名校验，攻击者可伪造请求。
+      确保所有协议版本都经过签名验证。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-345
+      confidence: MEDIUM
+
+  - id: sig-bypass-version-check-regex
+    languages: [java]
+    pattern-regex: "if\\s*\\(\\s*\\w*[Vv]ersion\\w*\\s*[<>=!]+\\s*\\d+\\s*\\)\\s*\\{"
+    message: >
+      [签名绕过] 版本检查条件分支可能跳过签名验证，请确认所有版本路径都包含签名校验。
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-345
+      confidence: LOW
+
+  - id: sig-java-hardcoded-key
+    languages: [java]
+    pattern: |
+      SecretKeySpec $KEY = new SecretKeySpec("...".getBytes(), ...);
+    message: "[签名绕过] 签名密钥硬编码在源码中，存在密钥泄露风险。使用密钥管理服务（KMS）。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-798
+
+  - id: sig-python-verify-false
+    languages: [python]
+    pattern: |
+      $VERIFIER.verify(..., verify=False)
+    message: "[签名绕过] 签名验证被显式禁用（verify=False），存在伪造风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-345
+
+  - id: sig-python-weak-hash
+    languages: [python]
+    pattern: |
+      hashlib.md5(...)
+    message: "[签名绕过] 使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。使用 SHA-256 替代。"
+    severity: WARNING
+    category: security
+    fix: "hashlib.sha256(...)"
+    metadata:
+      cwe: CWE-328
+
+  - id: sig-python-no-timestamp
+    languages: [python]
+    patterns:
+      - pattern: |
+          jwt.decode($TOKEN, $KEY, algorithms=[...])
+      - pattern-not: |
+          jwt.decode($TOKEN, $KEY, algorithms=[...], options={"require": ["exp", "iat"]})
+    message: "[签名绕过] JWT 解码未强制要求 exp/iat 字段，可能接受过期或无时间戳的 token。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-345

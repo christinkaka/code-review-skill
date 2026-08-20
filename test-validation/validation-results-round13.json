@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "round": 13,
+    "date": "2026-07-28",
+    "engine": "dual-engine (builtin + semgrep)",
+    "test_repo": "test-validation/",
+    "total_known_issues": 26,
+    "total_safe_files": 9
+  },
+  "scan_stats": {
+    "total_findings": 44,
+    "builtin_engine": 44,
+    "semgrep_engine": 44,
+    "both_engines": 44,
+    "builtin_only": 0,
+    "semgrep_only": 0
+  },
+  "metrics": {
+    "true_positives": 23,
+    "false_positives": 21,
+    "false_negatives": 3,
+    "recall": 88.5,
+    "recall_detail": "23/26",
+    "precision": 52.3,
+    "precision_detail": "23/44",
+    "false_positive_rate": 47.7,
+    "false_positive_rate_detail": "21/44",
+    "false_negative_rate": 11.5,
+    "false_negative_rate_detail": "3/26",
+    "f1_score": 65.7
+  },
+  "baseline_comparison": {
+    "round_12": {
+      "recall": 88.5,
+      "precision": 45.1,
+      "f1_score": 59.7,
+      "total_findings": 51
+    },
+    "round_13": {
+      "recall": 88.5,
+      "precision": 52.3,
+      "f1_score": 65.7,
+      "total_findings": 44
+    },
+    "target": {
+      "recall": 95.0,
+      "precision": 70.0,
+      "f1_score": 80.0
+    },
+    "delta": {
+      "recall": 0.0,
+      "precision": 7.2,
+      "f1_score": 6.0
+    },
+    "all_targets_met": false
+  },
+  "detection_by_category": {
+    "command-injection": {"total": 4, "detected": 4, "recall": 100.0},
+    "path-traversal": {"total": 5, "detected": 5, "recall": 100.0},
+    "sqli": {"total": 2, "detected": 2, "recall": 100.0},
+    "ssrf": {"total": 4, "detected": 4, "recall": 100.0},
+    "xxe": {"total": 5, "detected": 5, "recall": 100.0},
+    "xss": {"total": 6, "detected": 3, "recall": 50.0}
+  },
+  "false_positives_by_category": {
+    "path-traversal": 10,
+    "naming": 2,
+    "command-injection": 2,
+    "null-safety": 2,
+    "ssrf": 2,
+    "xss": 2,
+    "xxe": 1
+  },
+  "safe_file_results": {
+    "clean": [
+      "java/xxe/Safe.java",
+      "java/xss/Safe.java",
+      "java/sqli/Safe.java",
+      "python/xxe/safe.py"
+    ],
+    "with_false_positives": {
+      "java/path-traversal/Safe.java": 4,
+      "python/command-injection/safe.py": 3,
+      "python/path-traversal/safe.py": 3,
+      "typescript/xss/safe.ts": 2,
+      "typescript/ssrf/safe.ts": 2
+    },
+    "clean_rate": "4/9 (44.4%)"
+  },
+  "false_negatives": [
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 30,
+      "rule_id": "xss-java-servlet-output",
+      "reason": "缺少 Java Servlet XSS 检出规则"
+    },
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 44,
+      "rule_id": "xss-java-servlet-output",
+      "reason": "缺少 Java Servlet XSS 检出规则"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 50,
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "reason": "缺少 React dangerouslySetInnerHTML 检出规则"
+    }
+  ],
+  "top_issues": [
+    "path-traversal 规则过度泛化，贡献 47.6% 误报（10/21）",
+    "缺少 xss-java-servlet-output 规则，导致 2 个漏报",
+    "缺少 xss-js-dangerouslysetinnerhtml 规则，导致 1 个漏报",
+    "非安全规则（naming、null-safety）混入安全扫描，贡献 4 个误报",
+    "5/9 安全文件被误报，安全文件误报率 55.6%"
+  ]
+}

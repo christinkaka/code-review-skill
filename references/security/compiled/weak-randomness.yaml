@@ -1,0 +1,12 @@
+rules:
+- id: javautilrandom
+  languages:
+  - java
+  message: 弱随机数 - 使用 java.util.Random
+  metadata:
+    compiled_at: '2026-08-19T15:59:19.882308'
+    safe_approach: ''
+    source_file: 弱随机数 - 使用 java.util.Random
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

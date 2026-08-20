@@ -1,0 +1,12 @@
+rules:
+- id: '---'
+  languages:
+  - java
+  message: 日志注入 - 用户输入直接写入日志
+  metadata:
+    compiled_at: '2026-08-19T15:46:19.187025'
+    safe_approach: ''
+    source_file: 日志注入 - 用户输入直接写入日志
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

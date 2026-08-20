@@ -1,0 +1,46 @@
+rules:
+- id: raptor-use-after-free
+  languages:
+  - c
+  - cpp
+  message: The use of previously-freed memory can have any number of adverse consequences,
+    ranging from the corruption of valid data to the execution of arbitrary code,
+    depending on the instantiation and timing of the flaw. The simplest way data corruption
+    may occur involves the system's reuse of the freed memory.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-416: Use After Free'
+    impact: HIGH
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://github.com/struct/mms
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    - https://docs.microsoft.com/en-us/cpp/sanitizers/asan-error-examples
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  patterns:
+  - pattern-either:
+    - pattern: $PTR->$_
+    - pattern: $PTR[$_]
+    - pattern: (*$PTR)
+    - pattern: return $PTR;
+    - patterns:
+      - pattern-either:
+        - pattern: $FUN(..., <... $PTR ...>, ...)
+        - pattern: $PTR->$FUN(...)
+      - metavariable-pattern:
+          metavariable: $FUN
+          patterns:
+          - pattern-not: free
+  - pattern-inside: free($PTR); ...
+  - pattern-not-inside: "free($PTR);\n...\n$PTR = ...; \n...\n"
+  severity: ERROR

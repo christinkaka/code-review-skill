@@ -1,0 +1,12 @@
+rules:
+- id: xss---servlet-
+  languages:
+  - java
+  message: XSS - Servlet 响应直接写入用户输入
+  metadata:
+    compiled_at: '2026-08-19T15:46:19.187684'
+    safe_approach: ''
+    source_file: XSS - Servlet 响应直接写入用户输入
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

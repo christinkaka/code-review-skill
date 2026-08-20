@@ -1,0 +1,111 @@
+rules:
+- id: raptor-incorrect-use-of-free
+  languages:
+  - c
+  - cpp
+  message: The software calls free() on a pointer to memory that has a short  lifetime
+    and was not allocated using associated heap allocation  functions such as malloc(),
+    calloc(), or realloc().
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-590: Free of Memory not on the Heap'
+    impact: HIGH
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://github.com/shellphish/how2heap/blob/master/glibc_2.23/house_of_spirit.c
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  pattern-either:
+  - patterns:
+    - pattern: free($PTR)
+    - pattern-either:
+      - pattern-inside: '$_ $PTR[$_];
+
+          ...
+
+          '
+      - pattern-inside: '$_ $PTR[$_] = ...;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $PTR[] = ...;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $ARR[$_];
+
+          ...
+
+          $PTR = $ARR;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $ARR[$_] = ...;
+
+          ...
+
+          $PTR = $ARR;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $ARR[] = ...;
+
+          ...
+
+          $PTR = $ARR;
+
+          ...
+
+          '
+  - patterns:
+    - pattern: free(&$VAR)
+    - pattern-either:
+      - pattern-inside: '$_ $VAR;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $VAR = ...;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $VAR[$_];
+
+          ...
+
+          '
+      - pattern-inside: '$_ $VAR[$_] = ...;
+
+          ...
+
+          '
+      - pattern-inside: '$_ $VAR[] = ...;
+
+          ...
+
+          '
+      - pattern-inside: '$_ * $VAR;
+
+          ...
+
+          '
+      - pattern-inside: '$_ * $VAR = ...;
+
+          ...
+
+          '
+  severity: ERROR

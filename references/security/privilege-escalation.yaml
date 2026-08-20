@@ -1,0 +1,149 @@
+# 安全规约 - 提权漏洞
+# CWE-250: Execution with Unnecessary Privileges
+# CWE-269: Improper Privilege Management
+
+rules:
+  - id: priv-java-runtime-exec
+    languages: [java]
+    pattern: |
+      Runtime.getRuntime().exec($USER_INPUT)
+    message: >
+      [提权] Runtime.exec() 执行用户可控命令，存在命令注入和提权风险。
+      避免直接执行用户输入，使用白名单命令。
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-78
+      owasp: "A03:2021"
+
+  - id: priv-java-process-builder
+    languages: [java]
+    pattern: |
+      new ProcessBuilder($USER_INPUT).start()
+    message: "[提权] ProcessBuilder 使用用户输入，存在命令注入风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-os-system
+    languages: [python]
+    pattern: |
+      os.system($USER_INPUT)
+    message: "[提权] os.system() 执行用户可控命令，存在命令注入风险。使用 subprocess 并设置 shell=False。"
+    severity: ERROR
+    category: security
+    fix: "subprocess.run([cmd, arg1, arg2], shell=False, check=True)"
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-eval
+    languages: [python]
+    pattern: |
+      eval($USER_INPUT)
+    message: "[提权] eval() 执行用户可控代码，存在任意代码执行风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-95
+
+  - id: priv-python-exec
+    languages: [python]
+    pattern: |
+      exec($USER_INPUT)
+    message: "[提权] exec() 执行用户可控代码，存在任意代码执行风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-95
+
+  - id: priv-python-subprocess-shell
+    languages: [python]
+    pattern: |
+      subprocess.call($CMD, shell=True)
+    message: "[提权] subprocess 使用 shell=True 执行命令，存在命令注入风险。设置 shell=False。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-subprocess-run
+    languages: [python]
+    patterns:
+      - pattern: |
+          subprocess.run($CMD, shell=True, ...)
+      - pattern-not: |
+          subprocess.run([$CMD, ...], shell=False, ...)
+      - pattern-not: |
+          shlex.quote($ARG)
+    message: >
+      [提权] subprocess.run() 使用 shell=True 执行命令，存在命令注入风险。
+      使用显式参数列表并设置 shell=False。
+    severity: ERROR
+    category: security
+    fix: "subprocess.run([cmd, arg1, arg2], shell=False, check=True)"
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-subprocess-popen
+    languages: [python]
+    patterns:
+      - pattern: |
+          subprocess.Popen($CMD, ...)
+      - pattern-not: |
+          subprocess.Popen([$ARG, ...], ...)
+      - metavariable-regex:
+          metavariable: $CMD
+          regex: (?!.*shlex\.quote).*
+    message: >
+      [提权] subprocess.Popen() 使用用户输入，存在命令注入风险。
+      使用显式参数列表并设置 shell=False。
+    severity: ERROR
+    category: security
+    fix: "subprocess.Popen([cmd, arg1, arg2], shell=False)"
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-subprocess-shell-true
+    languages: [python]
+    pattern: |
+      subprocess.run($CMD, shell=True, ...)
+    message: "[提权] subprocess.run() 使用 shell=True 执行命令，存在命令注入风险。使用列表形式传递参数并设置 shell=False。"
+    severity: ERROR
+    category: security
+    fix: "subprocess.run([cmd, arg1, arg2], shell=False, check=True)"
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-popen-shell-true
+    languages: [python]
+    pattern: |
+      subprocess.Popen($CMD, shell=True, ...)
+    message: "[提权] subprocess.Popen() 使用 shell=True 执行命令，存在命令注入风险。使用列表形式传递参数并设置 shell=False。"
+    severity: ERROR
+    category: security
+    fix: "subprocess.Popen([cmd, arg1, arg2], shell=False)"
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-python-check-output-shell-true
+    languages: [python]
+    pattern: |
+      subprocess.check_output($CMD, shell=True, ...)
+    message: "[提权] subprocess.check_output() 使用 shell=True 执行命令，存在命令注入风险。使用列表形式传递参数并设置 shell=False。"
+    severity: ERROR
+    category: security
+    fix: "subprocess.check_output([cmd, arg1, arg2], shell=False)"
+    metadata:
+      cwe: CWE-78
+
+  - id: priv-js-child-process
+    languages: [javascript, typescript]
+    pattern: |
+      child_process.exec($USER_INPUT, ...)
+    message: "[提权] child_process.exec() 执行用户可控命令，存在命令注入风险。使用 execFile() 替代。"
+    severity: ERROR
+    category: security
+    fix: "child_process.execFile(cmd, [args])"
+    metadata:
+      cwe: CWE-78

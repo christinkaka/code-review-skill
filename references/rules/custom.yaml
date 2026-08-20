@@ -1,0 +1,46 @@
+# 自定义业务规则
+# 在此文件中添加团队特有的业务规则
+# 格式遵循 Semgrep 规则 YAML
+
+rules:
+  # 示例：检查是否使用了已废弃的 API
+  - id: custom-deprecated-api-usage
+    languages: [java]
+    pattern: |
+      @Deprecated
+      ...
+      $TYPE $METHOD(...) { ... }
+    message: "[自定义规则] 检测到使用 @Deprecated 标记的方法，请评估是否可迁移到新 API。"
+    severity: INFO
+    category: custom
+
+  # 示例：检查配置文件中的敏感信息
+  - id: custom-hardcoded-password
+    languages: [java, python, javascript, typescript]
+    pattern-regex: (password|secret|api_key)\s*=\s*["'][^"']+["']
+    message: "[自定义规则] 硬编码密钥风险：敏感信息硬编码在代码中，请使用配置中心或环境变量管理敏感配置。"
+    severity: HIGH
+    category: custom
+    metadata:
+      team: "platform"
+
+  # 示例：检查日志中是否打印了敏感信息
+  - id: custom-log-sensitive-data
+    languages: [java]
+    patterns:
+      - pattern: |
+          log.info("..." + $password + "...");
+      - pattern: |
+          log.debug("..." + $token + "...");
+    message: "[自定义规则] 日志中疑似打印敏感信息（密码/Token），请进行脱敏处理。"
+    severity: WARNING
+    category: custom
+
+  # ===== 在此添加更多自定义规则 =====
+  # - id: custom-your-rule-id
+  #   languages: [java]
+  #   pattern: |
+  #     your_pattern_here
+  #   message: "[自定义规则] your message here"
+  #   severity: WARNING
+  #   category: custom

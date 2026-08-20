@@ -183,7 +183,7 @@ class RuleEngine:
         self.rules = self._load_rules()
 
     def _load_rules(self) -> List[Dict]:
-        """加载 Profile 中启用的所有规则（从 Markdown 文件解析）"""
+        """加载 Profile 中启用的所有规则（从 Markdown 文件解析 + 外部 YAML 规则）"""
         all_rules = []
 
         for spec in self.profile.get("specs", []):
@@ -204,25 +204,107 @@ class RuleEngine:
                     logger.warning(f"规约文件不存在: {file_path}")
                     continue
 
-                if not file_path.endswith(".md"):
-                    logger.debug(f"跳过非 Markdown 文件: {file_path}")
-                    continue
+                # 处理 Markdown 规约文件
+                if file_path.endswith(".md"):
+                    try:
+                        rules = self.md_parser.parse_file(file_path)
+                        for rule in rules:
+                            # Skip disabled rules
+                            if rule.get("enabled") is False:
+                                logger.debug(f"跳过已禁用规则: {rule.get('id', 'unknown')}")
+                                continue
+                            if severity_override:
+                                rule["severity"] = severity_override
+                            all_rules.append(rule)
+                        logger.debug(f"从 {os.path.basename(file_path)} 解析出 {len(rules)} 条规则")
+                    except Exception as e:
+                        logger.error(f"解析规约文件失败 {file_path}: {e}")
 
-                try:
-                    rules = self.md_parser.parse_file(file_path)
-                    for rule in rules:
-                        # Skip disabled rules
-                        if rule.get("enabled") is False:
-                            logger.debug(f"跳过已禁用规则: {rule.get('id', 'unknown')}")
-                            continue
-                        if severity_override:
-                            rule["severity"] = severity_override
-                        all_rules.append(rule)
-                    logger.debug(f"从 {os.path.basename(file_path)} 解析出 {len(rules)} 条规则")
-                except Exception as e:
-                    logger.error(f"解析规约文件失败 {file_path}: {e}")
+                # 处理外部 YAML 规则文件（从 rule_loader.py 加载）
+                elif file_path.endswith((".yaml", ".yml")):
+                    try:
+                        rules = self._load_yaml_rules(file_path)
+                        for rule in rules:
+                            if severity_override:
+                                rule["severity"] = severity_override
+                            all_rules.append(rule)
+                        logger.debug(f"从 {os.path.basename(file_path)} 加载 {len(rules)} 条外部规则")
+                    except Exception as e:
+                        logger.error(f"加载外部规则失败 {file_path}: {e}")
 
-        logger.info(f"已加载 {len(all_rules)} 条规则（从 Markdown 规约）")
+        # 自动扫描 external/ 目录下的所有 YAML 规则
+        external_dir = self.specs_dir / "external"
+        if external_dir.exists() and external_dir.is_dir():
+            external_rules = self._load_external_rules(external_dir)
+            all_rules.extend(external_rules)
+            logger.info(f"从 external/ 目录自动加载 {len(external_rules)} 条外部规则")
+
+        logger.info(f"已加载 {len(all_rules)} 条规则（Markdown + 外部 YAML）")
+        return all_rules
+
+    def _load_yaml_rules(self, yaml_file: str) -> List[Dict]:
+        """加载单个 YAML 规则文件（Semgrep 格式）"""
+        with open(yaml_file, "r", encoding="utf-8") as f:
+            content = yaml.safe_load(f)
+
+        if not isinstance(content, dict) or "rules" not in content:
+            return []
+
+        rules = []
+        for rule in content.get("rules", []):
+            rule_id = rule.get("id")
+            if not rule_id:
+                continue
+
+            # 转换为内部规则格式
+            internal_rule = {
+                "id": rule_id,
+                "message": rule.get("message", f"External rule: {rule_id}"),
+                "severity": rule.get("severity", "WARNING"),
+                "languages": rule.get("languages", []),
+                "patterns": [],
+                "metadata": rule.get("metadata", {}),
+                "_source_file": os.path.basename(yaml_file),
+                "_external": True,  # 标记为外部规则
+                "_raw_yaml": rule,  # 保留原始 YAML 供 Semgrep 直接使用
+            }
+
+            # 提取 pattern/patterns
+            if "pattern" in rule:
+                internal_rule["patterns"].append({
+                    "type": "pattern",
+                    "content": rule["pattern"]
+                })
+            elif "patterns" in rule:
+                for p in rule["patterns"]:
+                    if isinstance(p, dict):
+                        if "pattern" in p:
+                            internal_rule["patterns"].append({
+                                "type": "pattern",
+                                "content": p["pattern"]
+                            })
+                        elif "pattern-not" in p:
+                            internal_rule["patterns"].append({
+                                "type": "pattern-not",
+                                "content": p["pattern-not"]
+                            })
+
+            rules.append(internal_rule)
+
+        return rules
+
+    def _load_external_rules(self, external_dir: Path) -> List[Dict]:
+        """自动加载 external/ 目录下的所有 YAML 规则"""
+        all_rules = []
+        yaml_files = list(external_dir.glob("*.yaml")) + list(external_dir.glob("*.yml"))
+
+        for yaml_file in yaml_files:
+            try:
+                rules = self._load_yaml_rules(str(yaml_file))
+                all_rules.extend(rules)
+            except Exception as e:
+                logger.warning(f"跳过外部规则文件 {yaml_file}: {e}")
+
         return all_rules
 
     def run(self, repo_path: str, changed_files: List[Dict]) -> List[Dict]:

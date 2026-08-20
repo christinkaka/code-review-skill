@@ -1,0 +1,61 @@
+rules:
+- id: raptor-unterminated-string-strncpy
+  languages:
+  - c
+  - cpp
+  message: If there is no NUL character byte in the first n bytes of the source string,
+    strncpy() and stpncpy() do not NUL-terminate the destination buffer. If the program
+    does not explicitly terminate the destination buffer, this will almost certainly
+    result in information disclosure, and possibly a buffer overflow condition.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-170: Improper Null Termination'
+    - 'CWE-126: Buffer Over-read'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://g.co/kgs/PCHQjJ
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  patterns:
+  - pattern: $FUN(...)
+  - metavariable-pattern:
+      metavariable: $FUN
+      pattern-either:
+      - pattern: strncpy
+      - pattern: stpncpy
+      - pattern: wcsncpy
+      - pattern: wcpncpy
+      - pattern: _mbsncpy
+  - pattern-not-inside: '$FUN($DST, $_, $_);
+
+      ...
+
+      $DST[$_] = NULL;
+
+      '
+  - pattern-not-inside: '$FUN($DST, $_, $_);
+
+      ...
+
+      $DST[$_] = ''\0'';
+
+      '
+  - pattern-not-inside: '$FUN($DST, $_, $_);
+
+      ...
+
+      $DST[$_] = 0;
+
+      '
+  severity: WARNING

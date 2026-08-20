@@ -1,0 +1,105 @@
+# 安全规约 - 越权访问
+# CWE-862: Missing Authorization
+# CWE-863: Incorrect Authorization
+# OWASP: A01:2021 - Broken Access Control
+
+rules:
+  # ===== Java / Spring =====
+  - id: auth-java-missing-annotation
+    languages: [java]
+    patterns:
+      - pattern: |
+          @RequestMapping(...)
+          public $RETURNTYPE $METHOD(...) {
+            ...
+          }
+      - pattern-not: |
+          @PreAuthorize(...)
+          @RequestMapping(...)
+          public $RETURNTYPE $METHOD(...) {
+            ...
+          }
+      - pattern-not: |
+          @Secured(...)
+          @RequestMapping(...)
+          public $RETURNTYPE $METHOD(...) {
+            ...
+          }
+      - pattern-not: |
+          @RolesAllowed(...)
+          @RequestMapping(...)
+          public $RETURNTYPE $METHOD(...) {
+            ...
+          }
+    message: >
+      [越权] Controller 方法缺少鉴权注解（@PreAuthorize / @Secured / @RolesAllowed），
+      可能存在未授权访问风险。请确认是否有全局拦截器覆盖。
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-862
+      owasp: "A01:2021"
+
+  - id: auth-java-horizontal-escalation
+    languages: [java]
+    pattern: |
+      @GetMapping(...)
+      public $RETURNTYPE $METHOD(@RequestParam(...) String $ID) {
+        ...
+        $REPOSITORY.findById($ID);
+        ...
+      }
+    message: >
+      [越权] 接口通过请求参数直接查询资源，未校验当前用户对该资源的所有权，
+      可能存在水平越权风险。建议添加资源归属校验。
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-862
+
+  - id: auth-java-idor-direct-ref
+    languages: [java]
+    patterns:
+      - pattern: |
+          $SERVICE.delete($REQUEST.getId());
+      - pattern-not: |
+          if ($REQUEST.getId().equals($CURRENT_USER.getId())) { ... }
+    message: "[越权] 直接使用请求中的 ID 执行删除操作，未校验资源归属，存在 IDOR 风险。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-862
+
+  # ===== Python / Flask / Django =====
+  - id: auth-python-missing-login-required
+    languages: [python]
+    patterns:
+      - pattern: |
+          @app.route(...)
+          def $FUNC(...):
+            ...
+      - pattern-not: |
+          @login_required
+          @app.route(...)
+          def $FUNC(...):
+            ...
+    message: "[越权] Flask 路由缺少 @login_required 装饰器，可能存在未授权访问。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-862
+
+  - id: auth-python-django-mixin
+    languages: [python]
+    patterns:
+      - pattern: |
+          class $VIEW(View):
+            ...
+      - pattern-not: |
+          class $VIEW(LoginRequiredMixin, View):
+            ...
+    message: "[越权] Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。"
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-862

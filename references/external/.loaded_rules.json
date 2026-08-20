@@ -1,0 +1,305 @@
+{
+  "loaded_rules": [
+    {
+      "rule_id": "raptor-write-into-stack-buffer",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.468514",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-write-into-stack-buffer.yaml"
+    },
+    {
+      "rule_id": "raptor-argv-envp-access",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.470210",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-argv-envp-access.yaml"
+    },
+    {
+      "rule_id": "raptor-incorrect-use-of-sizeof",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.474266",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-incorrect-use-of-sizeof.yaml"
+    },
+    {
+      "rule_id": "raptor-integer-wraparound",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.486171",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-integer-wraparound.yaml"
+    },
+    {
+      "rule_id": "raptor-overlapping-source-destination",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.490549",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-overlapping-source-destination.yaml"
+    },
+    {
+      "rule_id": "raptor-use-of-source-size-in-copy",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.495215",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-use-of-source-size-in-copy.yaml"
+    },
+    {
+      "rule_id": "raptor-interesting-api-calls",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.505101",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-interesting-api-calls.yaml"
+    },
+    {
+      "rule_id": "raptor-double-free",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.507174",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-double-free.yaml"
+    },
+    {
+      "rule_id": "raptor-missing-break-in-switch",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.509770",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-missing-break-in-switch.yaml"
+    },
+    {
+      "rule_id": "raptor-mismatched-memory-management",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.511642",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-mismatched-memory-management.yaml"
+    },
+    {
+      "rule_id": "raptor-memory-address-exposure",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.515385",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-memory-address-exposure.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-mktemp-tmpnam-tempnam",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.516794",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-mktemp-tmpnam-tempnam.yaml"
+    },
+    {
+      "rule_id": "raptor-pointer-subtraction",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.519002",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-pointer-subtraction.yaml"
+    },
+    {
+      "rule_id": "raptor-putenv-stack-var",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.521884",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-putenv-stack-var.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-gets",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.523144",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-gets.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-ato",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.524710",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-ato.yaml"
+    },
+    {
+      "rule_id": "raptor-incorrect-use-of-free",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.527332",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-incorrect-use-of-free.yaml"
+    },
+    {
+      "rule_id": "raptor-mismatched-memory-management-cpp",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.529571",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-mismatched-memory-management-cpp.yaml"
+    },
+    {
+      "rule_id": "raptor-signed-unsigned-conversion",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.534859",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-signed-unsigned-conversion.yaml"
+    },
+    {
+      "rule_id": "raptor-high-entropy-assignment",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.536202",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-high-entropy-assignment.yaml"
+    },
+    {
+      "rule_id": "raptor-unsafe-ret-strlcpy-strlcat",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.538270",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unsafe-ret-strlcpy-strlcat.yaml"
+    },
+    {
+      "rule_id": "raptor-missing-return",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.539896",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-missing-return.yaml"
+    },
+    {
+      "rule_id": "raptor-unchecked-ret-setuid-seteuid",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.542030",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unchecked-ret-setuid-seteuid.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-rand-srand",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.544583",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-rand-srand.yaml"
+    },
+    {
+      "rule_id": "raptor-regex-dos",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.551063",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-regex-dos.yaml"
+    },
+    {
+      "rule_id": "raptor-missing-default-in-switch",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.552456",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-missing-default-in-switch.yaml"
+    },
+    {
+      "rule_id": "raptor-suspicious-assert",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.554306",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-suspicious-assert.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-signal",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.555782",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-signal.yaml"
+    },
+    {
+      "rule_id": "raptor-unchecked-ret-malloc",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.558275",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unchecked-ret-malloc.yaml"
+    },
+    {
+      "rule_id": "raptor-format-string-bugs",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.563859",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-format-string-bugs.yaml"
+    },
+    {
+      "rule_id": "raptor-incorrect-use-of-memset",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.565465",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-incorrect-use-of-memset.yaml"
+    },
+    {
+      "rule_id": "raptor-typos",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.570374",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-typos.yaml"
+    },
+    {
+      "rule_id": "raptor-incorrect-use-of-strncat",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.572405",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-incorrect-use-of-strncat.yaml"
+    },
+    {
+      "rule_id": "raptor-ret-stack-address",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.576881",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-ret-stack-address.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-alloca",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.578097",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-alloca.yaml"
+    },
+    {
+      "rule_id": "raptor-integer-truncation",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.583644",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-integer-truncation.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-sprintf-vsprintf",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.585212",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-sprintf-vsprintf.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-strcpy-strcat",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.587609",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-strcpy-strcat.yaml"
+    },
+    {
+      "rule_id": "raptor-command-injection",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.589444",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-command-injection.yaml"
+    },
+    {
+      "rule_id": "raptor-use-after-free",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.591660",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-use-after-free.yaml"
+    },
+    {
+      "rule_id": "raptor-unchecked-ret-scanf",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.594809",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unchecked-ret-scanf.yaml"
+    },
+    {
+      "rule_id": "raptor-unterminated-string-strncpy",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.596818",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unterminated-string-strncpy.yaml"
+    },
+    {
+      "rule_id": "raptor-off-by-one",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.600482",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-off-by-one.yaml"
+    },
+    {
+      "rule_id": "raptor-unsafe-strlen",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.602451",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unsafe-strlen.yaml"
+    },
+    {
+      "rule_id": "raptor-unsafe-ret-snprintf-vsnprintf",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.604450",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-unsafe-ret-snprintf-vsnprintf.yaml"
+    },
+    {
+      "rule_id": "raptor-incorrect-order-setuid-setgid",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.607074",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-incorrect-order-setuid-setgid.yaml"
+    },
+    {
+      "rule_id": "raptor-incorrect-unsigned-comparison",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.609334",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-incorrect-unsigned-comparison.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-access-stat",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.610929",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-access-stat.yaml"
+    },
+    {
+      "rule_id": "raptor-insecure-api-scanf",
+      "source": "0xdea-c-cpp",
+      "loaded_at": "2026-08-20T15:24:32.613920",
+      "file": "/Users/chris/Documents/代码评审工具集/code-review-skill-extract/code-review-skill/references/external/0xdea-c-cpp_raptor-insecure-api-scanf.yaml"
+    }
+  ],
+  "sources": {
+    "0xdea-c-cpp": {
+      "url": "https://github.com/0xdea/semgrep-rules",
+      "loaded_at": "2026-08-20T15:24:32.613933",
+      "rule_count": 50
+    }
+  }
+}

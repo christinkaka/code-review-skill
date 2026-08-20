@@ -1,0 +1,34 @@
+rules:
+- id: raptor-insecure-api-signal
+  languages:
+  - c
+  - cpp
+  message: The signal() API should be regarded as deprecated. When possible, sigaction()
+    should be used instead, because it allows to precisely specify the desired behavior
+    in case two signals arrive shortly after each other thus preventing many race
+    conditions.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: HIGH
+    cwe:
+    - 'CWE-364: Signal Handler Race Condition'
+    - 'CWE-479: Signal Handler Use of a Non-reentrant Function'
+    - 'CWE-828: Signal Handler with Functionality that is not Asynchronous-Safe'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://lcamtuf.coredump.cx/signals.txt
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Dangerous Method or Function
+  pattern-either:
+  - pattern: signal(...)
+  - pattern: gsignal(...)
+  - pattern: ssignal(...)
+  severity: WARNING

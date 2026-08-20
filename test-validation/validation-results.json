@@ -1,0 +1,796 @@
+{
+  "validation_info": {
+    "timestamp": "2026-07-28T16:36:31",
+    "known_issues_count": 26,
+    "detected_issues_count": 48,
+    "method": "back-to-back",
+    "line_tolerance": 2,
+    "note": "Primary metrics use relaxed matching (file + line, ignoring rule_id). Strict matching results also included."
+  },
+  "metrics": {
+    "relaxed_matching": {
+      "description": "file + line(+/-2) match, ignoring rule_id differences",
+      "true_positives": 13,
+      "false_negatives": 13,
+      "false_positives": 35,
+      "recall": 0.5,
+      "precision": 0.2708,
+      "false_positive_rate": 0.7292,
+      "false_negative_rate": 0.5,
+      "f1_score": 0.3514
+    },
+    "strict_matching": {
+      "description": "file + line(+/-2) + exact rule_id match",
+      "true_positives": 2,
+      "false_negatives": 24,
+      "false_positives": 46,
+      "recall": 0.0769,
+      "precision": 0.0417,
+      "false_positive_rate": 0.9583,
+      "false_negative_rate": 0.9231,
+      "f1_score": 0.0541
+    }
+  },
+  "detected_known_issues": [
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "rule_id": "xxe-java-document-builder",
+      "severity": "ERROR",
+      "language": "java",
+      "status": "detected",
+      "scan_rule_id": "xxe-java-document-builder",
+      "rule_id_matched": true
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "rule_id": "xxe-java-document-builder",
+      "severity": "ERROR",
+      "language": "java",
+      "status": "detected",
+      "scan_rule_id": "xxe-java-document-builder",
+      "rule_id_matched": true
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 27,
+      "rule_id": "path-traversal-java-file",
+      "severity": "ERROR",
+      "language": "java",
+      "status": "detected",
+      "scan_rule_id": "path-traversal-pattern",
+      "rule_id_matched": false
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 36,
+      "rule_id": "path-traversal-java-weak-filter",
+      "severity": "ERROR",
+      "language": "java",
+      "status": "detected",
+      "scan_rule_id": "path-traversal-pattern",
+      "rule_id_matched": false
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 35,
+      "rule_id": "priv-python-popen-shell-true",
+      "severity": "ERROR",
+      "language": "python",
+      "status": "detected",
+      "scan_rule_id": "priv-python-subprocess-popen",
+      "rule_id_matched": false
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 22,
+      "rule_id": "path-traversal-python-os-path-join",
+      "severity": "ERROR",
+      "language": "python",
+      "status": "detected",
+      "scan_rule_id": "path-config-traversal",
+      "rule_id_matched": false
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 30,
+      "rule_id": "path-traversal-python-weak-filter",
+      "severity": "ERROR",
+      "language": "python",
+      "status": "detected",
+      "scan_rule_id": "path-traversal-pattern",
+      "rule_id_matched": false
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 39,
+      "rule_id": "path-traversal-python-os-path-join",
+      "severity": "ERROR",
+      "language": "python",
+      "status": "detected",
+      "scan_rule_id": "path-read-traversal",
+      "rule_id_matched": false
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 21,
+      "rule_id": "xss-ts-innerhtml",
+      "severity": "ERROR",
+      "language": "typescript",
+      "status": "detected",
+      "scan_rule_id": "xss-js-innerhtml",
+      "rule_id_matched": false
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 30,
+      "rule_id": "xss-ts-document-write",
+      "severity": "ERROR",
+      "language": "typescript",
+      "status": "detected",
+      "scan_rule_id": "xss-js-document-write",
+      "rule_id_matched": false
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 22,
+      "rule_id": "ssrf-ts-fetch-user-input",
+      "severity": "ERROR",
+      "language": "typescript",
+      "status": "detected",
+      "scan_rule_id": "ssrf-js-fetch",
+      "rule_id_matched": false
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 44,
+      "rule_id": "ssrf-ts-fetch-user-input",
+      "severity": "ERROR",
+      "language": "typescript",
+      "status": "detected",
+      "scan_rule_id": "ssrf-js-fetch",
+      "rule_id_matched": false
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 59,
+      "rule_id": "ssrf-ts-fetch-weak-filter",
+      "severity": "ERROR",
+      "language": "typescript",
+      "status": "detected",
+      "scan_rule_id": "ssrf-js-fetch",
+      "rule_id_matched": false
+    }
+  ],
+  "missed_known_issues": [
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 30,
+      "rule_id": "xss-java-servlet-output",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "规则 'xss-java-servlet-output' 未在扫描结果中出现"
+    },
+    {
+      "file": "java/xss/Vulnerable.java",
+      "line": 44,
+      "rule_id": "xss-java-servlet-output",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "规则 'xss-java-servlet-output' 未在扫描结果中出现"
+    },
+    {
+      "file": "java/sqli/Vulnerable.java",
+      "line": 33,
+      "rule_id": "sqli-java-statement-concat",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "规则 'sqli-java-statement-concat' 未在扫描结果中出现"
+    },
+    {
+      "file": "java/sqli/Vulnerable.java",
+      "line": 45,
+      "rule_id": "sqli-java-statement-concat",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "规则 'sqli-java-statement-concat' 未在扫描结果中出现"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 20,
+      "rule_id": "xxe-python-lxml-parser",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 'xxe-python-lxml-parser' 未在扫描结果中出现"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 28,
+      "rule_id": "xxe-python-lxml-parse",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 'xxe-python-lxml-parse' 未在扫描结果中出现"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 35,
+      "rule_id": "xxe-python-lxml-resolve-entities",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 'xxe-python-lxml-resolve-entities' 未在扫描结果中出现"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 19,
+      "rule_id": "priv-python-subprocess-shell-true",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 'priv-python-subprocess-shell-true' 未在扫描结果中出现"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 27,
+      "rule_id": "priv-python-os-system",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 'priv-python-os-system' 未在扫描结果中出现"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 43,
+      "rule_id": "priv-python-check-output-shell-true",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 'priv-python-check-output-shell-true' 未在扫描结果中出现"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 40,
+      "rule_id": "xss-ts-outerhtml",
+      "severity": "ERROR",
+      "language": "typescript",
+      "reason": "规则 'xss-ts-outerhtml' 未在扫描结果中出现"
+    },
+    {
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 50,
+      "rule_id": "xss-ts-dangerously-set-innerhtml",
+      "severity": "ERROR",
+      "language": "typescript",
+      "reason": "规则 'xss-ts-dangerously-set-innerhtml' 未在扫描结果中出现"
+    },
+    {
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 31,
+      "rule_id": "ssrf-ts-http-get-user-input",
+      "severity": "ERROR",
+      "language": "typescript",
+      "reason": "规则 'ssrf-ts-http-get-user-input' 未在扫描结果中出现"
+    }
+  ],
+  "false_positives": [
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 24,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 25,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "language": "java",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 32,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "java",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "java/path-traversal/Safe.java",
+      "line": 47,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "java",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 11,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 27,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 28,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 36,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 37,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 38,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "rule_id": "xxe-java-document-builder-usage",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "rule_id": "xxe-java-document-builder-usage",
+      "severity": "ERROR",
+      "language": "java",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 18,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 30,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 42,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "rule_id": "priv-python-subprocess-popen",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 22,
+      "rule_id": "priv-python-subprocess-run",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/command-injection/vulnerable.py",
+      "line": 30,
+      "rule_id": "priv-python-os-system",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "language": "python",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 6,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 23,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 30,
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "rule_id": "path-config-traversal",
+      "severity": "HIGH",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "rule_id": "path-read-traversal",
+      "severity": "ERROR",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 40,
+      "rule_id": "path-write-traversal",
+      "severity": "CRITICAL",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "rule_id": "xxe-python-lxml",
+      "severity": "WARNING",
+      "language": "python",
+      "reason": "规则 ID 不匹配或重复检出"
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "line": 40,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "language": "typescript",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "typescript/ssrf/safe.ts",
+      "line": 82,
+      "rule_id": "ssrf-js-fetch",
+      "severity": "WARNING",
+      "language": "typescript",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "line": 20,
+      "rule_id": "xss-js-innerhtml",
+      "severity": "ERROR",
+      "language": "typescript",
+      "reason": "安全文件误报：未识别安全防护措施"
+    },
+    {
+      "file": "typescript/xss/safe.ts",
+      "line": 68,
+      "rule_id": "xss-js-innerhtml",
+      "severity": "ERROR",
+      "language": "typescript",
+      "reason": "安全文件误报：未识别安全防护措施"
+    }
+  ],
+  "per_rule_stats": {
+    "path-config-traversal": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 7,
+      "recall": 0
+    },
+    "path-read-traversal": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 6,
+      "recall": 0
+    },
+    "path-traversal-java-file": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "path-traversal-java-weak-filter": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "path-traversal-pattern": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 4,
+      "recall": 0
+    },
+    "path-traversal-python-os-path-join": {
+      "known": 2,
+      "detected": 2,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "path-traversal-python-weak-filter": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "path-write-traversal": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 5,
+      "recall": 0
+    },
+    "priv-python-check-output-shell-true": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "priv-python-os-system": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 1,
+      "recall": 0.0
+    },
+    "priv-python-popen-shell-true": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "priv-python-subprocess-popen": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 1,
+      "recall": 0
+    },
+    "priv-python-subprocess-run": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 4,
+      "recall": 0
+    },
+    "priv-python-subprocess-shell-true": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "sqli-java-statement-concat": {
+      "known": 2,
+      "detected": 0,
+      "missed": 2,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "ssrf-js-fetch": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 2,
+      "recall": 0
+    },
+    "ssrf-ts-fetch-user-input": {
+      "known": 2,
+      "detected": 2,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "ssrf-ts-fetch-weak-filter": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "ssrf-ts-http-get-user-input": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "xss-java-servlet-output": {
+      "known": 2,
+      "detected": 0,
+      "missed": 2,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "xss-js-innerhtml": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 2,
+      "recall": 0
+    },
+    "xss-ts-dangerously-set-innerhtml": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "xss-ts-document-write": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "xss-ts-innerhtml": {
+      "known": 1,
+      "detected": 1,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "xss-ts-outerhtml": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "xxe-java-document-builder": {
+      "known": 2,
+      "detected": 2,
+      "missed": 0,
+      "fp": 0,
+      "recall": 1.0
+    },
+    "xxe-java-document-builder-usage": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 2,
+      "recall": 0
+    },
+    "xxe-python-lxml": {
+      "known": 0,
+      "detected": 0,
+      "missed": 0,
+      "fp": 1,
+      "recall": 0
+    },
+    "xxe-python-lxml-parse": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "xxe-python-lxml-parser": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    },
+    "xxe-python-lxml-resolve-entities": {
+      "known": 1,
+      "detected": 0,
+      "missed": 1,
+      "fp": 0,
+      "recall": 0.0
+    }
+  },
+  "per_language_stats": {
+    "java": {
+      "known": 8,
+      "detected": 4,
+      "missed": 4,
+      "fp": 12,
+      "recall": 0.5
+    },
+    "python": {
+      "known": 10,
+      "detected": 4,
+      "missed": 6,
+      "fp": 19,
+      "recall": 0.4
+    },
+    "typescript": {
+      "known": 8,
+      "detected": 5,
+      "missed": 3,
+      "fp": 4,
+      "recall": 0.625
+    }
+  }
+}

@@ -1,0 +1,154 @@
+# 安全规约 - 跨站脚本攻击 (XSS)
+# CWE-79: Improper Neutralization of Input During Web Page Generation
+# OWASP: A03:2021 - Injection
+
+rules:
+  # ===== Java =====
+  - id: xss-java-servlet-output
+    languages: [java]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              String $PARAM = $REQUEST.getParameter(...);
+              ...
+              $OUT.println(... + $PARAM + ...);
+          - pattern: |
+              String $PARAM = $REQUEST.getParameter(...);
+              ...
+              $OUT.println($PARAM);
+          - pattern: |
+              String $PARAM = $REQUEST.getParameter(...);
+              ...
+              $OUT.write(... + $PARAM + ...);
+          - pattern: |
+              String $PARAM = $REQUEST.getParameter(...);
+              ...
+              $OUT.print(... + $PARAM + ...);
+      - pattern-not: |
+          String $PARAM = $REQUEST.getParameter(...);
+          ...
+          $SAFE = encodeHtml($PARAM);
+          ...
+          $OUT.println(... + $SAFE + ...);
+      - pattern-not: |
+          String $PARAM = $REQUEST.getParameter(...);
+          ...
+          $SAFE = HtmlUtils.htmlEscape($PARAM);
+          ...
+          $OUT.println(... + $SAFE + ...);
+      - pattern-not: |
+          String $PARAM = $REQUEST.getParameter(...);
+          ...
+          $PARAM = encodeHtml($PARAM);
+          ...
+          $OUT.println(... + $PARAM + ...);
+      - pattern-not: |
+          String $PARAM = $REQUEST.getParameter(...);
+          ...
+          $PARAM = HtmlUtils.htmlEscape($PARAM);
+          ...
+          $OUT.println(... + $PARAM + ...);
+    message: >
+      [XSS] Servlet 响应直接写入用户输入未做 HTML 转义，存在反射型 XSS 风险。
+    severity: ERROR
+    category: security
+    fix: "使用 HtmlUtils.htmlEscape() 或 OWASP Java Encoder 进行输出编码"
+    metadata:
+      cwe: CWE-79
+      owasp: "A03:2021"
+
+  - id: xss-java-jsp-expr
+    languages: [java]
+    pattern-regex: <%=\s*\w+\.getParameter\([^)]+\)\s*%>
+    message: "[XSS] JSP 表达式直接输出请求参数，存在 XSS 风险。使用 <c:out> 或 fn:escapeXml() 替代。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+
+  - id: xss-java-string-builder-html
+    languages: [java]
+    patterns:
+      - pattern: |
+          StringBuilder $SB = new StringBuilder();
+          ...
+          $SB.append($USER_INPUT);
+          ...
+          $RESPONSE.getWriter().write($SB.toString());
+    message: "[XSS] StringBuilder 拼接用户输入后直接写入响应，存在存储型 XSS 风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+
+  # ===== JavaScript / TypeScript =====
+  - id: xss-js-innerhtml
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: |
+          $ELEMENT.innerHTML = $USER_INPUT
+      - pattern-not: |
+          $ELEMENT.textContent = $USER_INPUT
+      - pattern-not: |
+          DOMPurify.sanitize($USER_INPUT)
+      - pattern-not: |
+          encodeHtml($USER_INPUT)
+    message: "[XSS] innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。使用 textContent 或 DOMPurify.sanitize() 替代。"
+    severity: ERROR
+    category: security
+    fix: "$ELEMENT.textContent = $USER_INPUT;"
+    metadata:
+      cwe: CWE-79
+
+  - id: xss-js-outerhtml
+    languages: [javascript, typescript]
+    pattern: |
+      $ELEMENT.outerHTML = $USER_INPUT;
+    message: "[XSS] outerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。使用 DOM API 创建和替换元素。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+
+  - id: xss-js-document-write
+    languages: [javascript, typescript]
+    pattern: |
+      document.write($USER_INPUT);
+    message: "[XSS] document.write() 直接写入用户输入，存在 XSS 风险。使用 DOM API 替代。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+
+  - id: xss-js-dangerouslysetinnerhtml
+    languages: [javascript, typescript]
+    pattern-regex: dangerouslySetInnerHTML\s*=\s*\{\s*\{\s*__html\s*:\s*[^}]+\s*\}\s*\}
+    message: "[XSS] React dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。使用 DOMPurify 净化输入。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+
+  - id: xss-js-eval
+    languages: [javascript, typescript]
+    pattern: |
+      eval($USER_INPUT)
+    message: "[XSS] eval() 执行用户可控代码，存在代码注入风险。"
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+
+  # ===== Python =====
+  - id: xss-python-flask-markup
+    languages: [python]
+    pattern: |
+      from flask import Markup
+      ...
+      Markup($USER_INPUT)
+    message: "[XSS] Flask Markup() 未转义用户输入，存在 XSS 风险。使用 escape() 或 autoescape。"
+    severity: ERROR
+    category: security
+    fix: "from markupsafe import escape; escape($USER_INPUT)"
+    metadata:
+      cwe: CWE-79

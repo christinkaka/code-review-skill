@@ -1,0 +1,20 @@
+[
+  {
+    "rule_file": "references/security/compiled/xxe-natural-language.yaml",
+    "approved_at": "2026-08-19T15:47:28.330474",
+    "approved_file": "references/security/compiled/xxe-natural-language.approved.yaml",
+    "status": "approved"
+  },
+  {
+    "rule_file": "references/security/compiled/xxe-natural-language.yaml",
+    "approved_at": "2026-08-19T15:51:34.129673",
+    "approved_file": "references/security/compiled/xxe-natural-language.approved.yaml",
+    "status": "approved"
+  },
+  {
+    "rule_file": "references/security/compiled/xxe-natural-language.yaml",
+    "approved_at": "2026-08-19T18:15:39.008779",
+    "approved_file": "references/security/compiled/xxe-natural-language.approved.yaml",
+    "status": "approved"
+  }
+]

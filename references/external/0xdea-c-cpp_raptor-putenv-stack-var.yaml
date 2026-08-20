@@ -1,0 +1,109 @@
+rules:
+- id: raptor-putenv-stack-var
+  languages:
+  - c
+  - cpp
+  message: The software calls putenv() with a variable that has a short lifetime,
+    such as a pointer to an automatic variable allocated on the stack. The correct
+    behavior is to call putenv() with a static/global string.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-686: Function Call With Incorrect Argument Type'
+    - 'CWE-562: Return of Stack Variable Address'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A06:2025 - Insecure Design
+    references:
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  patterns:
+  - pattern: putenv($PTR)
+  - pattern-either:
+    - patterns:
+      - pattern-inside: '$_ $PTR[$_];
+
+          ...
+
+          '
+      - pattern-not-inside: 'static $_ $PTR[$_];
+
+          ...
+
+          '
+    - patterns:
+      - pattern-inside: '$_ $PTR[$_] = ...;
+
+          ...
+
+          '
+      - pattern-not-inside: 'static $_ $PTR[$_] = ...;
+
+          ...
+
+          '
+    - patterns:
+      - pattern-inside: '$_ $PTR[] = ...;
+
+          ...
+
+          '
+      - pattern-not-inside: 'static $_ $PTR[] = ...;
+
+          ...
+
+          '
+    - patterns:
+      - pattern-inside: '$_ $ARR[$_];
+
+          ...
+
+          $PTR = $ARR;
+
+          ...
+
+          '
+      - pattern-not-inside: 'static $_ $ARR[$_];
+
+          ...
+
+          '
+    - patterns:
+      - pattern-inside: '$_ $ARR[$_] = ...;
+
+          ...
+
+          $PTR = $ARR;
+
+          ...
+
+          '
+      - pattern-not-inside: 'static $_ $ARR[$_] = ...;
+
+          ...
+
+          '
+    - patterns:
+      - pattern-inside: '$_ $ARR[] = ...;
+
+          ...
+
+          $PTR = $ARR;
+
+          ...
+
+          '
+      - pattern-not-inside: 'static $_ $ARR[] = ...;
+
+          ...
+
+          '
+  severity: INFO

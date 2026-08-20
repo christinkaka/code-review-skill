@@ -1,0 +1,12 @@
+rules:
+- id: sql-java
+  languages:
+  - java
+  message: SQL 注入 - Java 字符串拼接构建 SQL
+  metadata:
+    compiled_at: '2026-08-19T15:46:42.479184'
+    safe_approach: ''
+    source_file: SQL 注入 - Java 字符串拼接构建 SQL
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

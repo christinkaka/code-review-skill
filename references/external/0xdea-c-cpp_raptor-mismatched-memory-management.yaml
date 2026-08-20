@@ -1,0 +1,57 @@
+rules:
+- id: raptor-mismatched-memory-management
+  languages:
+  - c
+  - cpp
+  message: The software attempts to return a memory resource to the system, but it
+    calls a release function that is not compatible with the function that was originally
+    used to allocate that resource. Due to inherent limitations of Semgrep, this rule
+    might generate many false positives and should therefore be customized for your
+    codebase.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: LOW
+    cwe:
+    - 'CWE-762: Mismatched Memory Management Routines'
+    impact: MEDIUM
+    likelihood: LOW
+    owasp:
+    - A06:2025 - Insecure Design
+    references:
+    - https://github.com/struct/mms
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  pattern-either:
+  - patterns:
+    - pattern: free($PTR)
+    - pattern-not-inside: '$PTR = malloc(...);
+
+        ...
+
+        '
+    - pattern-not-inside: '$PTR = calloc(...);
+
+        ...
+
+        '
+    - pattern-not-inside: '$PTR = realloc(...);
+
+        ...
+
+        '
+    - pattern-not-inside: '$PTR = strdup(...);
+
+        ...
+
+        '
+    - pattern-not-inside: '$PTR = strndup(...);
+
+        ...
+
+        '
+  severity: INFO

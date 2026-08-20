@@ -1,0 +1,58 @@
+rules:
+- id: raptor-insecure-api-scanf
+  languages:
+  - c
+  - cpp
+  message: A buffer overflow condition exists when a program attempts to put more
+    data in a buffer than it can hold, or when a program attempts to put data in a
+    memory area outside of the boundaries of a buffer.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: HIGH
+    cwe:
+    - 'CWE-676: Use of Potentially Dangerous Function'
+    - 'CWE-120: Buffer Copy without Checking Size of Input (''Classic Buffer Overflow'')'
+    - 'CWE-787: Out-of-bounds Write'
+    impact: HIGH
+    likelihood: HIGH
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://g.co/kgs/PCHQjJ
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Dangerous Method or Function
+  patterns:
+  - pattern-either:
+    - pattern: scanf($FMT, ...)
+    - pattern: __isoc99_scanf($FMT, ...)
+    - pattern: vscanf($FMT, ...)
+    - pattern: __isoc99_vscanf($FMT, ...)
+    - pattern: fscanf($_, $FMT, ...)
+    - pattern: __isoc99_fscanf($_, $FMT, ...)
+    - pattern: vfscanf($_, $FMT, ...)
+    - pattern: __isoc99_vfscanf($_, $FMT, ...)
+    - pattern: sscanf($_, $FMT, ...)
+    - pattern: __isoc99_sscanf($_, $FMT, ...)
+    - pattern: vsscanf($_, $FMT, ...)
+    - pattern: __isoc99_vsscanf($_, $FMT, ...)
+    - pattern: wscanf($FMT, ...)
+    - pattern: vwscanf($FMT, ...)
+    - pattern: fwscanf($_, $FMT, ...)
+    - pattern: vfwscanf($_, $FMT, ...)
+    - pattern: swscanf($_, $FMT, ...)
+    - pattern: vswscanf($_, $FMT, ...)
+  - pattern-not: sscanf("...", $FMT, ...)
+  - pattern-not: __isoc99_sscanf("...", $FMT, ...)
+  - pattern-not: vsscanf("...", $FMT, ...)
+  - pattern-not: __isoc99_vsscanf("...", $FMT, ...)
+  - pattern-not: swscanf("...", $FMT, ...)
+  - pattern-not: vswscanf("...", $FMT, ...)
+  - metavariable-regex:
+      metavariable: $FMT
+      regex: (".*%l?s.*"|".*%S.*"|[a-zA-Z_][a-zA-Z0-9_]*)
+  severity: ERROR

@@ -1,0 +1,12 @@
+rules:
+- id: java
+  languages:
+  - java
+  message: 反序列化漏洞 - Java 不安全反序列化
+  metadata:
+    compiled_at: '2026-08-19T15:59:19.876176'
+    safe_approach: ''
+    source_file: 反序列化漏洞 - Java 不安全反序列化
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

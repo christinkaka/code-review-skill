@@ -1,0 +1,29 @@
+# 代码实现规约 - 命名规范
+
+rules:
+  - id: naming-java-boolean-prefix
+    languages: [java]
+    pattern: |
+      boolean $NAME = ...;
+    message: >
+      [命名规范] 布尔变量建议使用 is/has/can/should 前缀，提高可读性。
+      例如：isActive, hasPermission, canExecute。
+    severity: INFO
+    category: implementation
+
+  - id: naming-python-class-case
+    languages: [python]
+    pattern: |
+      class $NAME:
+    message: "[命名规范] Python 类名应使用 PascalCase（如 UserService）。"
+    severity: INFO
+    category: implementation
+
+  - id: naming-python-function-case
+    languages: [python]
+    pattern: |
+      def $NAME(...):
+          ...
+    message: "[命名规范] Python 函数名应使用 snake_case（如 get_user_by_id）。"
+    severity: INFO
+    category: implementation

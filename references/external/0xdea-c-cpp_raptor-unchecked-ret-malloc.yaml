@@ -1,0 +1,55 @@
+rules:
+- id: raptor-unchecked-ret-malloc
+  languages:
+  - c
+  - cpp
+  message: The software does not check the return value from a method or function,
+    which can prevent it from detecting unexpected states and conditions.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-252: Unchecked Return Value'
+    - 'CWE-690: Unchecked Return Value to NULL Pointer Dereference'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://g.co/kgs/PCHQjJ
+    - https://github.com/struct/mms
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  patterns:
+  - pattern-either:
+    - pattern: $RET = $FUN(...)
+  - metavariable-pattern:
+      metavariable: $FUN
+      pattern-either:
+      - pattern: malloc
+      - pattern: calloc
+      - pattern: realloc
+      - pattern: reallocf
+      - pattern: valloc
+      - pattern: aligned_alloc
+      - pattern: strdup
+      - pattern: strndup
+  - pattern-not-inside: '$FUN(...);
+
+      ...
+
+      if (<... $RET ...>) ...
+
+      '
+  - pattern-not-inside: <... $_ == NULL ...>
+  - pattern-not-inside: <... NULL == $_ ...>
+  - pattern-not-inside: <... $_ != NULL ...>
+  - pattern-not-inside: <... NULL != $_ ...>
+  - pattern-not-inside: <... !$_ ...>
+  severity: WARNING

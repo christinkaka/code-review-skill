@@ -1,0 +1,12 @@
+rules:
+- id: ''
+  languages:
+  - java
+  message: 签名绕过 - 使用不安全的签名算法
+  metadata:
+    compiled_at: '2026-08-19T15:51:19.643041'
+    safe_approach: ''
+    source_file: 签名绕过 - 使用不安全的签名算法
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

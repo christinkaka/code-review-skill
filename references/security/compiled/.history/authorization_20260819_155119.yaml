@@ -1,0 +1,12 @@
+rules:
+- id: controller
+  languages:
+  - java
+  message: 越权 - Controller 方法缺少鉴权注解
+  metadata:
+    compiled_at: '2026-08-19T15:51:19.644628'
+    safe_approach: ''
+    source_file: 越权 - Controller 方法缺少鉴权注解
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

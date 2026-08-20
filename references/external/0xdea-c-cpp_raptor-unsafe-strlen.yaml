@@ -1,0 +1,43 @@
+rules:
+- id: raptor-unsafe-strlen
+  languages:
+  - c
+  - cpp
+  message: The software performs a calculation that can produce an integer overflow
+    or wraparound, when the logic assumes that the resulting value will always be
+    larger than the original value. This can introduce other weaknesses when the calculation
+    is used for resource management or execution control. When influenced by the size
+    of an  input it is often easier to overflow a short than an int.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-190: Integer Overflow or Wraparound'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://github.com/struct/mms
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Other Security
+  patterns:
+  - pattern-either:
+    - pattern: (short $_) = $FUN(...)
+    - pattern: (short int $_) = $FUN(...)
+    - pattern: (unsigned short $_) = $FUN(...)
+    - pattern: (unsigned short int $_) = $FUN(...)
+  - metavariable-pattern:
+      metavariable: $FUN
+      pattern-either:
+      - pattern: strlen
+      - pattern: lstrlen
+      - pattern: strnlen
+      - pattern: wcslen
+      - pattern: wcsnlen
+  severity: WARNING

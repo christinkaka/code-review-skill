@@ -1,0 +1,19 @@
+# 安全规约 - 不安全的随机数生成
+# CWE-330: Use of Insufficiently Random Values
+# OWASP: A02:2021 - Cryptographic Failures
+
+rules:
+  - id: crypto-weak-random-java
+    languages: [java]
+    pattern: |
+      new Random()
+    message: >
+      [弱随机数] 使用 java.util.Random，该类的输出可被预测。
+      安全敏感场景（令牌、会话 ID、密钥生成）应使用 SecureRandom。
+    severity: WARNING
+    category: security
+    fix: "new SecureRandom()"
+    metadata:
+      cwe: CWE-330
+      owasp: "A02:2021"
+      confidence: HIGH

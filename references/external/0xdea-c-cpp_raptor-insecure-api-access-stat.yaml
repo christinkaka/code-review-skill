@@ -1,0 +1,36 @@
+rules:
+- id: raptor-insecure-api-access-stat
+  languages:
+  - c
+  - cpp
+  message: The software checks the state of a resource before using it, but the  resource's
+    state can change between the check and the use in a way that  invalidates the
+    results of the check. This can cause the software to  perform invalid actions
+    when the resource is in an unexpected state.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: HIGH
+    cwe:
+    - 'CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://g.co/kgs/PCHQjJ
+    - https://labs.snyk.io/resources/leaky-vessels-container-vuln-deep-dive/
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Dangerous Method or Function
+  pattern-either:
+  - pattern: access(...)
+  - pattern: faccessat(...)
+  - pattern: faccessat2(...)
+  - pattern: stat(...)
+  - pattern: lstat(...)
+  - pattern: fstatat(...)
+  severity: WARNING

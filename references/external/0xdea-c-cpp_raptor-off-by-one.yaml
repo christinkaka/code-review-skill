@@ -1,0 +1,104 @@
+rules:
+- id: raptor-off-by-one
+  languages:
+  - c
+  - cpp
+  message: The software calculates or uses an incorrect maximum or minimum value that
+    is 1 more, or 1 less, than the correct value.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-193: Off-by-one Error'
+    - 'CWE-787: Out-of-bounds Write'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://g.co/kgs/PCHQjJ
+    - https://github.com/struct/mms
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  pattern-either:
+  - pattern: $BUF[sizeof($BUF)] = ...
+  - patterns:
+    - pattern: $BUF[$LEN] = ...
+    - pattern-either:
+      - pattern-inside: '$_ $BUF[$LEN];
+
+          ...
+
+          '
+      - pattern-inside: '$_ $BUF[$LEN] = ...;
+
+          ...
+
+          '
+  - patterns:
+    - pattern: '*($BUF + $LEN) = ...
+
+        '
+    - pattern-either:
+      - pattern-inside: '$_ $BUF[$LEN];
+
+          ...
+
+          '
+      - pattern-inside: '$_ $BUF[$LEN] = ...;
+
+          ...
+
+          '
+  - patterns:
+    - pattern: $BUF[$X][$Y] = ...
+    - pattern-either:
+      - pattern-inside: '$_ $BUF[$_][$Y];
+
+          ...
+
+          '
+      - pattern-inside: '$_ $BUF[$X][$_];
+
+          ...
+
+          '
+  - pattern: strlen($SRC) > sizeof($DST)
+  - pattern: strlen($SRC) <= sizeof($DST)
+  - pattern: sizeof($DST) < strlen($SRC)
+  - pattern: sizeof($DST) >= strlen($SRC)
+  - patterns:
+    - pattern: strncat($_, $_, $LEN)
+    - metavariable-pattern:
+        metavariable: $LEN
+        patterns:
+        - pattern-not: $_ - 1
+  - pattern: $STR[strlen($STR) - 1]
+  - patterns:
+    - pattern-inside: '$LEN = strlen($STR) - 1;
+
+        ...
+
+        '
+    - pattern: $STR[$LEN]
+  - patterns:
+    - pattern-inside: '$LEN = strlen($STR);
+
+        ...
+
+        '
+    - pattern: $STR[$LEN - 1]
+  - pattern: malloc(strlen($STR))
+  - patterns:
+    - pattern-inside: '$LEN = strlen($STR);
+
+        ...
+
+        '
+    - pattern: malloc($LEN)
+  severity: WARNING

@@ -1,0 +1,12 @@
+rules:
+- id: '---runtimeexec-'
+  languages:
+  - java
+  message: 提权 - Runtime.exec 执行用户可控命令
+  metadata:
+    compiled_at: '2026-08-19T15:46:19.185385'
+    safe_approach: ''
+    source_file: 提权 - Runtime.exec 执行用户可控命令
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

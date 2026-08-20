@@ -1,0 +1,105 @@
+rules:
+- id: raptor-format-string-bugs
+  languages:
+  - c
+  - cpp
+  message: The software uses a function that accepts a format string as an argument,
+    but the format string originates from an external source. This can lead  to buffer
+    overflows, denial of service, or data representation problems.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-134: Use of Externally-Controlled Format String'
+    impact: HIGH
+    likelihood: MEDIUM
+    owasp:
+    - A05:2025 - Injection
+    references:
+    - https://julianor.tripod.com/bc/formatstring-1.2.pdf
+    - http://phrack.org/issues/70/13.html#article
+    - https://g.co/kgs/PCHQjJ
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  pattern-either:
+  - patterns:
+    - pattern-either:
+      - pattern: printf(...)
+      - pattern: vprintf(...)
+      - pattern: wprintf(...)
+      - pattern: vwprintf(...)
+      - pattern: vcprintf(...)
+      - pattern: vcwprintf(...)
+      - pattern: vscprintf(...)
+      - pattern: vscwprintf(...)
+      - pattern: printk(...)
+      - pattern: scanf(...)
+      - pattern: __isoc99_scanf(...)
+      - pattern: vscanf(...)
+      - pattern: __isoc99_vscanf(...)
+      - pattern: wscanf(...)
+      - pattern: vwscanf(...)
+      - pattern: warn(...)
+      - pattern: vwarn(...)
+      - pattern: warnx(...)
+      - pattern: vwarnx(...)
+    - pattern-not: $_("...", ...)
+    - pattern-not: $_(gettext(...), ...)
+    - pattern-not: $_(dgettext(...), ...)
+    - pattern-not: $_(dcgettext(...), ...)
+  - patterns:
+    - pattern-either:
+      - pattern: fprintf(...)
+      - pattern: vfprintf(...)
+      - pattern: fwprintf(...)
+      - pattern: vfwprintf(...)
+      - pattern: sprintf(...)
+      - pattern: vsprintf(...)
+      - pattern: asprintf(...)
+      - pattern: vasprintf(...)
+      - pattern: dprintf(...)
+      - pattern: vdprintf(...)
+      - pattern: wsprintf(...)
+      - pattern: fscanf(...)
+      - pattern: __isoc99_fscanf(...)
+      - pattern: vfscanf(...)
+      - pattern: __isoc99_vfscanf(...)
+      - pattern: fwscanf(...)
+      - pattern: vfwscanf(...)
+      - pattern: sscanf(...)
+      - pattern: __isoc99_sscanf(...)
+      - pattern: vsscanf(...)
+      - pattern: __isoc99_vsscanf(...)
+      - pattern: swscanf(...)
+      - pattern: vswscanf(...)
+      - pattern: syslog(...)
+      - pattern: vsyslog(...)
+      - pattern: err(...)
+      - pattern: verr(...)
+      - pattern: errx(...)
+      - pattern: verrx(...)
+      - pattern: warnc(...)
+      - pattern: vwarnc(...)
+    - pattern-not: $_($_, "...", ...)
+    - pattern-not: $_($_, gettext(...), ...)
+    - pattern-not: $_($_, dgettext(...), ...)
+    - pattern-not: $_($_, dcgettext(...), ...)
+  - patterns:
+    - pattern-either:
+      - pattern: snprintf(...)
+      - pattern: vsnprintf(...)
+      - pattern: swprintf(...)
+      - pattern: vswprintf(...)
+      - pattern: errc(...)
+      - pattern: verrc(...)
+    - pattern-not: $_($_, $_, "...", ...)
+    - pattern-not: $_($_, $_, gettext(...), ...)
+    - pattern-not: $_($_, $_, dgettext(...), ...)
+    - pattern-not: $_($_, $_, dcgettext(...), ...)
+  severity: ERROR

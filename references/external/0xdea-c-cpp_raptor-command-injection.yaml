@@ -1,0 +1,39 @@
+rules:
+- id: raptor-command-injection
+  languages:
+  - c
+  - cpp
+  message: The software constructs an OS command using externally-influenced input,  but
+    it does not neutralize or incorrectly neutralizes special elements  that could
+    modify the intended OS command.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: HIGH
+    cwe:
+    - 'CWE-78: Improper Neutralization of Special Elements used in an OS Command (''OS
+      Command Injection'')'
+    - 'CWE-88: Improper Neutralization of Argument Delimiters in a Command (''Argument
+      Injection'')'
+    - 'CWE-676: Use of Potentially Dangerous Function'
+    impact: HIGH
+    likelihood: MEDIUM
+    owasp:
+    - A05:2025 - Injection
+    references:
+    - https://g.co/kgs/PCHQjJ
+    - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+    subcategory:
+    - vuln
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Command Injection
+  patterns:
+  - pattern-either:
+    - pattern: system(...)
+    - pattern: popen(...)
+    - pattern: p2open(...)
+    - pattern: wordexp(...)
+  - pattern-not: $_("...", ...)
+  severity: ERROR

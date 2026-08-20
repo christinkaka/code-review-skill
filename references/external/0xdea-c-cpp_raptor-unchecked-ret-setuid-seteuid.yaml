@@ -1,0 +1,47 @@
+rules:
+- id: raptor-unchecked-ret-setuid-seteuid
+  languages:
+  - c
+  - cpp
+  message: The software does not check the return value from a method or function,
+    which can prevent it from detecting unexpected states and conditions. If the program
+    calls a function to drop privileges but  does not check the return code to ensure
+    that privileges were  successfully dropped, then the program will continue to
+    operate with  the higher privileges.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-252: Unchecked Return Value'
+    impact: MEDIUM
+    likelihood: MEDIUM
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://lwn.net/Articles/451985/
+    - https://www.usenix.org/legacy/events/sec02/full_papers/chen/chen.pdf
+    - https://www.openwall.com/lists/oss-security/2023/12/30/4
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Improper Authorization
+  patterns:
+  - pattern: $FUN(...)
+  - metavariable-pattern:
+      metavariable: $FUN
+      pattern-either:
+      - pattern: setuid
+      - pattern: seteuid
+  - pattern-not-inside: $_ = $FUN(...)
+  - pattern-not-inside: <... $FUN(...) == $_ ...>
+  - pattern-not-inside: <... $_ == $FUN(...) ...>
+  - pattern-not-inside: <... $FUN(...) != $_ ...>
+  - pattern-not-inside: <... $_ != $FUN(...) ...>
+  - pattern-not-inside: <... $FUN(...) < $_ ...>
+  - pattern-not-inside: <... $_ > $FUN(...) ...>
+  - pattern-not-inside: <... !$FUN(...) ...>
+  - pattern-not-inside: return $FUN(...);
+  severity: WARNING

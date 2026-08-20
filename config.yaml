@@ -1,0 +1,114 @@
+# 代码评审工具 - 全局配置
+# ==========================================
+# 核心设计理念：Agent 主导，离线优先，最小化外部依赖
+
+# 扫描目标仓库列表
+repos:
+  - name: "example-project"
+    # 本地仓库路径（支持相对路径）
+    path: "./repos/example-project"
+    # Git 远程地址（首次 clone 时使用）
+    url: ""
+    # 基线分支
+    base_branch: "master"
+    # 目标分支（要评审的分支）
+    target_branch: "release/1.0"
+    # 主要语言（java / python / javascript / go / typescript）
+    language: "java"
+    # 使用的规约 profile
+    profile: "default"
+
+# 规约库路径（相对于 skill 根目录）
+specs_dir: "references"
+
+# 输出配置
+output:
+  # 报告输出目录
+  dir: "report"
+  # 输出格式: json / markdown / both
+  format: "both"
+  # 是否包含修复建议
+  include_fix: true
+  # 是否包含调用链上下文
+  include_call_chain: true
+  # 是否包含 Agent 分析说明
+  include_ai_analysis: true
+
+# 评审模式配置
+review:
+  # 评审方式: agent（默认，推荐） / semgrep / hybrid
+  # - agent: Agent 直接评审，无需外部依赖，离线可用
+  # - semgrep: 使用 Semgrep 工具，需要安装 Semgrep
+  # - hybrid: Agent + Semgrep 双重评审（如果 Semgrep 可用）
+  mode: "agent"
+  
+  # Agent 评审配置
+  agent:
+    # 是否启用上下文理解（过滤误报）
+    context_aware: true
+    # 是否生成修复建议
+    generate_fix: true
+    # 是否生成分析说明
+    generate_analysis: true
+
+# Semgrep 配置（可选增强，不是必须的）
+semgrep:
+  # 是否启用 Semgrep（如果 mode 为 semgrep 或 hybrid）
+  enabled: false
+  # Semgrep 可执行文件路径（留空则使用 PATH 中的 semgrep）
+  binary: ""
+  # 超时时间（秒）
+  timeout: 300
+  # 最大内存（MB）
+  max_memory: 4096
+  # 额外参数
+  extra_args: []
+
+# 调用图分析配置
+call_graph:
+  # 分析方式: tree-sitter（推荐） / regex / none
+  analyzer: "tree-sitter"
+  # 最大追踪深度（层数）
+  max_depth: 5
+  # 是否包含受影响方法列表
+  include_affected: true
+
+# 调度配置（用于定期扫描）
+schedule:
+  # cron 表达式（每天凌晨 2 点）
+  cron: "0 2 * * *"
+  # 扫描完成后是否发送通知
+  notify: false
+  # 通知方式: webhook / email / none
+  notify_method: "none"
+  notify_target: ""
+
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG / INFO / WARNING / ERROR
+  file: "logs/scan.log"
+
+# 性能优化配置
+performance:
+  # 增量扫描（只扫描变更文件）
+  incremental: true
+  # 并行处理文件数（0 表示不并行）
+  parallel_files: 4
+  # 大仓库分批处理（每批文件数）
+  batch_size: 50
+  # 跳过测试文件
+  skip_tests: true
+  # 跳过生成文件
+  skip_generated: true
+
+# 排除路径（不扫描这些目录/文件）
+exclude:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/generated/**"
+  - "**/target/**"
+  - "**/build/**"
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/vendor/**"

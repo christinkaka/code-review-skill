@@ -1,0 +1,12 @@
+rules:
+- id: ssrf-java-url
+  languages:
+  - java
+  message: SSRF - Java URL 连接使用用户输入
+  metadata:
+    compiled_at: '2026-08-19T15:46:42.473788'
+    safe_approach: ''
+    source_file: SSRF - Java URL 连接使用用户输入
+    violation_scenario: ''
+  pattern: ''
+  severity: WARNING

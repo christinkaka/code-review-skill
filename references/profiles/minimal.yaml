@@ -1,0 +1,21 @@
+# 最小评审规约配置
+name: minimal
+description: 最小集，仅启用安全规约和关键实现规约
+
+specs:
+  # 仅启用安全规约
+  - path: security/*.md
+    enabled: true
+
+  # 关键实现规约
+  - path: implementation/error-handling.md
+    enabled: true
+  - path: implementation/concurrency.md
+    enabled: true
+
+exclude:
+  - "**/test/**"
+  - "**/generated/**"
+  - "**/target/**"
+  - "**/build/**"
+  - "**/node_modules/**"

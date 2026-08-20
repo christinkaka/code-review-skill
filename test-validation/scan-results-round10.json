@@ -1,0 +1,796 @@
+{
+  "issues": [
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.custom-hardcoded-password",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "java/path-traversal/Safe.java",
+      "line": 18,
+      "end_line": 18,
+      "message": "疑似硬编码密码，请使用配置中心或环境变量管理敏感配置。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.naming-java-constant-case",
+      "category": "unknown",
+      "severity": "INFO",
+      "file": "java/path-traversal/Safe.java",
+      "line": 18,
+      "end_line": 18,
+      "message": "常量应使用全大写 + 下划线命名（UPPER_SNAKE_CASE）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "java/path-traversal/Safe.java",
+      "line": 24,
+      "end_line": 24,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-write-traversal",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "java/path-traversal/Safe.java",
+      "line": 25,
+      "end_line": 25,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "java/path-traversal/Safe.java",
+      "line": 32,
+      "end_line": 32,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "java/path-traversal/Safe.java",
+      "line": 47,
+      "end_line": 47,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.custom-hardcoded-password",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 20,
+      "end_line": 20,
+      "message": "疑似硬编码密码，请使用配置中心或环境变量管理敏感配置。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.naming-java-constant-case",
+      "category": "unknown",
+      "severity": "INFO",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 20,
+      "end_line": 20,
+      "message": "常量应使用全大写 + 下划线命名（UPPER_SNAKE_CASE）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-write-traversal",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 27,
+      "end_line": 27,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 28,
+      "end_line": 28,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-traversal-pattern",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 36,
+      "end_line": 36,
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-write-traversal",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 37,
+      "end_line": 37,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "java/path-traversal/Vulnerable.java",
+      "line": 38,
+      "end_line": 38,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.custom-hardcoded-password",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "java/sqli/Safe.java",
+      "line": 30,
+      "end_line": 30,
+      "message": "疑似硬编码密码，请使用配置中心或环境变量管理敏感配置。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.custom-hardcoded-password",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "java/sqli/Safe.java",
+      "line": 43,
+      "end_line": 43,
+      "message": "疑似硬编码密码，请使用配置中心或环境变量管理敏感配置。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xxe-java-document-builder-usage",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "java/xxe/Vulnerable.java",
+      "line": 22,
+      "end_line": 24,
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xxe-java-document-builder-usage",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "java/xxe/Vulnerable.java",
+      "line": 29,
+      "end_line": 31,
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-subprocess-run",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/safe.py",
+      "line": 18,
+      "end_line": 22,
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-subprocess-run",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/safe.py",
+      "line": 30,
+      "end_line": 35,
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-subprocess-run",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/safe.py",
+      "line": 42,
+      "end_line": 46,
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.null-python-none-check",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "end_line": 57,
+      "message": "函数返回值未判空直接调用方法，若返回 None 将抛出 AttributeError。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-subprocess-popen",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/safe.py",
+      "line": 53,
+      "end_line": 56,
+      "message": "subprocess.Popen() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-subprocess-run",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/vulnerable.py",
+      "line": 22,
+      "end_line": 22,
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-os-system",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/vulnerable.py",
+      "line": 30,
+      "end_line": 30,
+      "message": "os.system() 执行用户可控命令，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.null-python-none-check",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "python/command-injection/vulnerable.py",
+      "line": 37,
+      "end_line": 38,
+      "message": "函数返回值未判空直接调用方法，若返回 None 将抛出 AttributeError。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.priv-python-subprocess-popen",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/command-injection/vulnerable.py",
+      "line": 37,
+      "end_line": 37,
+      "message": "subprocess.Popen() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "end_line": 26,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/path-traversal/safe.py",
+      "line": 26,
+      "end_line": 26,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "end_line": 39,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/path-traversal/safe.py",
+      "line": 39,
+      "end_line": 39,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "end_line": 52,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-write-traversal",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "python/path-traversal/safe.py",
+      "line": 52,
+      "end_line": 52,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 23,
+      "end_line": 23,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 23,
+      "end_line": 23,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-traversal-pattern",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 30,
+      "end_line": 30,
+      "message": "检测代码中是否包含路径穿越模式（`../`、`..\\`、`%2e%2e%2f` 等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-config-traversal",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "end_line": 32,
+      "message": "配置文件路径使用用户输入，攻击者可通过 `../` 读取或覆盖敏感配置文件。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 32,
+      "end_line": 32,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-read-traversal",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 40,
+      "end_line": 40,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.path-write-traversal",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "python/path-traversal/vulnerable.py",
+      "line": 40,
+      "end_line": 40,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xxe-python-lxml",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "python/xxe/vulnerable.py",
+      "line": 14,
+      "end_line": 29,
+      "message": "lxml.etree.parse() 默认可能解析外部实体，建议使用 defusedxml 替代。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.ssrf-js-fetch",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "typescript/ssrf/safe.ts",
+      "line": 40,
+      "end_line": 40,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.ssrf-js-fetch",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "typescript/ssrf/safe.ts",
+      "line": 82,
+      "end_line": 82,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.ssrf-js-fetch",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 22,
+      "end_line": 22,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.ssrf-js-fetch",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 44,
+      "end_line": 47,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.ssrf-js-fetch",
+      "category": "unknown",
+      "severity": "WARNING",
+      "file": "typescript/ssrf/vulnerable.ts",
+      "line": 59,
+      "end_line": 59,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xss-js-innerhtml",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "typescript/xss/safe.ts",
+      "line": 20,
+      "end_line": 20,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xss-js-innerhtml",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "typescript/xss/safe.ts",
+      "line": 68,
+      "end_line": 68,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xss-js-innerhtml",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 21,
+      "end_line": 21,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "rule_id": "var.folders.nl.4wt4n5td4bs5gbh76dh_4vww0000gn.T.xss-js-document-write",
+      "category": "unknown",
+      "severity": "ERROR",
+      "file": "typescript/xss/vulnerable.ts",
+      "line": 30,
+      "end_line": 30,
+      "message": "document.write() 直接写入用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "engine": "builtin",
+      "engines": [
+        "builtin",
+        "semgrep"
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "stats": {
+    "total": 49,
+    "builtin": 49,
+    "semgrep": 49,
+    "both_engines": 49,
+    "builtin_only": 0,
+    "semgrep_only": 0
+  }
+}

@@ -1,0 +1,46 @@
+# 代码实现规约 - 并发安全规范
+
+rules:
+  - id: conc-java-unsafe-simpledateformat
+    languages: [java]
+    pattern: |
+      static SimpleDateFormat $fmt = ...;
+    message: "[并发安全] SimpleDateFormat 非线程安全，不应作为 static 共享变量。使用 DateTimeFormatter（线程安全）或 ThreadLocal。"
+    severity: ERROR
+    category: implementation
+    fix: "static final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(\"yyyy-MM-dd\");"
+
+  - id: conc-java-unsafe-hashmap
+    languages: [java]
+    patterns:
+      - pattern: |
+          static Map<$K, $V> $map = new HashMap<>();
+      - pattern-not: |
+          static Map<$K, $V> $map = new ConcurrentHashMap<>();
+    message: "[并发安全] HashMap 作为 static 共享变量非线程安全，使用 ConcurrentHashMap 替代。"
+    severity: ERROR
+    category: implementation
+
+  - id: conc-java-double-checked-locking
+    languages: [java]
+    pattern: |
+      if ($field == null) {
+        synchronized ($LOCK) {
+          if ($field == null) {
+            $field = new $TYPE(...);
+          }
+        }
+      }
+    message: "[并发安全] 双重检查锁定模式需要 volatile 修饰字段，否则可能因指令重排导致问题。"
+    severity: ERROR
+    category: implementation
+    fix: "private volatile $TYPE $field;"
+
+  - id: conc-python-global-mutable
+    languages: [python]
+    pattern: |
+      global $VAR
+      $VAR = ...
+    message: "[并发安全] 使用 global 修改全局变量，在多线程/异步环境中可能导致竞态条件。考虑使用线程安全的数据结构或锁。"
+    severity: WARNING
+    category: implementation

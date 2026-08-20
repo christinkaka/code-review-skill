@@ -1,0 +1,45 @@
+rules:
+- id: raptor-incorrect-unsigned-comparison
+  languages:
+  - c
+  - cpp
+  message: Checking if an unsigned variable is negative makes no sense and is usually
+    a good indication that something is probably wrong with the code.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: HIGH
+    cwe:
+    - 'CWE-697: Incorrect Comparison'
+    impact: MEDIUM
+    likelihood: LOW
+    owasp:
+    - A10:2025 - Mishandling of Exceptional Conditions
+    references:
+    - https://g.co/kgs/PCHQjJ
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Improper Validation
+  pattern-either:
+  - pattern: (unsigned short $_) < 0
+  - pattern: (unsigned short int $_) < 0
+  - pattern: (unsigned int $_) < 0
+  - pattern: (unsigned long $_) < 0
+  - pattern: (unsigned long int $_) < 0
+  - pattern: (size_t $_) < 0
+  - pattern: (unsigned short $_) <= 0
+  - pattern: (unsigned short int $_) <= 0
+  - pattern: (unsigned int $_) <= 0
+  - pattern: (unsigned long $_) <= 0
+  - pattern: (unsigned long int $_) <= 0
+  - pattern: (size_t $_) <= 0
+  - pattern: (unsigned short $_) >= 0
+  - pattern: (unsigned short int $_) >= 0
+  - pattern: (unsigned int $_) >= 0
+  - pattern: (unsigned long $_) >= 0
+  - pattern: (unsigned long int $_) >= 0
+  - pattern: (size_t $_) >= 0
+  severity: WARNING

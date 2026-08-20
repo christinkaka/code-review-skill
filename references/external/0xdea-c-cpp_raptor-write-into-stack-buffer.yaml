@@ -1,0 +1,179 @@
+rules:
+- id: raptor-write-into-stack-buffer
+  languages:
+  - c
+  - cpp
+  message: The software directly writes into a stack buffer. This might lead to a
+    stack-based buffer overflow.
+  metadata:
+    author: Marco Ivaldi <raptor@0xdeadbeef.info>
+    category: security
+    confidence: MEDIUM
+    cwe:
+    - 'CWE-121: Stack-based Buffer Overflow'
+    impact: LOW
+    likelihood: LOW
+    owasp:
+    - A08:2025 - Software or Data Integrity Failures
+    references:
+    - https://github.com/googleprojectzero/weggli
+    subcategory:
+    - audit
+    technology:
+    - c
+    - cpp
+    vulnerability_class: Memory Issues
+  pattern-either:
+  - patterns:
+    - pattern: $FUN($BUF, ...)
+    - pattern-inside: '$_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not-inside: 'static $_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not: $FUN($BUF, "...", ...)
+    - metavariable-pattern:
+        metavariable: $FUN
+        pattern-either:
+        - pattern: strcpy
+        - pattern: strncpy
+        - pattern: stpcpy
+        - pattern: stpncpy
+        - pattern: strlcpy
+        - pattern: strscpy
+        - pattern: wcscpy
+        - pattern: wcsncpy
+        - pattern: wcpcpy
+        - pattern: wcpncpy
+        - pattern: wcslcpy
+        - pattern: _mbscpy
+        - pattern: _mbsncpy
+        - pattern: _mbpcpy
+        - pattern: _mbpncpy
+        - pattern: _mbslcpy
+        - pattern: strccpy
+        - pattern: strcadd
+        - pattern: streadd
+        - pattern: strecpy
+        - pattern: strcat
+        - pattern: strncat
+        - pattern: strlcat
+        - pattern: wcscat
+        - pattern: wcsncat
+        - pattern: wcslcat
+        - pattern: _mbscat
+        - pattern: _mbsncat
+        - pattern: _mbslcat
+        - pattern: memcpy
+        - pattern: memccpy
+        - pattern: mempcpy
+        - pattern: memmove
+        - pattern: memset
+        - pattern: wmemcpy
+        - pattern: wmempcpy
+        - pattern: wmemmove
+        - pattern: wmemset
+  - patterns:
+    - pattern: $FUN($BUF, $FMT, ...)
+    - pattern-inside: '$_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not-inside: 'static $_ $BUF[$_];
+
+        ...
+
+        '
+    - metavariable-regex:
+        metavariable: $FMT
+        regex: (".*%l?s.*"|".*%S.*"|[a-zA-Z_][a-zA-Z0-9_]*)
+    - metavariable-pattern:
+        metavariable: $FUN
+        pattern-either:
+        - pattern: sprintf
+        - pattern: vsprintf
+  - patterns:
+    - pattern: $FUN($BUF, $_, $FMT, ...)
+    - pattern-inside: '$_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not-inside: 'static $_ $BUF[$_];
+
+        ...
+
+        '
+    - metavariable-regex:
+        metavariable: $FMT
+        regex: (".*%l?s.*"|".*%S.*"|[a-zA-Z_][a-zA-Z0-9_]*)
+    - metavariable-pattern:
+        metavariable: $FUN
+        pattern-either:
+        - pattern: snprintf
+        - pattern: vsnprintf
+        - pattern: swprintf
+        - pattern: vswprintf
+  - patterns:
+    - pattern: $FUN($BUF, ...)
+    - pattern-inside: '$_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not-inside: 'static $_ $BUF[$_];
+
+        ...
+
+        '
+    - metavariable-pattern:
+        metavariable: $FUN
+        pattern-either:
+        - pattern: gets
+        - pattern: fgets
+        - pattern: getwd
+        - pattern: getcwd
+        - pattern: fread
+  - patterns:
+    - pattern: $FUN($_, $BUF, ...)
+    - pattern-inside: '$_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not-inside: 'static $_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not: $FUN("...", $BUF, ...)
+    - metavariable-pattern:
+        metavariable: $FUN
+        pattern-either:
+        - pattern: bcopy
+  - patterns:
+    - pattern: $FUN($_, $BUF, ...)
+    - pattern-inside: '$_ $BUF[$_];
+
+        ...
+
+        '
+    - pattern-not-inside: 'static $_ $BUF[$_];
+
+        ...
+
+        '
+    - metavariable-pattern:
+        metavariable: $FUN
+        pattern-either:
+        - pattern: read
+        - pattern: pread
+        - pattern: recv
+        - pattern: recvfrom
+  severity: INFO

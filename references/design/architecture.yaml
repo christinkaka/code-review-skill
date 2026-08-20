@@ -1,0 +1,50 @@
+# 设计规约 - 架构合规
+# 检查分层依赖、循环引用、模块边界
+
+rules:
+  - id: arch-java-layer-violation
+    languages: [java]
+    patterns:
+      - pattern: |
+          package com.$org.controller;
+          ...
+          import com.$org.dao.$CLASS;
+      - pattern: |
+          package com.$org.controller;
+          ...
+          import com.$org.repository.$CLASS;
+    message: >
+      [架构违规] Controller 层直接依赖 DAO/Repository 层，违反分层架构规范。
+      Controller 应通过 Service 层访问数据。
+    severity: WARNING
+    category: design
+
+  - id: arch-java-circular-dep
+    languages: [java]
+    pattern: |
+      package com.$org.service.$A;
+      ...
+      import com.$org.service.$B.$CLASS;
+    message: >
+      [架构违规] Service 层之间存在跨包直接引用，可能导致循环依赖。
+      考虑通过接口或事件解耦。
+    severity: WARNING
+    category: design
+
+  - id: arch-java-entity-leak
+    languages: [java]
+    patterns:
+      - pattern: |
+          package com.$org.controller;
+          ...
+          import com.$org.entity.$CLASS;
+      - pattern: |
+          package com.$org.controller;
+          ...
+          import com.$org.model.$CLASS;
+    message: >
+      [架构违规] Controller 层直接引用 Entity/Model 层对象，存在数据模型泄露风险。
+      应使用 DTO 进行数据传输。
+    severity: WARNING
+    category: design
+    fix: "创建对应的 DTO 类，使用 Mapper 进行 Entity <-> DTO 转换"
