@@ -390,6 +390,7 @@ code-review-skill/
 │   ├── design/               # 设计规约（架构、API、数据库）
 │   ├── implementation/       # 代码实现规约（命名、异常、并发、空指针）
 │   ├── security/             # 安全规约（12 类，覆盖 OWASP Top 10）
+│   ├── external/             # 外部加载规则（从 GitHub 高分仓库）
 │   ├── rules/                # 自定义业务规则
 │   ├── profiles/             # 规约配置（YAML，控制启用哪些规约）
 │   ├── prompts/              # AI 评审工作流提示词（5 种工作流）
@@ -401,7 +402,9 @@ code-review-skill/
 │   ├── scan.py               # 主扫描入口
 │   ├── diff_analyzer.py      # 分支差异分析
 │   ├── call_graph.py         # 调用图构建与血缘分析
-│   ├── rule_engine.py        # 规则引擎（Semgrep 集成，可选）
+│   ├── rule_engine.py        # 规则引擎（Semgrep 集成 + 外部规则加载）
+│   ├── rule_loader.py        # 外部规则加载器（从 GitHub 高分仓库）
+│   ├── rule_compiler.py      # 规约预编译器（自然语言 → Semgrep 规则）
 │   ├── report_generator.py   # 报告生成（JSON + Markdown）
 │   └── test_rules.py         # 规则测试脚本
 ├── test-validation/          # 测试验证数据
@@ -784,11 +787,99 @@ flowchart TD
 
 ---
 
+## 外部规则加载
+
+除了内置规约库，还支持从高分开源规约库加载经过验证的规则，无需从零编写。
+
+### 推荐规则库
+
+| 规则库 | Stars | 语言覆盖 | 适用场景 |
+|---|---|---|---|
+| **Semgrep 官方规则** | 15.8k | 30+ 语言 | OWASP Top 10 全集，20000+ 规则 |
+| **0xdea/semgrep-rules** | ~500 | C/C++ | 缓冲区溢出、use-after-free、整数溢出等 |
+| **mindedsecurity/android-security** | 335 | Java/Kotlin | Android 移动安全，基于 OWASP MASTG |
+| **dipa96/semgrep-rules** | ~30 | JavaScript | DOM XSS 深度检测 |
+
+### 使用方式
+
+```bash
+# 列出推荐规则库
+python3 scripts/rule_loader.py --list
+
+# 从推荐库加载
+python3 scripts/rule_loader.py --from recommended --repo-key semgrep-official
+python3 scripts/rule_loader.py --from recommended --repo-key 0xdea-c-cpp
+
+# 从自定义 GitHub 仓库加载
+python3 scripts/rule_loader.py --from github --repo https://github.com/user/rules
+
+# 查看已加载规则
+python3 scripts/rule_loader.py --status
+
+# 移除规则
+python3 scripts/rule_loader.py --remove <rule-id>
+```
+
+### AI 交互流程
+
+在执行代码评审时，AI 会在策略确认阶段**主动询问**是否需要加载外部规则：
+
+1. **检测项目语言** → 匹配推荐规则库
+2. **展示策略** → 包含规则配置板块（内部规则 + 外部规则）
+3. **用户选择** → 可选择"📦 加载外部规则"
+4. **交互式加载** → 展示推荐库 → 用户选择 → 执行加载 → 展示结果
+5. **更新策略** → 重新确认
+
+详见 [外部规则加载指南](.trae/skills/code-review/references/external-rules-guide.md)。
+
+---
+
+## 规约预编译
+
+支持将自然语言规约转换为 Semgrep 规则，带安全审核机制。
+
+### 流程
+
+```
+人写自然语言规约（纯 Markdown，无需 Semgrep 语法）
+    ↓
+AI 理解并生成 Semgrep 规则草稿
+    ↓
+AI 对比解读新旧规则差异
+    ↓
+【AI 必须等待用户确认】← 关键控制点
+    ↓
+回归测试验证规则效果（可选）
+    ↓
+用户确认后生成最终规则
+```
+
+### 使用方式
+
+```bash
+# 编译所有自然语言规约
+python3 scripts/rule_compiler.py --specs-dir references/security/
+
+# 对比新旧规则差异
+python3 scripts/rule_compiler.py --diff references/security/compiled/xxe.yaml
+
+# 人工确认后部署（交互式）
+python3 scripts/rule_compiler.py --approve references/security/compiled/xxe.yaml
+```
+
+**⚠️ AI 行为要求**：禁止自动部署，必须等待用户确认。
+
+详见 [规约预编译指南](.trae/skills/code-review/references/rule-compiler-guide.md)。
+
+---
+
 ## 扩展
 
 - **新增安全规则**: 在 `references/security/` 下添加 Markdown
 - **新增设计规约**: 在 `references/design/` 下添加 Markdown
 - **新增测试案例**: 在 `references/test-cases/` 对应子目录下添加测试
+- **加载外部规则**: 使用 `rule_loader.py` 从高分开源仓库加载
+- **预编译自然语言规约**: 使用 `rule_compiler.py` 转换为 Semgrep 规则
 - **接入新语言**: 在 `scripts/call_graph.py` 中添加 Tree-sitter 解析器
 - **自定义报告**: 扩展 `scripts/report_generator.py`
 
