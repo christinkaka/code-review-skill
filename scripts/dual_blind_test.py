@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from rule_engine import RuleEngine
 from ai_reviewer import AIReviewer
 from report_generator import ReportGenerator
+from scan import prefilter_issues
 import yaml
 
 
@@ -53,6 +54,10 @@ def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files
     scan_duration = time.time() - start_time
     
     print(f"[2/4] 规则引擎检出: {len(raw_issues)} 个问题 (耗时 {scan_duration:.2f}s)")
+    
+    # 4.5 Prefilter 白名单过滤（与 scan.py 主流程一致，测试文件误报在此过滤）
+    raw_issues = prefilter_issues(raw_issues, {})
+    print(f"      Prefilter 后: {len(raw_issues)} 个问题")
     
     # 5. AI 复核（mock LLM）
     ai_config = {

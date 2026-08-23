@@ -352,14 +352,16 @@ flowchart TB
 
 ### 双盲测试验证
 
-在 GitHub Top 真实仓库（freeCodeCamp / Django / Spring Boot）上走完整 SKILL 流程（规则引擎 -> AI 复核 -> 报告生成）验证：
+在 GitHub Top 真实仓库（freeCodeCamp / Django / Spring Boot）上走完整 SKILL 流程（规则引擎 -> Prefilter 白名单 -> AI 复核 -> 报告生成）验证：
 
-| 仓库 | Stars | 语言 | 扫描文件 | 引擎检出 | AI 复核后 | 过滤率 |
-|------|-------|------|---------|---------|----------|--------|
-| freeCodeCamp | 375K+ | JavaScript | 50 | 69 | 54 | 21.7% |
-| Django | 78K+ | Python | 50 | 109 | 90 | 17.4% |
-| Spring Boot | 70K+ | Java | 50 | 2221 | 1782 | 19.8% |
-| **合计** | - | 3 语言 | **150** | **2399** | **1926** | **19.7%** |
+| 仓库 | Stars | 语言 | 扫描文件 | 引擎检出 | Prefilter 后 | AI 复核后 | 总过滤率 |
+|------|-------|------|---------|---------|-------------|----------|---------|
+| freeCodeCamp | 375K+ | JavaScript | 50 | 69 | 62 | 51 | 26.1% |
+| Django | 78K+ | Python | 50 | 109 | 107 | 88 | 19.3% |
+| Spring Boot | 70K+ | Java | 50 | 2221 | 1865 | 1506 | 32.2% |
+| **合计** | - | 3 语言 | **150** | **2399** | **2034** | **1645** | **31.4%** |
+
+> Prefilter 白名单覆盖主流测试文件约定（`src/test/**`、`dockerTest/**`、`*Tests.java`、`*IT.java`、`test_*.py`、`*.spec.*` 等），Spring Boot 实测过滤 356 个测试文件误报。
 
 配套 `test-validation/` 语料（Vulnerable/Safe 成对样本）验证单规则精确率/召回率 >= 0.9。
 

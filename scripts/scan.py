@@ -66,13 +66,27 @@ def prefilter_issues(issues: list, config: dict) -> list:
     """
     # 从配置加载白名单
     whitelist = config.get("prefilter", {}).get("whitelist", {})
-    
+
     # 默认白名单规则
+    # 覆盖主流测试文件约定（双盲测试 Spring Boot 实测发现 359 个 path-traversal
+    # 命中几乎全在测试文件，故扩展以下模式）：
+    # - 标准目录: src/test/**、src/tests/**（Maven/Gradle）
+    # - 自定义 source set: dockerTest/**、integrationTest/**（Spring Boot 等）
+    # - JUnit 命名: *Test.*（单数）、*Tests.*（复数）、*IT.*（Failsafe）
+    # - pytest: test_*.py、*_test.py
+    # - 前端: *.spec.*、*.test.*
     file_patterns = whitelist.get("file_patterns", [
         "**/test/**",
         "**/tests/**",
+        "**/dockerTest/**",
+        "**/integrationTest/**",
         "**/*_test.*",
         "**/*Test.*",
+        "**/*Tests.*",
+        "**/*IT.*",
+        "**/test_*.py",
+        "**/*.spec.*",
+        "**/*.test.*",
         "**/Safe.*",
         "**/safe.*",
     ])
