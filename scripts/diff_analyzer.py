@@ -65,7 +65,9 @@ class DiffAnalyzer:
             logger.error(f"分支引用无效: {e}")
             raise ValueError(f"无法解析分支引用: {e}")
 
-        diff_index = base_commit.diff(target_commit)
+        # create_patch=True 让 diff_item.diff 携带补丁文本（@@ hunk）。
+        # 默认模式下 diff 为空串，增删行数会静默归零（真实仓库实测发现）。
+        diff_index = base_commit.diff(target_commit, create_patch=True)
 
         changed_files = []
         diff_text_parts = []
@@ -78,14 +80,24 @@ class DiffAnalyzer:
                 "deletions": 0,
             }
 
-            # 统计增删行数
+            # 统计增删行数（基于补丁行首 + / - 前缀，排除 +++ / --- 文件头）
             try:
-                raw_diff = diff_item.diff.decode("utf-8", errors="replace")
-                diff_text_parts.append(raw_diff)
-                file_info["additions"] = raw_diff.count("\n+") - raw_diff.count("\n+++")
-                file_info["deletions"] = raw_diff.count("\n-") - raw_diff.count("\n---")
-            except Exception:
-                pass
+                raw = diff_item.diff
+                if isinstance(raw, bytes):
+                    raw = raw.decode("utf-8", errors="replace")
+                if raw:
+                    diff_text_parts.append(raw)
+                    patch_lines = raw.split("\n")
+                    file_info["additions"] = sum(
+                        1 for l in patch_lines
+                        if l.startswith("+") and not l.startswith("+++")
+                    )
+                    file_info["deletions"] = sum(
+                        1 for l in patch_lines
+                        if l.startswith("-") and not l.startswith("---")
+                    )
+            except Exception as e:
+                logger.debug(f"统计 {file_info['path']} 增删行数失败: {e}")
 
             changed_files.append(file_info)
 
