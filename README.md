@@ -337,6 +337,33 @@ flowchart TB
 | **误报过滤** | LLM 评估置信度，过滤低置信度问题 | 减少噪音，提高准确性 | `is_false_positive: bool`，`ai_confidence: float` |
 | **修复建议生成** | 5 种工作流提示词（安全/质量/性能/架构/综合） | 提供针对性的修复代码 | `enhanced_fix: string`，工作流特定字段 |
 
+### AI 不确定性治理层
+
+温度非零（0.1~0.2）意味着同一输入多次评审可能产生不同结论。本层通过四道机制量化并约束这种漂移：
+
+| 模块 | 实现方式 | 效果 | 输出 |
+|------|----------|------|------|
+| **审计轨迹** | `ai_reviewer.py` 每个 kept/dropped 决策留痕，LLM 失败 fail-open 重试 | AI 过滤决策可事后追溯，误杀 ERROR 级问题高亮 | JSONL 审计日志，`dropped_errors` 统计 |
+| **规则编译 LLM** | `rule_compiler.py` 接入真实 LLM（temperature=0），失败降级启发式 | MD 规约 -> Semgrep YAML 的转换确定性优先 | 编译后规则，`generation_method` 标注来源 |
+| **漂移量化** | `consistency_checker.py` 多轮运行测 flip_rate，阈值判定 | 温度采样方差可度量，不稳定问题定位到 rule_id/file/line | `{flip_rate, verdict, per_issue}` 报告 |
+| **外部规则沙箱** | `rule_sandbox.py` 结构校验 + Semgrep 冒烟测试 | 坏规则（无 pattern、非法 severity）不进引擎 | 隔离名单 `quarantined_rules` |
+
+**漂移判定**：`flip_rate <= drift_threshold`（默认 0.1）判定 stable；超阈值输出不稳定问题清单，建议人工复核或降低温度重跑。
+
+### 双盲测试验证
+
+在 GitHub Top 真实仓库（freeCodeCamp / Django / Spring Boot）上走完整 SKILL 流程（规则引擎 -> AI 复核 -> 报告生成）验证：
+
+| 仓库 | Stars | 语言 | 扫描文件 | 引擎检出 | AI 复核后 | 过滤率 |
+|------|-------|------|---------|---------|----------|--------|
+| freeCodeCamp | 375K+ | JavaScript | 50 | 69 | 54 | 21.7% |
+| Django | 78K+ | Python | 50 | 109 | 90 | 17.4% |
+| Spring Boot | 70K+ | Java | 50 | 2221 | 1782 | 19.8% |
+| **合计** | - | 3 语言 | **150** | **2399** | **1926** | **19.7%** |
+
+配套 `test-validation/` 语料（Vulnerable/Safe 成对样本）验证单规则精确率/召回率 >= 0.9。
+
+
 ### 输出层
 
 | 模块 | 实现方式 | 效果 | 输出 |
@@ -358,6 +385,10 @@ flowchart TB
 | **自定义规约体系** | ✅ 已实现 | Markdown + YAML | 分层目录（设计/实现/安全），Profile 配置 |
 | **安全漏洞检测** | ✅ 已实现 | 双引擎 | 12 类安全规约，覆盖 OWASP Top 10 |
 | **AI 辅助评审** | ✅ 已实现 | 多工作流 | 5 种工作流（安全/质量/性能/架构/综合） |
+| **AI 决策审计** | ✅ 已实现 | JSONL 留痕 | 每个过滤决策可追溯，fail-open 保护 |
+| **AI 漂移量化** | ✅ 已实现 | 多轮 flip_rate | 温度采样方差可度量，阈值判定 |
+| **外部规则沙箱** | ✅ 已实现 | 结构校验 + 冒烟 | 坏规则隔离，不进引擎 |
+| **双盲测试** | ✅ 已实现 | 真实仓库验证 | 3 语言 Top 仓库全链路，343 测试用例 |
 | **定期扫描调度** | ✅ 已实现 | Cron + Webhook | 定时扫描 + 结果通知 |
 | **CI/CD 集成** | ✅ 已实现 | CLI | 可嵌入 GitHub Actions / GitLab CI |
 | **离线运行** | ✅ 已实现 | 无外部依赖 | 核心功能全部离线可用 |
@@ -404,11 +435,15 @@ code-review-skill/
 │   ├── call_graph.py         # 调用图构建与血缘分析
 │   ├── rule_engine.py        # 规则引擎（Semgrep 集成 + 外部规则加载）
 │   ├── rule_loader.py        # 外部规则加载器（从 GitHub 高分仓库）
-│   ├── rule_compiler.py      # 规约预编译器（自然语言 → Semgrep 规则）
+│   ├── rule_compiler.py      # 规约预编译器（自然语言 -> Semgrep 规则，LLM 增强）
+│   ├── rule_sandbox.py       # 外部规则沙箱（结构校验 + Semgrep 冒烟）
+│   ├── consistency_checker.py # AI 决策漂移量化（flip_rate）
+│   ├── llm_client.py         # LLM 客户端封装（temperature 控制）
+│   ├── dual_blind_test.py    # 双盲测试脚本（真实仓库全链路验证）
 │   ├── report_generator.py   # 报告生成（JSON + Markdown）
 │   └── test_rules.py         # 规则测试脚本
-├── test-validation/          # 测试验证数据
-├── tests/                    # 单元测试
+├── test-validation/          # 测试验证数据（Vulnerable/Safe 成对语料）
+├── tests/                    # 单元测试（343 个用例）
 ├── offline-packages/         # 离线依赖包（20 个包，约 19MB）
 ├── config.yaml               # 全局配置
 ├── requirements.txt          # Python 依赖
