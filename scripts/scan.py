@@ -82,14 +82,14 @@ def prefilter_issues(issues: list, config: dict) -> list:
     # 从配置加载白名单
     whitelist = config.get("prefilter", {}).get("whitelist", {})
 
-    # 默认白名单规则
+    # 默认白名单规则（17 类）
     # 覆盖主流测试文件约定（双盲测试 Spring Boot 实测发现 359 个 path-traversal
     # 命中几乎全在测试文件，故扩展以下模式）：
-    # - 标准目录: src/test/**、src/tests/**（Maven/Gradle）
+    # - 标准目录: test/**、tests/**、__tests__/**（Maven/Gradle/JS）、spec/**（rspec）
     # - 自定义 source set: dockerTest/**、integrationTest/**（Spring Boot 等）
-    # - JUnit 命名: *Test.*（单数）、*Tests.*（复数）、*IT.*（Failsafe）
+    # - JUnit 命名: *Test.*（单数）、*Tests.*（复数）、*IT.*（Failsafe）、*TestCase.*
     # - pytest: test_*.py、*_test.py
-    # - 前端: *.spec.*、*.test.*
+    # - 前端/Ruby: *.spec.*、*.test.*、*Spec.*
     file_patterns = whitelist.get("file_patterns", [
         "**/test/**",
         "**/tests/**",
@@ -99,9 +99,13 @@ def prefilter_issues(issues: list, config: dict) -> list:
         "**/*Test.*",
         "**/*Tests.*",
         "**/*IT.*",
+        "**/*TestCase.*",
         "**/test_*.py",
         "**/*.spec.*",
         "**/*.test.*",
+        "**/*Spec.*",
+        "**/__tests__/**",
+        "**/spec/**",
         "**/Safe.*",
         "**/safe.*",
     ])
@@ -406,6 +410,41 @@ def run_scan(args):
 
     # 4.5 Prefilter 白名单过滤（P0-3 修复）
     raw_issues = prefilter_issues(raw_issues, config)
+
+    # 4.6 生成子 Agent 评审任务文件（主 Agent 委派契约，见 main-agent-contract.md）
+    try:
+        task_config = dict(config.get("ai_review", {}))
+        if hasattr(args, "workflow") and getattr(args, "workflow", None):
+            task_config["workflow"] = args.workflow
+        task_reviewer = AIReviewer(task_config)
+
+        feedback_summary: dict = {}
+        feedback_examples: list = []
+        if FeedbackManager is not None:
+            try:
+                fm = FeedbackManager()
+                feedback_summary = fm.get_feedback_summary()
+                feedback_examples = build_feedback_examples(fm, max_examples=10)
+            except Exception as fm_err:
+                logger.debug(f"历史反馈数据加载失败（任务文件将显示暂无数据）: {fm_err}")
+
+        task_path = output_dir / "subagent-review-task.md"
+        task_reviewer.generate_subagent_task(
+            issues=raw_issues,
+            scan_info={
+                "repo": args.repo,
+                "base": args.base,
+                "target": args.target,
+                "profile": args.profile,
+                "scan_time": datetime.now().isoformat(),
+            },
+            feedback_summary=feedback_summary,
+            feedback_examples=feedback_examples,
+            output_path=str(task_path),
+        )
+        logger.info(f"  子 Agent 评审任务文件: {task_path}")
+    except Exception as task_err:
+        logger.warning(f"子 Agent 任务文件生成失败（不影响主流程）: {task_err}")
 
     # 5. AI 增强评审（可选）
     issues = raw_issues

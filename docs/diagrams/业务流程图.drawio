@@ -1,0 +1,135 @@
+<mxfile host="app.diagrams.net" agent="code-review-skill" version="24.7.7" type="device">
+  <diagram id="flow-001" name="主要业务流程">
+    <mxGraphModel dx="1100" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="f-title" value="主要业务流程：从评审请求到报告输出" style="text;html=1;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="f-subtitle" value="主 Agent 只调度不评审：确定性扫描（规则）先行，子 Agent AI 评审兜底，治理闭环持续纠偏" style="text;html=1;fontSize=12;fontColor=#666666;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="700" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-start" value="用户发起代码评审请求" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="80" width="240" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-p1" value="&lt;b&gt;主 Agent 解析意图&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;workflow · profile · 扫描模式&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="155" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p2" value="&lt;b&gt;Step 0 环境准备&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Python 依赖（离线包） · Semgrep 检测&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="250" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p3" value="&lt;b&gt;Step 2 数据提取&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Git Diff 变更文件 · Tree-sitter 调用图&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="345" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p4" value="&lt;b&gt;Step 3 规则预编译&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;计算规约 hash · 校验 manifest 缓存&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="440" width="240" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-d1" value="缓存有效？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="355" y="535" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p5a" value="&lt;b&gt;加载预编译缓存&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;17ms -&amp;gt; 8ms 提速 50%&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="630" y="550" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p5b" value="&lt;b&gt;重新解析 Markdown 规约&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;更新 manifest 缓存&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="550" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-p6" value="&lt;b&gt;Step 4 多引擎融合扫描&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Prefilter 白名单 · Semgrep · AST · 正则&lt;br/&gt;去重合并（AST &amp;gt; Semgrep &amp;gt; Regex）&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="670" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-d2" value="发现候选问题？" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="355" y="780" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="f-pnone" value="&lt;b&gt;输出无问题报告&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;直接进入报告生成&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="630" y="795" width="170" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-p7" value="&lt;b&gt;生成评审任务文件&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;subagent-review-task.md&lt;br/&gt;含温度参数与字段契约&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="910" width="240" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p8" value="&lt;b&gt;主 Agent 委派子 Agent&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;Task 工具 · 单次委派 · 温度 0.1-0.2&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="1015" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="f-p9" value="&lt;b&gt;子 Agent AI 评审&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;上下文感知 · 误报过滤（is_false_positive）&lt;br/&gt;置信度（ai_confidence） · 修复建议&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="1110" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-p10" value="&lt;b&gt;治理记录&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;决策日志 · 漂移量化 · 人工反馈收集&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="1225" width="240" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-p11" value="&lt;b&gt;Step 6 报告生成&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#666666&quot;&gt;分层展示：确定性扫描结果 vs AI 评审结论&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="1330" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f-end" value="输出报告 / Webhook 通知" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="1430" width="240" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe-0-1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-start" target="f-p1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-1-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p1" target="f-p2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-2-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p2" target="f-p3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-3-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p3" target="f-p4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-4-d1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p4" target="f-d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-d1-yes" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="f-d1" target="f-p5a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-d1-no" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;fontSize=11;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="f-d1" target="f-p5b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p5a-p6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="f-p5a" target="f-p6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p5b-p6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="f-p5b" target="f-p6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p6-d2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p6" target="f-d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-d2-yes" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-d2" target="f-p7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-d2-no" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="f-d2" target="f-pnone">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-pnone-p11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="f-pnone" target="f-p11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p7-p8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p7" target="f-p8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p8-p9" value="Task 委派" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p8" target="f-p9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p9-p10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p9" target="f-p10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p10-p11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p10" target="f-p11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-p11-end" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="f-p11" target="f-end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fe-feedback" value="人工反馈注入下次扫描" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#9673a6;strokeWidth=1.5;fontSize=11;dashed=1;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="f-p10" target="f-p3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

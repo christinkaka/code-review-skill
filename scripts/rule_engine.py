@@ -317,9 +317,20 @@ class RuleEngine:
 
         return all_rules
 
+    # 引擎优先级：AST(3) > Semgrep(2) > Regex(1)
+    ENGINE_PRIORITY = {"ast": 3, "semgrep": 2, "regex": 1}
+
     def run(self, repo_path: str, changed_files: List[Dict]) -> List[Dict]:
         """
-        执行规则检查
+        执行规则检查（多引擎并行 + 优先级合并）
+
+        引擎策略（对齐 docs/architecture.md 多引擎融合架构）：
+        1. Tree-sitter AST 引擎（builtin_engine_v2）：始终执行，最精确，优先级最高
+        2. Semgrep 引擎：可用时执行
+        3. 内置正则引擎：Semgrep 不可用时执行（离线回退方案）
+
+        合并去重：同一 (rule_id, file, line) 保留最高优先级引擎的检出内容，
+        多引擎同时检出时 confidence = 1.0。
 
         Args:
             repo_path: 仓库路径
@@ -332,12 +343,90 @@ class RuleEngine:
             logger.warning("无可用规则，跳过检查")
             return []
 
-        # 尝试使用 Semgrep
+        engine_results: List[Tuple[str, List[Dict]]] = []
+
+        # [引擎 1/3] Tree-sitter AST（始终执行）
+        ast_issues = self._run_with_ast(repo_path, changed_files)
+        engine_results.append(("ast", ast_issues))
+
+        # [引擎 2/3] Semgrep（可用时） / [引擎 3/3] 内置正则（回退）
         if self._semgrep_available():
-            return self._run_with_semgrep(repo_path, changed_files)
+            semgrep_issues = self._run_with_semgrep(repo_path, changed_files)
+            engine_results.append(("semgrep", semgrep_issues))
         else:
-            logger.info("Semgrep 不可用，使用内置模式匹配引擎")
-            return self._run_with_builtin(repo_path, changed_files)
+            logger.info("Semgrep 不可用，启用内置正则引擎（回退方案）")
+            regex_issues = self._run_with_builtin(repo_path, changed_files)
+            engine_results.append(("regex", regex_issues))
+
+        merged = self._merge_multi_engine(engine_results)
+
+        for engine_name, engine_issues in engine_results:
+            logger.info(f"{engine_name} 引擎检出 {len(engine_issues)} 个问题")
+        multi = sum(1 for i in merged if len(i.get("engines", [])) > 1)
+        logger.info(
+            f"多引擎合并去重: {sum(len(x[1]) for x in engine_results)} -> {len(merged)} "
+            f"(多引擎同时检出 {multi} 个)"
+        )
+        return merged
+
+    def _run_with_ast(self, repo_path: str, changed_files: List[Dict]) -> List[Dict]:
+        """Tree-sitter AST 引擎（builtin_engine_v2，精确语法分析，优先级最高）"""
+        try:
+            from builtin_engine_v2 import BuiltinEngineV2
+        except ImportError:
+            logger.debug("builtin_engine_v2 不可用，跳过 AST 引擎")
+            return []
+
+        if not hasattr(self, "_ast_engine"):
+            self._ast_engine = BuiltinEngineV2()
+
+        repo = Path(repo_path)
+        issues: List[Dict] = []
+        for file_info in changed_files:
+            file_path = repo / file_info["path"]
+            if not file_path.exists():
+                continue
+            try:
+                found = self._ast_engine.scan_file(str(file_path))
+            except Exception as e:
+                logger.debug(f"AST 扫描失败 {file_info['path']}: {e}")
+                continue
+            for it in found:
+                # 统一为相对路径，与其他引擎对齐
+                it["file"] = file_info["path"]
+            issues.extend(found)
+        return issues
+
+    @classmethod
+    def _merge_multi_engine(cls, engine_results: List[Tuple[str, List[Dict]]]) -> List[Dict]:
+        """多引擎结果合并去重（优先级 AST > Semgrep > Regex）
+
+        同一 (rule_id, file, line) 被多个引擎检出时：
+        - 保留最高优先级引擎的检出内容（覆盖 message/severity 等）
+        - engines 列表记录所有检出该位置的引擎
+        - 多引擎同时检出时 confidence = 1.0（双引擎互证）
+        """
+        ordered = sorted(
+            engine_results, key=lambda kv: cls.ENGINE_PRIORITY.get(kv[0], 0)
+        )
+        merged: Dict[str, Dict] = {}
+        for engine_name, engine_issues in ordered:
+            for issue in engine_issues:
+                key = f"{issue.get('rule_id', '')}:{issue.get('file', '')}:{issue.get('line', 0)}"
+                issue["engine"] = engine_name
+                if key in merged:
+                    existing = merged[key]
+                    engines = existing.setdefault("engines", [])
+                    if engine_name not in engines:
+                        engines.append(engine_name)
+                    # 高优先级引擎（后处理）的检出内容覆盖低优先级
+                    existing.update({k: v for k, v in issue.items() if k != "engines"})
+                    existing["engines"] = engines
+                    existing["confidence"] = 1.0
+                else:
+                    issue["engines"] = [engine_name]
+                    merged[key] = issue
+        return list(merged.values())
 
     def _semgrep_available(self) -> bool:
         """检查 Semgrep 是否可用"""

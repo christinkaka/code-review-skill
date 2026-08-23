@@ -177,3 +177,49 @@ class TestConfigurableWhitelist:
         }}}
         issues = [make_issue("path-write-traversal", "legacy/old_writer.py")]
         assert prefilter_issues(issues, config) == []
+
+
+# ===================================================================
+# 白名单扩展至 17 类（v2）：__tests__/、spec/、*Spec.*、*TestCase.*
+# ===================================================================
+
+class TestWhitelistV2Expansion:
+    """对齐 scan.py 默认白名单 17 类模式"""
+
+    def test_jest_underscore_tests_dir_filtered(self):
+        """**/__tests__/**：Jest/Mocha 约定"""
+        issues = [make_issue("xss-js-innerhtml", "src/components/__tests__/App.test.js")]
+        assert prefilter_issues(issues, {}) == []
+
+    def test_rspec_spec_dir_filtered(self):
+        """**/spec/**：rspec/Rails 约定"""
+        issues = [make_issue("sqli-ruby-拼接", "spec/models/user_spec.rb")]
+        assert prefilter_issues(issues, {}) == []
+
+    def test_spec_suffix_file_filtered(self):
+        """**/*Spec.*：Spock/Groovy/Ruby 复数约定"""
+        issues = [make_issue("xxe-java-document-builder", "src/test/groovy/ParserSpec.groovy")]
+        assert prefilter_issues(issues, {}) == []
+
+    def test_testcase_suffix_file_filtered(self):
+        """**/*TestCase.*：JUnit 老式命名"""
+        issues = [make_issue("priv-java-exec", "src/main/java/org/app/LegacyTestCase.java")]
+        assert prefilter_issues(issues, {}) == []
+
+    def test_production_spec_named_file_not_filtered(self):
+        """非测试目录下含 spec 字样的生产文件不被误过滤（如 Specification 实现）"""
+        issues = [make_issue("naming-java-class", "src/main/java/org/app/Specification.java")]
+        assert prefilter_issues(issues, {}) != []
+
+    def test_default_whitelist_has_17_patterns(self):
+        """默认白名单必须恰好 17 类模式（与架构图声明一致）"""
+        import inspect
+        import scan
+        source = inspect.getsource(scan.prefilter_issues)
+        # 提取默认列表：file_patterns = whitelist.get(... [ ... ])
+        start = source.index('file_patterns = whitelist.get("file_patterns", [')
+        end = source.index('])', start)
+        block = source[start:end]
+        patterns = [ln.strip().strip(',').strip('"') for ln in block.splitlines()
+                    if ln.strip().startswith('"**')]
+        assert len(patterns) == 17, f"默认白名单应为 17 类，实际 {len(patterns)}: {patterns}"

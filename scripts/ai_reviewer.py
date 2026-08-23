@@ -494,8 +494,151 @@ class AIReviewer:
         if workflow not in self.WORKFLOW_CONFIG:
             logger.error(f"不支持的工作流: {workflow}")
             return False
-        
+
         self.workflow = workflow
         self.prompt_template = self._load_prompt_template()
         logger.info(f"已切换工作流: {workflow}")
         return True
+
+    # ============================================================
+    # 子 Agent 评审任务文件生成（主 Agent 委派契约）
+    # ============================================================
+
+    def generate_subagent_task(
+        self,
+        issues: List[Dict],
+        scan_info: Dict = None,
+        feedback_summary: Dict = None,
+        feedback_examples: List[Dict] = None,
+        output_path: str = None,
+    ) -> str:
+        """生成子 Agent 评审任务文件（subagent-review-task.md）
+
+        主 Agent 在扫描完成后读取该文件，通过 Task 工具委派子 Agent 执行
+        AI 评审（见 references/main-agent-contract.md）。
+
+        内容契约对齐：
+        - references/prompts/ai-enhancer-prompt.md（字段唯一来源）
+        - docs/VERIFICATION_MATRIX.md P-01 ~ P-05 验证要求
+
+        Args:
+            issues: Prefilter 过滤后的候选问题列表
+            scan_info: 扫描概要（repo/base/target/profile 等）
+            feedback_summary: FeedbackManager.get_feedback_summary() 结果
+            feedback_examples: build_feedback_examples() 返回的近期反馈
+            output_path: 任务文件写出路径（None 则只返回内容）
+
+        Returns:
+            任务文件的 Markdown 内容
+        """
+        scan_info = scan_info or {}
+        feedback_summary = feedback_summary or {}
+        feedback_examples = feedback_examples or []
+
+        workflow = self.get_current_workflow()
+        wf_config = self.WORKFLOW_CONFIG.get(workflow, {})
+        temperature = wf_config.get("temperature", 0.1)
+
+        total = feedback_summary.get("total", 0)
+        confirmed = feedback_summary.get("confirmed", 0)
+        false_positive = feedback_summary.get("false_positive", 0)
+        uncertain = feedback_summary.get("uncertain", 0)
+        judged = confirmed + false_positive
+        accuracy = f"{confirmed / judged * 100:.1f}%" if judged > 0 else "暂无数据"
+
+        lines: List[str] = []
+        lines.append("# 子 Agent 评审任务")
+        lines.append("")
+        lines.append(
+            "> 本文件由 scan.py 自动生成。主 Agent 读取本文件后，"
+            "必须通过 Task 工具委派一个子 Agent 执行 AI 评审，不能自己直接评审。"
+        )
+        lines.append(">")
+        lines.append(
+            "> 输出字段契约唯一来源：`references/prompts/ai-enhancer-prompt.md`，"
+            "不要修改字段名或输出格式。"
+        )
+        lines.append("")
+
+        # --- 扫描概要 ---
+        lines.append("## 扫描概要")
+        lines.append("")
+        lines.append(f"- 仓库: `{scan_info.get('repo', '-')}`")
+        lines.append(
+            f"- 分支对比: `{scan_info.get('base', '-')}` -> `{scan_info.get('target', '-')}`"
+        )
+        lines.append(f"- 规约 Profile: `{scan_info.get('profile', '-')}`")
+        lines.append(f"- 评审工作流: `{workflow}`（{wf_config.get('description', '')}）")
+        lines.append(
+            f"- 温度参数: `{temperature}`（低温度确保评审严谨性与一致性）"
+        )
+        lines.append(f"- 候选问题数: {len(issues)}")
+        lines.append(f"- 扫描时间: {scan_info.get('scan_time', '-')}")
+        lines.append("")
+
+        # --- 历史反馈统计（P-01 / P-02）---
+        lines.append("## 历史反馈统计")
+        lines.append("")
+        lines.append(f"总反馈数: {total}, 确认: {confirmed}, 误报: {false_positive}, 待定: {uncertain}")
+        lines.append("")
+        lines.append(f"历史准确率: {accuracy}")
+        lines.append("")
+
+        # --- 近期反馈示例（P-03）---
+        lines.append("## 近期反馈示例")
+        lines.append("")
+        if feedback_examples:
+            for fb in feedback_examples:
+                comment = fb.get("comment") or "无备注"
+                lines.append(
+                    f"- [{fb.get('issue_id', '-')}] 判定: {fb.get('verdict', '-')} | {comment}"
+                )
+        else:
+            lines.append("- 暂无历史反馈")
+        lines.append("")
+
+        # --- 评审要求（P-04 / P-05）---
+        lines.append("## 评审要求")
+        lines.append("")
+        lines.append("1. 为每个判断提供**决策理由和证据**，禁止无依据结论")
+        lines.append("2. 标记误报（`is_false_positive = true` 时必须给出理由）")
+        lines.append("3. 输出 JSON 字段契约（严格遵守字段名）：")
+        lines.append("")
+        lines.append("   ```json")
+        lines.append('   {')
+        lines.append('     "rule_id": "规则 ID",')
+        lines.append('     "is_false_positive": false,')
+        lines.append('     "ai_confidence": 0.92,')
+        lines.append('     "analysis": "分析说明",')
+        lines.append('     "enhanced_fix": "修复建议代码",')
+        lines.append('     "evidence": ["证据列表（引用具体代码行或上下文）"]')
+        lines.append('   }')
+        lines.append("   ```")
+        lines.append("")
+
+        # --- 待评审问题清单 ---
+        lines.append("## 待评审问题清单")
+        lines.append("")
+        if issues:
+            for idx, issue in enumerate(issues, 1):
+                lines.append(
+                    f"{idx}. **[{issue.get('severity', '-')}]** "
+                    f"`{issue.get('rule_id', '-')}` — "
+                    f"`{issue.get('file', '-')}:{issue.get('line', '-')}`"
+                    f"（引擎: {issue.get('engine', '-')}"
+                    f"{', 多引擎互证' if len(issue.get('engines', [])) > 1 else ''}）"
+                )
+                lines.append(f"   - {issue.get('message', '')}")
+        else:
+            lines.append("本次扫描无候选问题。")
+        lines.append("")
+
+        content = "\n".join(lines)
+
+        if output_path:
+            out = Path(output_path)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(content, encoding="utf-8")
+            logger.info(f"子 Agent 评审任务文件已生成: {output_path}")
+
+        return content
