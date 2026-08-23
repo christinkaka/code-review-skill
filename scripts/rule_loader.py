@@ -29,6 +29,8 @@ from typing import Dict, List, Optional
 
 import yaml
 
+from rule_sandbox import RuleSandbox
+
 
 # 推荐的高分开源规约库
 RECOMMENDED_REPOS = {
@@ -88,7 +90,7 @@ class RuleLoader:
         if self.metadata_file.exists():
             with open(self.metadata_file, "r", encoding="utf-8") as f:
                 return json.load(f)
-        return {"loaded_rules": [], "sources": {}}
+        return {"loaded_rules": [], "sources": {}, "quarantined_rules": []}
 
     def _save_metadata(self):
         """保存规则元数据"""
@@ -233,7 +235,20 @@ class RuleLoader:
                     rule_id = rule.get("id")
                     if not rule_id:
                         continue
-                    
+
+                    # 沙箱结构校验（P2）：无效规则不落盘，进隔离名单
+                    valid, reason = RuleSandbox.validate_structure(rule)
+                    if not valid:
+                        self.metadata.setdefault("quarantined_rules", []).append({
+                            "rule_id": rule_id,
+                            "source": source_name,
+                            "file": str(yaml_file),
+                            "reason": reason,
+                            "quarantined_at": datetime.now().isoformat(),
+                        })
+                        print(f"隔离无效规则 {rule_id}: {reason}")
+                        continue
+
                     # 检查是否已加载
                     if any(r["rule_id"] == rule_id for r in loaded):
                         continue

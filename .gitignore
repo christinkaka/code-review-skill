@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# 测试与缓存
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 真实仓库克隆（双盲测试数据，体积大不入库）
+repos/
+
+# 扫描报告输出（可随时重新生成）
+reports/*/issues.json
+reports/*/report.md
+
+# 系统文件
+.DS_Store
+*.log
+
+# 临时文件
+*.tmp
+*.bak

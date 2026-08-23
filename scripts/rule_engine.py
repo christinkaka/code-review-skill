@@ -22,6 +22,8 @@ from typing import Dict, List, Optional, Tuple
 
 import yaml
 
+from rule_sandbox import RuleSandbox
+
 logger = logging.getLogger("code-review.rules")
 
 
@@ -233,8 +235,10 @@ class RuleEngine:
                         logger.error(f"加载外部规则失败 {file_path}: {e}")
 
         # 自动扫描 external/ 目录下的所有 YAML 规则
+        # （仅当 profile 实际启用规则时：空 specs 是用户的明确意愿，不隐式拉入外部规则）
+        profile_specs = (self.profile or {}).get("specs", [])
         external_dir = self.specs_dir / "external"
-        if external_dir.exists() and external_dir.is_dir():
+        if external_dir.exists() and external_dir.is_dir() and profile_specs:
             external_rules = self._load_external_rules(external_dir)
             all_rules.extend(external_rules)
             logger.info(f"从 external/ 目录自动加载 {len(external_rules)} 条外部规则")
@@ -243,7 +247,7 @@ class RuleEngine:
         return all_rules
 
     def _load_yaml_rules(self, yaml_file: str) -> List[Dict]:
-        """加载单个 YAML 规则文件（Semgrep 格式）"""
+        """加载单个 YAML 规则文件（Semgrep 格式，含结构校验）"""
         with open(yaml_file, "r", encoding="utf-8") as f:
             content = yaml.safe_load(f)
 
@@ -254,6 +258,12 @@ class RuleEngine:
         for rule in content.get("rules", []):
             rule_id = rule.get("id")
             if not rule_id:
+                continue
+
+            # 结构校验（P2 引擎侧防御）：无效规则不进引擎
+            valid, reason = RuleSandbox.validate_structure(rule)
+            if not valid:
+                logger.warning(f"跳过无效外部规则 {rule_id}: {reason}")
                 continue
 
             # 转换为内部规则格式
@@ -414,17 +424,23 @@ class RuleEngine:
             if not rule.get("patterns"):
                 continue
 
+            has_positive_pattern = any(
+                p.get("type") in ("pattern", "pattern-regex")
+                for p in rule["patterns"]
+            )
+            if not has_positive_pattern:
+                logger.debug(
+                    f"跳过无正向 pattern 的规则 {rule.get('id')}（仅有 pattern-not）"
+                )
+                continue
+
             languages = rule.get("languages", ["java"])
 
             if len(languages) <= 1:
-                # 单语言规则：直接创建
                 semgrep_rule = self._build_semgrep_rule(rule, languages)
                 semgrep_rules["rules"].append(semgrep_rule)
             else:
-                # 多语言规则：为每个语言创建独立的 Semgrep 规则
-                # 使用 __{lang} 后缀确保 ID 唯一，后续在结果处理时还原
                 for lang in languages:
-                    # 检查该语言是否有可用的 pattern（跳过无 pattern 的语言）
                     has_pattern = False
                     for p in rule["patterns"]:
                         p_lang = p.get("lang")
