@@ -59,6 +59,9 @@ class RuleCompiler:
         self.history_dir = self.output_dir / ".history"
         self.history_dir.mkdir(parents=True, exist_ok=True)
 
+        # manifest 文件路径（用于缓存管理）
+        self.manifest_path = self.output_dir / "manifest.json"
+
         # LLM 客户端：注入优先，否则自动探测（环境变量/config.yaml）
         if llm_client is not None:
             self.llm_client = llm_client
@@ -66,6 +69,104 @@ class RuleCompiler:
             self.llm_client = LLMClient.autodetect(
                 project_root=self.specs_dir.parent
             )
+
+    def compute_file_hash(self, file_path: str) -> str:
+        """计算文件的 SHA256 hash"""
+        import hashlib
+        with open(file_path, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
+
+    def load_manifest(self) -> Dict:
+        """加载 manifest 文件"""
+        if self.manifest_path.exists():
+            with open(self.manifest_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {}
+
+    def save_manifest(self, manifest: Dict):
+        """保存 manifest 文件"""
+        with open(self.manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+    def is_cache_valid(self, rel_path: str, current_hash: str, manifest: Dict) -> bool:
+        """检查缓存是否有效"""
+        if rel_path not in manifest:
+            return False
+
+        cached = manifest[rel_path]
+        return cached.get("hash") == current_hash
+
+    def compile_file(self, md_path: str, force: bool = False) -> Dict:
+        """
+        编译单个 Markdown 文件
+
+        Args:
+            md_path: Markdown 文件路径
+            force: 是否强制重新编译
+
+        Returns:
+            编译后的规则字典
+        """
+        md_path = Path(md_path)
+        rel_path = str(md_path.relative_to(self.specs_dir))
+
+        # 计算当前 hash
+        current_hash = self.compute_file_hash(str(md_path))
+
+        # 加载 manifest
+        manifest = self.load_manifest()
+
+        # 检查缓存
+        if not force and self.is_cache_valid(rel_path, current_hash, manifest):
+            logger.debug(f"缓存有效，跳过编译: {rel_path}")
+            compiled_path = self.output_dir / f"{rel_path}.json"
+            if compiled_path.exists():
+                with open(compiled_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+
+        # 需要重新编译
+        logger.info(f"编译规则文件: {rel_path}")
+
+        # 解析 Markdown 文件
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from rule_engine import MarkdownRuleParser
+        parser = MarkdownRuleParser()
+        rules = parser.parse_file(str(md_path))
+
+        # 检查是否需要 AI 生成 pattern
+        for rule in rules:
+            if not rule.get("patterns"):
+                logger.warning(f"规则 {rule['id']} 没有 pattern，需要 AI 生成")
+                # TODO: 调用 AI 生成 pattern
+                # 暂时跳过
+                continue
+
+        # 构建编译结果
+        compiled = {
+            "source": rel_path,
+            "hash": current_hash,
+            "compiled_at": datetime.now().isoformat(),
+            "rules_count": len(rules),
+            "rules": rules
+        }
+
+        # 保存编译结果
+        compiled_path = self.output_dir / f"{rel_path}.json"
+        compiled_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(compiled_path, "w", encoding="utf-8") as f:
+            json.dump(compiled, f, indent=2, ensure_ascii=False)
+
+        # 更新 manifest
+        manifest[rel_path] = {
+            "hash": current_hash,
+            "compiled_at": compiled["compiled_at"],
+            "rules_count": len(rules)
+        }
+        self.save_manifest(manifest)
+
+        logger.info(f"编译完成: {rel_path} ({len(rules)} 条规则)")
+        return compiled
 
     def compile_all(self, force: bool = False) -> Dict:
         """

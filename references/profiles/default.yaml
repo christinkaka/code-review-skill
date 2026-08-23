@@ -26,6 +26,8 @@ specs:
     enabled: true
   - path: security/xxe.md
     enabled: true
+  - path: security/xxe-natural-language.md
+    enabled: true
   - path: security/xss.md
     enabled: true
   - path: security/path-traversal.md
@@ -37,6 +39,14 @@ specs:
   - path: security/sql-injection.md
     enabled: true
   - path: security/ssrf.md
+    enabled: true
+  - path: security/weak-randomness.md
+    enabled: true
+  - path: security/hardcoded-secrets.md
+    enabled: true
+  - path: security/deserialization.md
+    enabled: true
+  - path: security/log-injection.md
     enabled: true
 
   # 自定义规则

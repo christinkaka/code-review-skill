@@ -1,0 +1,962 @@
+{
+  "scan_info": {
+    "repo": "freeCodeCamp",
+    "repo_path": "repos/freeCodeCamp",
+    "profile": "default",
+    "timestamp": "2026-08-23 15:07:58",
+    "duration_seconds": 6.67,
+    "test_type": "dual-blind"
+  },
+  "summary": {
+    "total": 51,
+    "critical": 18,
+    "high": 33,
+    "medium": 0,
+    "low": 0,
+    "by_category": {
+      "security": 51
+    },
+    "by_file": {
+      "tools/challenge-helper-scripts/utils.ts": 5,
+      "client/src/templates/Challenges/classic/editor.tsx": 4,
+      "client/tools/external-curriculum/build-external-curricula-data-v2.ts": 3,
+      "api/src/routes/helpers/challenge-helpers.ts": 2,
+      "client/src/templates/Challenges/components/independent-lower-jaw.tsx": 2,
+      "client/src/templates/Challenges/exam-download/show.tsx": 2,
+      "client/src/utils/ajax.ts": 2,
+      "client/tools/download-trending.ts": 2,
+      "e2e/utils/email.ts": 2,
+      "packages/challenge-builder/src/transformers.js": 2,
+      "tools/challenge-helper-scripts/create-daily-challenges.ts": 2,
+      "tools/challenge-helper-scripts/create-project.ts": 2,
+      "api/src/routes/protected/socrates.ts": 1,
+      "api/src/routes/protected/user.ts": 1,
+      "api/src/routes/public/auth.ts": 1,
+      "client/src/client-only-routes/show-daily-coding-challenge.tsx": 1,
+      "client/src/components/daily-coding-challenge/calendar.tsx": 1,
+      "client/src/components/helpers/skeleton-sprite.tsx": 1,
+      "client/src/components/signout-modal/index.tsx": 1,
+      "client/src/html.tsx": 1
+    },
+    "by_rule": {
+      "ssrf-js-fetch": 17,
+      "path-write-traversal": 16,
+      "xss-js-dangerouslysetinnerhtml": 8,
+      "xss-js-innerhtml": 8,
+      "path-read-traversal": 2
+    }
+  },
+  "diff_summary": {
+    "files_changed": 0,
+    "insertions": 0,
+    "deletions": 0
+  },
+  "call_graph_summary": {
+    "node_count": 0,
+    "edge_count": 0,
+    "affected_methods": []
+  },
+  "issues": [
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "api/src/routes/helpers/challenge-helpers.ts",
+      "line": 46,
+      "end_line": 46,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7550021510445334,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "api/src/routes/helpers/challenge-helpers.ts",
+      "line": 103,
+      "end_line": 103,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7946421476297646,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "api/src/routes/protected/socrates.ts",
+      "line": 127,
+      "end_line": 140,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8853398974845823,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "api/src/routes/protected/user.ts",
+      "line": 440,
+      "end_line": 440,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7673877665258833,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "api/src/routes/public/auth.ts",
+      "line": 13,
+      "end_line": 17,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.755959443887614,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/client-only-routes/show-daily-coding-challenge.tsx",
+      "line": 158,
+      "end_line": 160,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8510710576206725,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/components/daily-coding-challenge/calendar.tsx",
+      "line": 153,
+      "end_line": 153,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8589882961206433,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/components/helpers/skeleton-sprite.tsx",
+      "line": 8,
+      "end_line": 8,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8678531367751817,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/components/signout-modal/index.tsx",
+      "line": 48,
+      "end_line": 51,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7512997519356122,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/html.tsx",
+      "line": 45,
+      "end_line": 45,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8896278789976454,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/pages/status/version.tsx",
+      "line": 24,
+      "end_line": 24,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7810958999623563,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/classic/editor.tsx",
+      "line": 840,
+      "end_line": 842,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8173189090225254,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/classic/editor.tsx",
+      "line": 867,
+      "end_line": 867,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8707452062733783,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/classic/editor.tsx",
+      "line": 965,
+      "end_line": 965,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8959463573387636,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/classic/editor.tsx",
+      "line": 966,
+      "end_line": 968,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9446231527958742,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/components/challenge-transcript.tsx",
+      "line": 58,
+      "end_line": 58,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8604081262546455,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/components/independent-lower-jaw.tsx",
+      "line": 352,
+      "end_line": 354,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8737039504728492,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/components/independent-lower-jaw.tsx",
+      "line": 378,
+      "end_line": 384,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8654704290513524,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/components/output.tsx",
+      "line": 21,
+      "end_line": 21,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7591648767311324,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/components/preview-portal.tsx",
+      "line": 113,
+      "end_line": 119,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8078775927204215,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/components/test-suite.tsx",
+      "line": 62,
+      "end_line": 62,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8229664357940168,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/templates/Challenges/exam-download/show.tsx",
+      "line": 288,
+      "end_line": 290,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7919014061542975,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/templates/Challenges/exam-download/show.tsx",
+      "line": 304,
+      "end_line": 306,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9373309175424989,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/src/templates/Challenges/utils/index.ts",
+      "line": 122,
+      "end_line": 122,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8718262011333977,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/utils/ajax.ts",
+      "line": 45,
+      "end_line": 49,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8779999519708186,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/src/utils/ajax.ts",
+      "line": 104,
+      "end_line": 104,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8869228501979749,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "client/tools/create-env.ts",
+      "line": 125,
+      "end_line": 125,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9051999823092489,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "client/tools/download-trending.ts",
+      "line": 40,
+      "end_line": 40,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7564200487808076,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "client/tools/download-trending.ts",
+      "line": 68,
+      "end_line": 68,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8035481751951405,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "client/tools/external-curriculum/build-external-curricula-data-v2.ts",
+      "line": 498,
+      "end_line": 498,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9385819428670109,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "client/tools/external-curriculum/build-external-curricula-data-v2.ts",
+      "line": 502,
+      "end_line": 505,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8129355761596956,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "client/tools/external-curriculum/build-external-curricula-data-v2.ts",
+      "line": 518,
+      "end_line": 521,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8291263802121329,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "client/tools/generate-search-placeholder.ts",
+      "line": 98,
+      "end_line": 106,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8417703705174797,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-dangerouslysetinnerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "client/utils/tags.tsx",
+      "line": 70,
+      "end_line": 78,
+      "message": "dangerouslySetInnerHTML 使用用户输入，存在 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7993255015387967,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "curriculum/src/generate/build-curriculum.ts",
+      "line": 13,
+      "end_line": 13,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.802548321704587,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "e2e/utils/email.ts",
+      "line": 17,
+      "end_line": 17,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9295645767204954,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "e2e/utils/email.ts",
+      "line": 30,
+      "end_line": 32,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7938641518314566,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "packages/challenge-builder/src/transformers.js",
+      "line": 214,
+      "end_line": 215,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8519052587352929,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xss-js-innerhtml",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "packages/challenge-builder/src/transformers.js",
+      "line": 427,
+      "end_line": 427,
+      "message": "innerHTML 直接赋值用户输入，存在 DOM 型 XSS 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-79",
+        "owasp": "A03:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8344319933599368,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/create-daily-challenges.ts",
+      "line": 107,
+      "end_line": 107,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8558228690198274,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/create-daily-challenges.ts",
+      "line": 126,
+      "end_line": 126,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9221559404468996,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "tools/challenge-helper-scripts/create-project.ts",
+      "line": 252,
+      "end_line": 255,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.857394066081759,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "tools/challenge-helper-scripts/create-project.ts",
+      "line": 263,
+      "end_line": 266,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8781923597159617,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/utils.ts",
+      "line": 78,
+      "end_line": 78,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.940763185504216,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/utils.ts",
+      "line": 101,
+      "end_line": 101,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8026778101502181,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/utils.ts",
+      "line": 125,
+      "end_line": 125,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7857303761060263,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/utils.ts",
+      "line": 228,
+      "end_line": 228,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9241037139673534,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/challenge-helper-scripts/utils.ts",
+      "line": 267,
+      "end_line": 270,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.877789898973201,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-js-fetch",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "tools/daily-challenges/helpers.ts",
+      "line": 8,
+      "end_line": 14,
+      "message": "fetch 请求用户可控 URL（服务端），存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.780567853709927,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/scripts/redirect-gen.ts",
+      "line": 26,
+      "end_line": 33,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8578758060239251,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "tools/scripts/seed-exams/add-nano-ids.js",
+      "line": 54,
+      "end_line": 54,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8560707344390355,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    }
+  ]
+}

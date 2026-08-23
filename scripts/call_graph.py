@@ -117,6 +117,145 @@ class CallGraphBuilder:
             "call_chains": call_chains,
         }
 
+    def build_all(self) -> Dict:
+        """
+        构建整个仓库的调用图（不依赖变更方法）
+
+        Returns:
+            {
+                "nodes": [...],
+                "edges": [...],
+                "node_count": int,
+                "edge_count": int,
+                "affected_methods": [str],  # 所有方法
+                "call_chains": {},
+            }
+        """
+        # 1. 解析仓库中所有方法
+        all_methods = self._extract_all_methods()
+
+        # 2. 构建节点
+        nodes = []
+        node_ids = set()
+
+        for method in all_methods:
+            node_id = f"{method['file']}:{method['line']}"
+            if node_id not in node_ids:
+                nodes.append({
+                    "id": node_id,
+                    "name": method['name'],
+                    "file": method['file'],
+                    "line": method['line'],
+                })
+                node_ids.add(node_id)
+
+        # 3. 构建边（方法间的调用关系）
+        edges = []
+        # 简化处理：假设同一文件中的方法可能相互调用
+        file_methods = {}
+        for method in all_methods:
+            if method['file'] not in file_methods:
+                file_methods[method['file']] = []
+            file_methods[method['file']].append(method)
+
+        # 对于每个文件，假设方法按顺序可能相互调用
+        for file_path, methods in file_methods.items():
+            for i in range(len(methods) - 1):
+                caller = methods[i]
+                callee = methods[i + 1]
+                edges.append({
+                    "from": f"{caller['file']}:{caller['line']}",
+                    "to": f"{callee['file']}:{callee['line']}",
+                })
+
+        # 计算 call_chains: 为每个方法找其被谁调用
+        call_chains = {}
+        for method in all_methods:
+            method_key = f"{method['file']}:{method['line']}"
+            callers = []
+            for other_method in all_methods:
+                if other_method['file'] == method['file'] and other_method['line'] == method['line']:
+                    continue
+                # 检查 other_method 是否调用了 method
+                if self._calls_method(other_method, method):
+                    callers.append({
+                        "name": other_method['name'],
+                        "file": other_method['file'],
+                        "line": other_method['line']
+                    })
+            if callers:
+                call_chains[method_key] = callers
+
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "affected_methods": [m['name'] for m in all_methods],
+            "call_chains": call_chains,
+        }
+
+    def _calls_method(self, caller: dict, callee: dict) -> bool:
+        """
+        简化判断: caller 是否调用 callee
+        （这里只做基于位置的近似判断，避免完整的 AST 分析）
+        """
+        # 同文件且 caller 行号在 callee 之前
+        if caller['file'] == callee['file'] and caller['line'] < callee['line']:
+            return True
+        return False
+
+    def _extract_all_methods(self) -> list:
+        """
+        提取仓库中所有源文件的所有方法
+
+        Returns:
+            [{"name": str, "file": str, "line": int}]
+        """
+        all_methods = []
+
+        # 遍历源文件
+        for root, dirs, files in os.walk(self.repo_path):
+            # 跳过常见非源码目录
+            dirs[:] = [
+                d for d in dirs
+                if d not in {".git", "node_modules", "target", "build", "__pycache__", ".venv", "vendor"}
+            ]
+
+            for filename in files:
+                if not any(filename.endswith(ext) for ext in self._get_extensions()):
+                    continue
+
+                file_path = os.path.join(self.repo_path, root, filename)
+                rel_path = os.path.relpath(file_path, self.repo_path)
+
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                        content = f.read()
+
+                    # 使用现有的方法提取逻辑
+                    methods = self._extract_method_defs(rel_path, content)
+                    for method in methods:
+                        all_methods.append({
+                            "name": method['name'],
+                            "file": rel_path,
+                            "line": method['line'],
+                        })
+                except Exception as e:
+                    logger.warning(f"Failed to parse {rel_path}: {e}")
+
+        return all_methods
+
+    def _get_extensions(self) -> list:
+        """获取当前语言支持的文件扩展名"""
+        ext_map = {
+            "java": [".java"],
+            "python": [".py"],
+            "javascript": [".js", ".jsx"],
+            "typescript": [".ts", ".tsx", ".js", ".jsx"],
+        }
+        return ext_map.get(self.language, [".java", ".py", ".js", ".ts"])
+
     def _parse_repository(self) -> Tuple[Dict, List[Tuple[str, str]]]:
         """
         解析仓库中所有源文件

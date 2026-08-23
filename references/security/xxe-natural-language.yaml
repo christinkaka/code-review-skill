@@ -1,0 +1,39 @@
+rules:
+  - id: xxe-natural-language
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: |
+                  $FACTORY = DocumentBuilderFactory.newInstance();
+                  ...
+                  $BUILDER = $FACTORY.newDocumentBuilder();
+                  ...
+                  $BUILDER.parse($INPUT);
+              - pattern-not: |
+                  $FACTORY = DocumentBuilderFactory.newInstance();
+                  ...
+                  $FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                  ...
+                  $BUILDER = $FACTORY.newDocumentBuilder();
+                  ...
+                  $BUILDER.parse($INPUT);
+              - pattern-not: |
+                  $FACTORY = DocumentBuilderFactory.newInstance();
+                  ...
+                  $FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                  ...
+                  $BUILDER = $FACTORY.newDocumentBuilder();
+                  ...
+                  $BUILDER.parse($INPUT);
+    message: |
+      XXE 漏洞：DocumentBuilderFactory 未禁用外部实体。
+      攻击者可构造恶意 XML 读取服务器文件或发起 SSRF 攻击。
+      修复：调用 setFeature() 禁用外部实体。
+    languages: [java]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: xxe
+      cwe: CWE-611
+      owasp: A05:2021
+      description: "自然语言规约演示：DocumentBuilder 未禁用外部实体"

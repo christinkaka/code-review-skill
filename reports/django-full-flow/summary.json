@@ -1,0 +1,49 @@
+{
+  "total": 107,
+  "critical": 54,
+  "high": 34,
+  "medium": 2,
+  "low": 17,
+  "by_category": {
+    "security": 88,
+    "implementation": 18,
+    "custom": 1
+  },
+  "by_file": {
+    "django/core/management/commands/makemessages.py": 10,
+    "scripts/tests.py": 9,
+    "django/core/cache/backends/filebased.py": 6,
+    "django/core/management/commands/makemigrations.py": 6,
+    "django/core/management/templates.py": 5,
+    "django/utils/archive.py": 4,
+    "django/utils/cache.py": 4,
+    "scripts/manage_translations.py": 4,
+    "scripts/prepare_commit_msg.py": 4,
+    "scripts/do_django_release.py": 3,
+    "django/core/management/commands/optimizemigration.py": 2,
+    "django/core/management/commands/squashmigrations.py": 2,
+    "django/db/migrations/writer.py": 2,
+    "django/utils/functional.py": 2,
+    "django/views/generic/edit.py": 2,
+    "django/contrib/admin/checks.py": 1,
+    "django/contrib/auth/checks.py": 1,
+    "django/contrib/auth/hashers.py": 1,
+    "django/contrib/auth/password_validation.py": 1,
+    "django/contrib/gis/db/models/lookups.py": 1
+  },
+  "by_rule": {
+    "path-read-traversal": 47,
+    "path-write-traversal": 21,
+    "naming-python-class-case": 17,
+    "sig-python-weak-hash": 10,
+    "auth-python-django-mixin": 3,
+    "sqli-python-execute-format": 2,
+    "conc-python-global-mutable": 1,
+    "priv-python-subprocess-popen": 1,
+    "sqli-python-raw-query": 1,
+    "custom-hardcoded-password": 1,
+    "priv-python-subprocess-run": 1,
+    "ssrf-python-requests": 1,
+    "priv-python-eval": 1
+  }
+}

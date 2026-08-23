@@ -31,6 +31,21 @@ except ImportError:
     Scheduler = None
     Notifier = None
 
+# Harness 模块（可选依赖，V8/V9 线的 AI 质量管控：决策日志/反馈/质量监控）
+# 需要把项目根目录加入 sys.path，因为 harness 包在项目根目录
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+try:
+    from harness.decision_logger import DecisionLogger
+    from harness.feedback_manager import FeedbackManager
+    from harness.quality_monitor import QualityMonitor
+except ImportError:
+    DecisionLogger = None
+    FeedbackManager = None
+    QualityMonitor = None
+
 # ============================================================
 # 日志配置
 # ============================================================
@@ -147,6 +162,155 @@ def prefilter_issues(issues: list, config: dict) -> list:
         logger.info(f"Prefilter: 过滤 {dropped_count} 个白名单误报，剩余 {len(filtered)} 个")
     
     return filtered
+
+
+# ============================================================
+# Harness 集成（V8/V9 线移植：AI 质量管控）
+# ============================================================
+def load_harness_config(harness_config_path: str = None) -> dict:
+    """加载 Harness 配置文件
+
+    Harness 配置控制 AI 评审的行为约束、监控和反馈机制。
+    与 config.yaml（全局扫描配置）分离，专注于 AI 质量管控。
+    """
+    import yaml
+
+    if harness_config_path is None:
+        project_root = Path(__file__).parent.parent
+        harness_config_path = project_root / "config" / "harness.yaml"
+
+    harness_config_path = Path(harness_config_path)
+    if harness_config_path.exists():
+        with open(harness_config_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+
+    # 配置文件不存在时返回禁用配置
+    return {
+        "harness": {
+            "enabled": False,
+            "decision_logging": {"enabled": False, "keep_recent": 10, "storage_dir": "data/decisions"},
+            "feedback": {"enabled": False, "allow_batch": True, "storage_file": "data/feedbacks.json"},
+            "auto_improvement": {"enabled": False},
+            "quality_monitor": {"enabled": False, "cache_file": "data/stats_cache.json"},
+        }
+    }
+
+
+def create_workspace(repo_path: str = None, base_dir: str = None) -> dict:
+    """创建独立的工作空间
+
+    每次扫描创建独立的工作空间目录，包含：
+    - report/: 扫描报告
+    - cache/: 规则编译缓存
+    - decisions/: 决策日志
+
+    工作空间默认创建在被扫描项目的 .code-review/workspace/ 下，
+    避免污染 code-review-skill 项目本身。
+
+    Returns:
+        {
+            "scan_id": str,          # 扫描ID（时间戳_随机后缀）
+            "workspace_dir": Path,   # 工作空间根目录
+            "report_dir": Path,      # 报告目录
+            "cache_dir": Path,       # 缓存目录
+            "decisions_dir": Path,   # 决策日志目录
+        }
+    """
+    import hashlib
+
+    if base_dir is None:
+        if repo_path:
+            base_dir = Path(repo_path).resolve() / ".code-review" / "workspace"
+        else:
+            project_root = Path(__file__).parent.parent
+            base_dir = project_root / ".code-review" / "workspace"
+
+    base_dir = Path(base_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    # 生成 scan_id: 时间戳_随机后缀
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    random_suffix = hashlib.md5(str(time.time()).encode()).hexdigest()[:4]
+    scan_id = f"{timestamp}_{random_suffix}"
+
+    workspace_dir = base_dir / scan_id
+    report_dir = workspace_dir / "report"
+    cache_dir = workspace_dir / "cache"
+    decisions_dir = workspace_dir / "decisions"
+
+    report_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    decisions_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"工作空间已创建: {workspace_dir}")
+
+    return {
+        "scan_id": scan_id,
+        "workspace_dir": workspace_dir,
+        "report_dir": report_dir,
+        "cache_dir": cache_dir,
+        "decisions_dir": decisions_dir,
+    }
+
+
+def init_harness_components(harness_config: dict) -> dict:
+    """根据 harness 配置初始化各组件
+
+    Returns:
+        {"decision_logger": DecisionLogger|None,
+         "feedback_manager": FeedbackManager|None,
+         "quality_monitor": QualityMonitor|None}
+    """
+    result = {
+        "decision_logger": None,
+        "feedback_manager": None,
+        "quality_monitor": None,
+    }
+
+    harness = harness_config.get("harness", {})
+    if not harness.get("enabled", False):
+        return result
+
+    # 初始化决策日志
+    dl_config = harness.get("decision_logging", {})
+    if dl_config.get("enabled", False) and DecisionLogger is not None:
+        result["decision_logger"] = DecisionLogger(
+            storage_dir=dl_config.get("storage_dir", "data/decisions")
+        )
+
+    # 初始化反馈管理（全局路径 + workspace 路径）
+    fb_config = harness.get("feedback", {})
+    if fb_config.get("enabled", False) and FeedbackManager is not None:
+        result["feedback_manager"] = FeedbackManager(
+            storage_file=fb_config.get("storage_file", "data/feedbacks.json"),
+            workspace_storage_file=fb_config.get("workspace_storage_file")
+        )
+
+    # 初始化质量监控（依赖前两个组件）
+    qm_config = harness.get("quality_monitor", {})
+    if qm_config.get("enabled", False) and QualityMonitor is not None:
+        if result["decision_logger"] and result["feedback_manager"]:
+            result["quality_monitor"] = QualityMonitor(
+                decision_logger=result["decision_logger"],
+                feedback_manager=result["feedback_manager"],
+                cache_file=qm_config.get("cache_file", "data/stats_cache.json"),
+            )
+
+    return result
+
+
+def build_feedback_examples(feedback_manager, max_examples: int = 10) -> list:
+    """从 FeedbackManager 提取近期反馈示例
+
+    取最近的 max_examples 条反馈，附加到 AI 评审提示词中。
+
+    Returns:
+        [{"issue_id": str, "verdict": str, "comment": str|None, "timestamp": str}]
+    """
+    all_feedbacks = feedback_manager.get_all_feedbacks()
+    # 按时间倒序取最近的
+    recent = sorted(all_feedbacks, key=lambda f: f.get("timestamp", ""), reverse=True)
+    return recent[:max_examples]
 
 
 # ============================================================

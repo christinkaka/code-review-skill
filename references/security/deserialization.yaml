@@ -1,0 +1,76 @@
+# 安全规约 - 不安全反序列化
+# CWE-502: Deserialization of Untrusted Data
+# OWASP: A08:2021 - Software and Data Integrity Failures
+
+rules:
+  - id: deser-java-object-input-stream
+    languages: [java]
+    patterns:
+      - pattern: |
+          new ObjectInputStream($USER_INPUT)
+    message: >
+      [不安全反序列化] 使用 ObjectInputStream 反序列化不可信数据，攻击者可构造恶意
+      序列化对象执行远程代码（RCE）。使用白名单校验反序列化类，或改用 JSON 等安全格式。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-502
+      owasp: "A08:2021"
+      confidence: HIGH
+
+  - id: deser-java-read-object
+    languages: [java]
+    patterns:
+      - pattern: |
+          $STREAM.readObject()
+    message: >
+      [不安全反序列化] 调用 readObject() 反序列化对象流。确保输入来源可信，
+      或重写 resolveClass() 方法进行白名单校验。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-502
+      owasp: "A08:2021"
+      confidence: MEDIUM
+
+  - id: deser-python-pickle-loads
+    languages: [python]
+    patterns:
+      - pattern: pickle.loads($USER_INPUT)
+    message: >
+      [不安全反序列化] 使用 pickle.loads() 反序列化不可信数据，攻击者可构造恶意
+      pickle 数据执行任意代码。使用 json.loads() 替代，或使用签名验证。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-502
+      owasp: "A08:2021"
+      confidence: HIGH
+
+  - id: deser-python-pickle-load
+    languages: [python]
+    patterns:
+      - pattern: pickle.load($FILE)
+    message: >
+      [不安全反序列化] 使用 pickle.load() 从文件反序列化数据。如果文件来源不可信，
+      攻击者可构造恶意 pickle 数据执行任意代码。使用 json.load() 替代。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-502
+      owasp: "A08:2021"
+      confidence: MEDIUM
+
+  - id: deser-node-unserialize
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: serialize.unserialize($USER_INPUT)
+    message: >
+      [不安全反序列化] 使用 node-serialize 的 unserialize() 反序列化不可信数据，
+      可导致远程代码执行。使用 JSON.parse() 替代。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-502
+      owasp: "A08:2021"
+      confidence: HIGH

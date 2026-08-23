@@ -1,0 +1,39 @@
+{
+  "total": 51,
+  "critical": 18,
+  "high": 33,
+  "medium": 0,
+  "low": 0,
+  "by_category": {
+    "security": 51
+  },
+  "by_file": {
+    "tools/challenge-helper-scripts/utils.ts": 5,
+    "client/src/templates/Challenges/classic/editor.tsx": 4,
+    "client/tools/external-curriculum/build-external-curricula-data-v2.ts": 3,
+    "api/src/routes/helpers/challenge-helpers.ts": 2,
+    "client/src/templates/Challenges/components/independent-lower-jaw.tsx": 2,
+    "client/src/templates/Challenges/exam-download/show.tsx": 2,
+    "client/src/utils/ajax.ts": 2,
+    "client/tools/download-trending.ts": 2,
+    "e2e/utils/email.ts": 2,
+    "packages/challenge-builder/src/transformers.js": 2,
+    "tools/challenge-helper-scripts/create-daily-challenges.ts": 2,
+    "tools/challenge-helper-scripts/create-project.ts": 2,
+    "api/src/routes/protected/socrates.ts": 1,
+    "api/src/routes/protected/user.ts": 1,
+    "api/src/routes/public/auth.ts": 1,
+    "client/src/client-only-routes/show-daily-coding-challenge.tsx": 1,
+    "client/src/components/daily-coding-challenge/calendar.tsx": 1,
+    "client/src/components/helpers/skeleton-sprite.tsx": 1,
+    "client/src/components/signout-modal/index.tsx": 1,
+    "client/src/html.tsx": 1
+  },
+  "by_rule": {
+    "ssrf-js-fetch": 17,
+    "path-write-traversal": 16,
+    "xss-js-dangerouslysetinnerhtml": 8,
+    "xss-js-innerhtml": 8,
+    "path-read-traversal": 2
+  }
+}

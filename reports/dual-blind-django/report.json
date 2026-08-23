@@ -1,0 +1,1564 @@
+{
+  "scan_info": {
+    "repo": "Django",
+    "repo_path": "repos/django",
+    "profile": "default",
+    "timestamp": "2026-08-23 15:08:02",
+    "duration_seconds": 3.91,
+    "test_type": "dual-blind"
+  },
+  "summary": {
+    "total": 88,
+    "critical": 41,
+    "high": 29,
+    "medium": 2,
+    "low": 16,
+    "by_category": {
+      "security": 70,
+      "implementation": 17,
+      "custom": 1
+    },
+    "by_file": {
+      "scripts/tests.py": 9,
+      "django/core/management/commands/makemessages.py": 8,
+      "django/core/management/commands/makemigrations.py": 6,
+      "django/core/cache/backends/filebased.py": 5,
+      "django/utils/cache.py": 4,
+      "scripts/manage_translations.py": 4,
+      "django/core/management/templates.py": 3,
+      "scripts/prepare_commit_msg.py": 3,
+      "django/core/management/commands/optimizemigration.py": 2,
+      "django/db/migrations/writer.py": 2,
+      "django/utils/archive.py": 2,
+      "django/utils/functional.py": 2,
+      "django/views/generic/edit.py": 2,
+      "scripts/do_django_release.py": 2,
+      "django/contrib/admin/checks.py": 1,
+      "django/contrib/auth/checks.py": 1,
+      "django/contrib/auth/hashers.py": 1,
+      "django/contrib/auth/password_validation.py": 1,
+      "django/contrib/gis/db/models/lookups.py": 1,
+      "django/contrib/gis/gdal/prototypes/generation.py": 1
+    },
+    "by_rule": {
+      "path-read-traversal": 36,
+      "naming-python-class-case": 16,
+      "path-write-traversal": 16,
+      "sig-python-weak-hash": 10,
+      "auth-python-django-mixin": 3,
+      "conc-python-global-mutable": 1,
+      "sqli-python-raw-query": 1,
+      "custom-hardcoded-password": 1,
+      "sqli-python-execute-format": 1,
+      "priv-python-subprocess-run": 1,
+      "ssrf-python-requests": 1,
+      "priv-python-eval": 1
+    }
+  },
+  "diff_summary": {
+    "files_changed": 0,
+    "insertions": 0,
+    "deletions": 0
+  },
+  "call_graph_summary": {
+    "node_count": 0,
+    "edge_count": 0,
+    "affected_methods": []
+  },
+  "issues": [
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/admin/checks.py",
+      "line": 32,
+      "end_line": 32,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7550021510445334,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/auth/checks.py",
+      "line": 13,
+      "end_line": 13,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7946421476297646,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/contrib/auth/hashers.py",
+      "line": 665,
+      "end_line": 665,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8853398974845823,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/contrib/auth/password_validation.py",
+      "line": 254,
+      "end_line": 254,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7673877665258833,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/db/models/lookups.py",
+      "line": 57,
+      "end_line": 58,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.755959443887614,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/gdal/prototypes/generation.py",
+      "line": 22,
+      "end_line": 22,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8510710576206725,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/geos/geometry.py",
+      "line": 40,
+      "end_line": 40,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8589882961206433,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/geos/prototypes/geom.py",
+      "line": 21,
+      "end_line": 21,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8678531367751817,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/contrib/sessions/backends/file.py",
+      "line": 82,
+      "end_line": 82,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7512997519356122,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "conc-python-global-mutable",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "django/contrib/sites/models.py",
+      "line": 72,
+      "end_line": 73,
+      "message": "使用 global 修改全局变量，在多线程/异步环境中可能导致竞态条件。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8896278789976454,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/contrib/staticfiles/storage.py",
+      "line": 161,
+      "end_line": 161,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7810958999623563,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/cache/backends/filebased.py",
+      "line": 36,
+      "end_line": 36,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8173189090225254,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/cache/backends/filebased.py",
+      "line": 55,
+      "end_line": 55,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8707452062733783,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/cache/backends/filebased.py",
+      "line": 65,
+      "end_line": 65,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8959463573387636,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/cache/backends/filebased.py",
+      "line": 98,
+      "end_line": 98,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9446231527958742,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/core/cache/backends/filebased.py",
+      "line": 136,
+      "end_line": 136,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8604081262546455,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/core/cache/utils.py",
+      "line": 7,
+      "end_line": 7,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8737039504728492,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/files/base.py",
+      "line": 115,
+      "end_line": 115,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8654704290513524,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/files/images.py",
+      "line": 50,
+      "end_line": 50,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7591648767311324,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/files/move.py",
+      "line": 50,
+      "end_line": 50,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8078775927204215,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 110,
+      "end_line": 110,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8229664357940168,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 116,
+      "end_line": 116,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7919014061542975,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 116,
+      "end_line": 116,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9373309175424989,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 195,
+      "end_line": 195,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8718262011333977,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 726,
+      "end_line": 726,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8779999519708186,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 734,
+      "end_line": 734,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8869228501979749,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 734,
+      "end_line": 734,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9051999823092489,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemessages.py",
+      "line": 764,
+      "end_line": 764,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7564200487808076,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8035481751951405,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9385819428670109,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 368,
+      "end_line": 368,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8129355761596956,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 368,
+      "end_line": 368,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8291263802121329,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 502,
+      "end_line": 502,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8417703705174797,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 502,
+      "end_line": 502,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7993255015387967,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/optimizemigration.py",
+      "line": 122,
+      "end_line": 122,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.802548321704587,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/optimizemigration.py",
+      "line": 122,
+      "end_line": 122,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9295645767204954,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/shell.py",
+      "line": 84,
+      "end_line": 84,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7938641518314566,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/squashmigrations.py",
+      "line": 208,
+      "end_line": 208,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8519052587352929,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/templates.py",
+      "line": 208,
+      "end_line": 208,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8344319933599368,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/templates.py",
+      "line": 320,
+      "end_line": 320,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8558228690198274,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/templates.py",
+      "line": 320,
+      "end_line": 320,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9221559404468996,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-python-raw-query",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/db/backends/oracle/base.py",
+      "line": 323,
+      "end_line": 327,
+      "message": "SQLAlchemy raw query 使用字符串拼接，存在注入风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.857394066081759,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "custom-hardcoded-password",
+      "category": "custom",
+      "severity": "HIGH",
+      "file": "django/db/backends/oracle/creation.py",
+      "line": 292,
+      "end_line": 292,
+      "message": "疑似硬编码密码，请使用配置中心或环境变量管理敏感配置。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8781923597159617,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/db/backends/sqlite3/_functions.py",
+      "line": 414,
+      "end_line": 414,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.940763185504216,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-python-execute-format",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/db/backends/sqlite3/base.py",
+      "line": 331,
+      "end_line": 331,
+      "message": "Python 使用字符串格式化/拼接构建 SQL，存在注入风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8026778101502181,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/db/backends/utils.py",
+      "line": 309,
+      "end_line": 309,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7857303761060263,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/db/migrations/writer.py",
+      "line": 279,
+      "end_line": 279,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9241037139673534,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/db/migrations/writer.py",
+      "line": 279,
+      "end_line": 279,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.877789898973201,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/db/models/fields/__init__.py",
+      "line": 1166,
+      "end_line": 1167,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.780567853709927,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/db/models/query_utils.py",
+      "line": 311,
+      "end_line": 311,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8578758060239251,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/forms/boundfield.py",
+      "line": 201,
+      "end_line": 202,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8560707344390355,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/templatetags/tz.py",
+      "line": 12,
+      "end_line": 12,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9163331058722359,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/utils/archive.py",
+      "line": 199,
+      "end_line": 199,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7615850332988375,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/utils/archive.py",
+      "line": 199,
+      "end_line": 199,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9393898890595989,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 125,
+      "end_line": 125,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7756782928999526,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 356,
+      "end_line": 356,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8599607186989888,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9244866082170515,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 376,
+      "end_line": 376,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7923596410884164,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/decorators.py",
+      "line": 7,
+      "end_line": 7,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8959862138179953,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/deprecation.py",
+      "line": 168,
+      "end_line": 168,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.812343258260179,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/functional.py",
+      "line": 7,
+      "end_line": 7,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8799756115278907,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/functional.py",
+      "line": 51,
+      "end_line": 51,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8535151682071181,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/translation/__init__.py",
+      "line": 189,
+      "end_line": 189,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8676617436914467,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "priv-python-subprocess-run",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/utils/version.py",
+      "line": 90,
+      "end_line": 93,
+      "message": "subprocess.run() 使用用户输入，存在命令注入风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-78"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7940434768903119,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "auth-python-django-mixin",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/views/generic/base.py",
+      "line": 231,
+      "end_line": 291,
+      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9310840026012256,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/views/generic/edit.py",
+      "line": 88,
+      "end_line": 89,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7641714699777307,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "auth-python-django-mixin",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/views/generic/edit.py",
+      "line": 137,
+      "end_line": 158,
+      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8837955556592562,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "auth-python-django-mixin",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/views/i18n.py",
+      "line": 98,
+      "end_line": 231,
+      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.776462369745005,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "docs/lint.py",
+      "line": 30,
+      "end_line": 30,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8642086186650569,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/do_django_release.py",
+      "line": 76,
+      "end_line": 76,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9069238848581507,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/do_django_release.py",
+      "line": 136,
+      "end_line": 136,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7880819828723755,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-python-requests",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/manage_translations.py",
+      "line": 76,
+      "end_line": 76,
+      "message": "requests 请求用户可控 URL，存在 SSRF 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.843404933607335,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/manage_translations.py",
+      "line": 137,
+      "end_line": 137,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8846729094586603,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/manage_translations.py",
+      "line": 137,
+      "end_line": 137,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7696835742303918,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "priv-python-eval",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/manage_translations.py",
+      "line": 404,
+      "end_line": 404,
+      "message": "eval() 执行用户可控代码，存在任意代码执行风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-95"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8178605210789927,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/pr_quality/check_pr.py",
+      "line": 426,
+      "end_line": 426,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7997312667840571,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/prepare_commit_msg.py",
+      "line": 109,
+      "end_line": 109,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8057090289333881,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/prepare_commit_msg.py",
+      "line": 114,
+      "end_line": 114,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9346531198552026,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/prepare_commit_msg.py",
+      "line": 114,
+      "end_line": 114,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9222698209523661,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 56,
+      "end_line": 58,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7601176659049762,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/tests.py",
+      "line": 56,
+      "end_line": 58,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9172055170159904,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 60,
+      "end_line": 60,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9352733966016256,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/tests.py",
+      "line": 60,
+      "end_line": 60,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7832622221207828,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 80,
+      "end_line": 80,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7927494598398364,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 108,
+      "end_line": 108,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7617270799944358,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/tests.py",
+      "line": 108,
+      "end_line": 108,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9470617687559452,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 110,
+      "end_line": 110,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9068141203897139,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/tests.py",
+      "line": 110,
+      "end_line": 110,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8346014971980326,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    }
+  ]
+}
