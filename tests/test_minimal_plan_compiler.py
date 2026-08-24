@@ -182,6 +182,22 @@ class TestRepairLoop:
         assert fake.call_count == 4, f"应最多调用 4 次（实际 {fake.call_count}）"
         assert v["status"] == "failed", "全部失败时 validation=failed"
 
+    def test_repair_rounds_capped_at_budget(self, tmp_path, spec_dir):
+        """预算耗尽时 repair_rounds == MAX_REPAIR_ROUNDS（3），不超预算"""
+        result, fake, seq = self._compile(
+            tmp_path, spec_dir,
+            llm_patterns=["always.bad.pattern("],
+            semgrep_results=[semgrep_mock({"bad": 0, "good": 0})],
+        )
+
+        rule = yaml.safe_load(open(result["output"], encoding="utf-8"))
+        v = rule["rules"][0]["metadata"]["validation"]
+
+        assert v.get("repair_rounds") == 3, (
+            f"预算耗尽时 repair_rounds 应为 3（MAX_REPAIR_ROUNDS），"
+            f"实际 {v.get('repair_rounds')}"
+        )
+
     def test_no_retry_when_first_pass_succeeds(self, tmp_path, spec_dir):
         """第 1 轮就通过时不重试（LLM 只调用 1 次）"""
         result, fake, seq = self._compile(
@@ -266,7 +282,7 @@ class TestPassRateThreshold:
         assert v["pass_rate"] == 0.5, "2 项测试通过 1 项，pass_rate=0.5"
 
     def test_deploy_refused_when_pass_rate_below_threshold(self, tmp_path):
-        """pass_rate < 90% 时拒绝部署"""
+        """pass_rate < 90% 时拒绝部署（status=passed 但通过率不足，测新闸门本身）"""
         output_dir = tmp_path / "compiled"
         output_dir.mkdir(parents=True, exist_ok=True)
         rule = {
@@ -280,7 +296,9 @@ class TestPassRateThreshold:
                     "compiled_at": "2026-01-01T00:00:00",
                     "generation_method": "ai",
                     "validation": {
-                        "status": "failed",
+                        # 注意：status=passed 确保不命中第一道 failed 闸门，
+                        # 专测第二道 pass_rate 阈值闸门
+                        "status": "passed",
                         "pass_rate": 0.5,
                     },
                 },

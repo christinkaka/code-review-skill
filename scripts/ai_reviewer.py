@@ -5,6 +5,7 @@ AI 增强评审器
 支持多工作流提示词切换。
 """
 
+import copy
 import json
 import logging
 import os
@@ -212,7 +213,18 @@ class AIReviewer:
         if self.voting_votes > 1:
             return self._review_with_voting(issues, diff_result, call_graph)
 
-        return self._review_pass(issues, diff_result, call_graph)
+        # 单次评审路径（默认）
+        logger.info(f"AI 评审开始，工作流: {self.workflow}，输入 {len(issues)} 个问题")
+        self._audit_input_count += len(issues)
+        filtered_issues = self._review_pass(issues, diff_result, call_graph)
+
+        summary = self.get_audit_summary()
+        logger.info(
+            f"AI 评审完成，输出 {len(filtered_issues)} 个问题"
+            f"（保留 {summary['kept']}，过滤 {summary['dropped']}，"
+            f"其中误杀 ERROR 级 {summary['dropped_errors']}，fail-open {summary['fail_open_events']} 次）"
+        )
+        return filtered_issues
 
     def _review_pass(
         self,
@@ -220,12 +232,7 @@ class AIReviewer:
         diff_result: Dict,
         call_graph: Dict,
     ) -> List[Dict]:
-        """单次评审（投票模式下的一票）"""
-        logger.info(f"AI 评审开始，工作流: {self.workflow}，输入 {len(issues)} 个问题")
-
-        # 审计：记录本次评审的输入总量
-        self._audit_input_count += len(issues)
-
+        """单次评审的批处理主体（审计统计由调用方负责，投票模式复用）"""
         # 分批处理（避免超出 token 限制）
         batch_size = 20
         filtered_issues = []
@@ -235,12 +242,6 @@ class AIReviewer:
             result = self._review_batch(batch, diff_result, call_graph, batch_index)
             filtered_issues.extend(result)
 
-        summary = self.get_audit_summary()
-        logger.info(
-            f"AI 评审完成，输出 {len(filtered_issues)} 个问题"
-            f"（保留 {summary['kept']}，过滤 {summary['dropped']}，"
-            f"其中误杀 ERROR 级 {summary['dropped_errors']}，fail-open {summary['fail_open_events']} 次）"
-        )
         return filtered_issues
 
     def _review_with_voting(
@@ -256,6 +257,13 @@ class AIReviewer:
         才保留。某票 LLM 失败时该票 fail-open（保留全部），
         不会导致整个投票流程崩溃。
 
+        注意：偶数票平票时（如 votes=2 的 1:1）双方都达不到多数阈值，
+        全部丢弃。建议配置奇数票（3/5）。
+
+        审计语义：逐票的 kept/dropped 决策记录不进入最终审计轨迹
+        （否则 total_input 虚增 votes 倍、dropped_errors 虚高），
+        投票结束后写入最终多数票裁决（reason 含投票计数）。
+
         Returns:
             多数票过滤后的问题列表（含最后一次保留版本的 AI 增强字段）
         """
@@ -266,8 +274,11 @@ class AIReviewer:
             f"AI 投票评审开始：{votes} 票采样，多数票阈值 {majority}"
         )
 
+        # 审计：输入只计一次；逐票决策记录投票后回滚
+        self._audit_input_count += len(issues)
+        audit_start_index = len(self.audit_records)
+
         # 每票独立评审（深拷贝隔离各票状态，避免 ai_confidence 等字段互相污染）
-        import copy
         vote_results = []
         for vote_index in range(votes):
             result = self._review_pass(
@@ -275,7 +286,17 @@ class AIReviewer:
             )
             vote_results.append(result)
 
-        # 统计每个问题被保留的票数，多数票过滤
+        # 回滚逐票决策记录（kept/dropped），保留事件记录
+        # （llm_call_failed / parse_retry / parse_failed 等诊断信息）
+        event_records = [
+            r for r in self.audit_records[audit_start_index:]
+            if "decision" not in r
+        ]
+        self.audit_records = (
+            self.audit_records[:audit_start_index] + event_records
+        )
+
+        # 统计每个问题被保留的票数，多数票过滤 + 写入最终裁决
         kept_issues: List[Dict] = []
         for issue in issues:
             key = self._issue_key(issue)
@@ -283,7 +304,20 @@ class AIReviewer:
                 1 for result in vote_results
                 if any(self._issue_key(i) == key for i in result)
             )
-            if vote_count >= majority:
+            kept = vote_count >= majority
+
+            # 审计：最终多数票裁决（可追溯票数）
+            self._audit({
+                "decision": "kept" if kept else "dropped",
+                "rule_id": issue.get("rule_id"),
+                "file": issue.get("file"),
+                "line": issue.get("line"),
+                "severity": issue.get("severity"),
+                "reason": f"majority_vote: {vote_count}/{votes} 票"
+                          f"（阈值 {majority}）",
+            })
+
+            if kept:
                 # 取最后一次保留该问题的版本（含 AI 增强字段）
                 for result in reversed(vote_results):
                     matched = [

@@ -330,7 +330,16 @@ class RuleCompiler:
             if validation["status"] != "failed":
                 break
 
-            # 累积失败反馈
+            # 预算耗尽则停止（不再记录：最后一轮失败已由 validation=failed 表达，
+            # 且该失败不会再触发修复，记录进 prompt 无意义）
+            if round_num >= self.MAX_REPAIR_ROUNDS:
+                logger.warning(
+                    f"修复预算耗尽（{self.MAX_REPAIR_ROUNDS} 轮），"
+                    f"validation=failed"
+                )
+                break
+
+            # 累积失败反馈（只有会触发下一轮修复的失败才需要记录）
             failure_history.append({
                 "round": round_num + 1,
                 "failure": self._describe_validation_failure(validation),
@@ -339,14 +348,6 @@ class RuleCompiler:
                 f"Golden test 第 {round_num + 1} 轮失败: "
                 f"{failure_history[-1]['failure']}"
             )
-
-            # 预算耗尽则停止
-            if round_num >= self.MAX_REPAIR_ROUNDS:
-                logger.warning(
-                    f"修复预算耗尽（{self.MAX_REPAIR_ROUNDS} 轮），"
-                    f"validation=failed"
-                )
-                break
 
             # 带全部历史失败反馈重新生成
             semgrep_rule = self._generate_semgrep_rule_with_ai(

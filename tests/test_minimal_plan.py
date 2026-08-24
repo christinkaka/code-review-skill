@@ -217,3 +217,92 @@ class TestVotingMajority:
         # 票1 保留 2 个，票2 fail-open 保留 2 个，票3 保留 2 个
         # 两个问题都是 3/3，都保留
         assert len(result) == 2
+
+
+# ===================================================================
+# 1b. 投票模式的审计语义（I-1 修复验证）
+# ===================================================================
+
+class TestVotingAudit:
+    """投票模式下审计统计必须反映最终裁决，不被逐票记录污染"""
+
+    def setup_method(self):
+        self.issues = [make_issue("rule-a"), make_issue("rule-b", line=20)]
+        self.diff = {"changed_files": [{"path": "src/Foo.java", "status": "modified"}]}
+        self.call_graph = {}
+
+    def _inject(self, reviewer, responses):
+        call_count = {"n": 0}
+
+        def mock_llm(prompt):
+            resp = responses[call_count["n"] % len(responses)]
+            call_count["n"] += 1
+            return resp
+
+        reviewer._call_llm = mock_llm
+        reviewer._is_available = lambda: True
+
+    def test_audit_total_input_not_inflated(self):
+        """投票模式下 total_input 只计一次（不是 votes 倍）"""
+        reviewer = make_reviewer(votes=3)
+
+        resp = llm_response_for(self.issues, {
+            "rule-a": (True, 0.9), "rule-b": (True, 0.9),
+        })
+        self._inject(reviewer, [resp, resp, resp])
+
+        reviewer.review(self.issues, self.diff, self.call_graph)
+
+        summary = reviewer.get_audit_summary()
+        assert summary["total_input"] == 2, (
+            f"total_input 应为 2（问题数），实际 {summary['total_input']}（被逐票虚增）"
+        )
+
+    def test_audit_reflects_final_majority_decision(self):
+        """审计记录的是最终多数票裁决：rule-a 保留(2/3)、rule-b 过滤(1/3)"""
+        reviewer = make_reviewer(votes=3)
+
+        resp_keep = llm_response_for(self.issues, {
+            "rule-a": (True, 0.9), "rule-b": (True, 0.9),
+        })
+        resp_drop_b = llm_response_for(self.issues, {
+            "rule-a": (True, 0.9), "rule-b": (False, 0.2),
+        })
+        # 票1: 都保留；票2: rule-b 过滤；票3: rule-b 过滤
+        self._inject(reviewer, [resp_keep, resp_drop_b, resp_drop_b])
+
+        result = reviewer.review(self.issues, self.diff, self.call_graph)
+
+        summary = reviewer.get_audit_summary()
+        # 最终裁决：rule-a 保留（3/3），rule-b 过滤（1/3，未达多数 2/3）
+        assert summary["kept"] == 1, (
+            f"最终保留应为 1，实际 {summary['kept']}"
+        )
+        assert summary["dropped"] == 1, (
+            f"最终过滤应为 1（不是逐票累计），实际 {summary['dropped']}"
+        )
+        assert len(result) == 1
+        assert result[0]["rule_id"] == "rule-a"
+
+    def test_audit_dropped_reason_mentions_vote(self):
+        """最终过滤的审计记录 reason 应说明投票结果（可追溯）"""
+        reviewer = make_reviewer(votes=3)
+
+        resp_keep = llm_response_for(self.issues, {
+            "rule-a": (True, 0.9), "rule-b": (True, 0.9),
+        })
+        resp_drop_b = llm_response_for(self.issues, {
+            "rule-a": (True, 0.9), "rule-b": (False, 0.2),
+        })
+        self._inject(reviewer, [resp_keep, resp_drop_b, resp_drop_b])
+
+        reviewer.review(self.issues, self.diff, self.call_graph)
+
+        dropped_records = [
+            r for r in reviewer.audit_records
+            if r.get("decision") == "dropped"
+        ]
+        assert len(dropped_records) == 1
+        assert "vote" in dropped_records[0].get("reason", "").lower() or \
+               "票" in dropped_records[0].get("reason", ""), \
+            "dropped 记录的 reason 应包含投票信息"
