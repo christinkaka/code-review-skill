@@ -10,6 +10,10 @@
 2. 通过率阈值（≥90% 才允许部署）
    - validation 结果包含 pass_rate 字段
    - pass_rate < 阈值时拒绝部署
+3. LLM 不可用时的重试空转（M-3）
+   - 启发式降级生成是确定性的（同样输入同样输出），重试空转
+   - 首轮 golden test 失败即停止（仍执行 1 次以标记 validation 状态）
+   - LLM 可用时的重试逻辑不受影响
 """
 
 import json
@@ -341,3 +345,83 @@ class TestPassRateThreshold:
         result = compiler.approve_and_deploy(rule_file, auto_approve=True)
 
         assert result["status"] == "approved"
+
+
+# ===================================================================
+# 3. LLM 不可用时的重试空转（M-3）
+# ===================================================================
+
+class UnavailableLLM:
+    """is_available()=False 的假 LLM（模拟 LLM 完全不可用）"""
+
+    def is_available(self):
+        return False
+
+    def chat(self, prompt, system=None, temperature=0.0, max_tokens=1024):
+        raise AssertionError("LLM 不可用时不应调用 chat")
+
+
+class TestLLMUnavailableNoRetry:
+    """LLM 不可用（启发式降级）时不应重试空转
+
+    启发式 pattern 推断是确定性的（同样输入同样输出），重试不可能
+    产生不同的 pattern，只会白白多跑 semgrep。预期：首轮 golden test
+    失败后直接停止（golden test 仍执行 1 次，用于标记 validation 状态）。
+    """
+
+    def _compile_and_count(self, compiler, spec_dir):
+        """编译并计数 semgrep（subprocess.run）调用次数，恒返回失败结果"""
+        semgrep_calls = []
+
+        def counting_run(cmd, **kwargs):
+            semgrep_calls.append(cmd)
+            # bad 不命中 -> validation=failed（漏检）
+            return semgrep_mock({"bad": 0, "good": 0})
+
+        with patch("subprocess.run", side_effect=counting_run):
+            result = compiler.compile_rule(spec_dir / "plain-hash.md", force=True)
+        return result, semgrep_calls
+
+    def test_no_retry_when_llm_unavailable(self, tmp_path, spec_dir):
+        """llm_client.is_available()=False：semgrep 只调用 1 次，不重试"""
+        compiler = RuleCompiler(str(spec_dir), str(tmp_path / "compiled"),
+                                llm_client=UnavailableLLM())
+        result, calls = self._compile_and_count(compiler, spec_dir)
+
+        assert len(calls) == 1, (
+            f"LLM 不可用时启发式结果确定，重试是空转；"
+            f"semgrep 应只调用 1 次（实际 {len(calls)} 次）"
+        )
+
+        rule = yaml.safe_load(open(result["output"], encoding="utf-8"))
+        v = rule["rules"][0]["metadata"]["validation"]
+        assert v["status"] == "failed", "golden test 仍执行 1 次并标记 failed"
+        assert v["bad_matched"] is False, "mock bad 不命中，应正常判定漏检"
+
+    def test_no_retry_when_llm_client_is_none(self, tmp_path, spec_dir):
+        """self.llm_client=None（探测不到 LLM）：semgrep 只调用 1 次，不重试"""
+        # 注入可用客户端构造（绕过 autodetect），再置 None 模拟探测失败
+        compiler = RuleCompiler(str(spec_dir), str(tmp_path / "compiled"),
+                                llm_client=SequenceLLM(["p("]))
+        compiler.llm_client = None
+        result, calls = self._compile_and_count(compiler, spec_dir)
+
+        assert len(calls) == 1, (
+            f"llm_client=None 时启发式结果确定，重试是空转；"
+            f"semgrep 应只调用 1 次（实际 {len(calls)} 次）"
+        )
+
+        rule = yaml.safe_load(open(result["output"], encoding="utf-8"))
+        v = rule["rules"][0]["metadata"]["validation"]
+        assert v["status"] == "failed", "golden test 仍执行 1 次并标记 failed"
+        assert "repair_rounds" not in v, "未发生重试，不应记录修复轮次"
+
+    def test_heuristic_fallback_generation_method_marked(self, tmp_path, spec_dir):
+        """LLM 不可用降级路径仍正确标记 generation_method=heuristic_fallback"""
+        compiler = RuleCompiler(str(spec_dir), str(tmp_path / "compiled"),
+                                llm_client=UnavailableLLM())
+        result, _ = self._compile_and_count(compiler, spec_dir)
+
+        rule = yaml.safe_load(open(result["output"], encoding="utf-8"))
+        assert rule["rules"][0]["metadata"]["generation_method"] == \
+            "heuristic_fallback"

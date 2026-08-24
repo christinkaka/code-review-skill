@@ -304,6 +304,13 @@ class RuleCompiler:
         - 下一轮生成的 prompt 看到全部历史失败（避免重复犯错）
         - 预算上限 MAX_REPAIR_ROUNDS 轮，防止无限循环
 
+        LLM 不可用时的短路（M-3）：
+        - llm_client 为 None 或 is_available()=False 时走启发式降级，
+          启发式生成是确定性的（同样输入同样输出），重试不可能产生
+          不同的 pattern，只会空转浪费 semgrep 调用
+        - 因此首轮 golden test 失败后直接停止重试；golden test 仍执行
+          1 次，validation=failed 状态照常标记
+
         Returns:
             (semgrep_rule, validation)
         """
@@ -328,6 +335,16 @@ class RuleCompiler:
 
             # 验证通过（或无法验证）时停止重试
             if validation["status"] != "failed":
+                break
+
+            # LLM 不可用（启发式降级）时生成结果确定性，重试空转：
+            # 首轮失败即停止（golden test 已执行 1 次，validation 状态
+            # 照常标记，只是不再重新生成 + 重复验证）
+            if self.llm_client is None or not self.llm_client.is_available():
+                logger.warning(
+                    "LLM 不可用（启发式降级生成确定性结果），"
+                    f"golden test 第 {round_num + 1} 轮失败后跳过重试"
+                )
                 break
 
             # 预算耗尽则停止（不再记录：最后一轮失败已由 validation=failed 表达，

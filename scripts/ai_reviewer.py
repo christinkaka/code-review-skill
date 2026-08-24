@@ -259,6 +259,9 @@ class AIReviewer:
 
         注意：偶数票平票时（如 votes=2 的 1:1）双方都达不到多数阈值，
         全部丢弃。建议配置奇数票（3/5）。
+        另：输入 issues 若含重复 (rule_id, file, line) 键（数据异常），
+        投票保留列表会对同一 dict 对象产生别名引用（修改其一会影响
+        另一个），属已知限制，上游应保证键唯一。
 
         审计语义：逐票的 kept/dropped 决策记录不进入最终审计轨迹
         （否则 total_input 虚增 votes 倍、dropped_errors 虚高），
