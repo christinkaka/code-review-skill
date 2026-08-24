@@ -84,8 +84,12 @@ owasp: A07:2021
 
 ## 检测模式
 
-```pattern
-String $VAR = "...";
+```pattern-regex
+(?i)String\s+\w*(password|passwd|secret|api_?key|apikey|token|credential)\w*\s*=\s*"(?![^"]*\$\{)[^"]{8,}"
 ```
 
-使用 `metavariable-regex` 过滤变量名包含 `password`、`secret`、`api_key`、`token` 等关键词。
+精度约束（P0 降噪，2026-08-24 双盲实测驱动：原 `String $VAR = "...";` 在
+Spring Boot 50 文件误报 706 次，占检出 27%）：
+- 变量名必须包含敏感关键词（password/passwd/secret/api_key/apikey/token/credential）
+- 字面量长度 >= 8，排除 "test"、"123" 等短占位值
+- 排除 `${...}` 模板占位符（配置注入写法，非硬编码）

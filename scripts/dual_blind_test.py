@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from rule_engine import RuleEngine
 from ai_reviewer import AIReviewer
 from report_generator import ReportGenerator
-from scan import prefilter_issues
+from scan import prefilter_issues, tiered_ai_review
 import yaml
 
 
@@ -58,8 +58,8 @@ def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files
     # 4.5 Prefilter 白名单过滤（与 scan.py 主流程一致，测试文件误报在此过滤）
     raw_issues = prefilter_issues(raw_issues, {})
     print(f"      Prefilter 后: {len(raw_issues)} 个问题")
-    
-    # 5. AI 复核（mock LLM）
+
+    # 5. AI 复核（mock LLM，分层评审：CRITICAL/ERROR 精审，WARNING/INFO 统计层保留）
     ai_config = {
         "llm": {
             "url": "https://api.example.com/v1/chat/completions",
@@ -71,13 +71,16 @@ def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files
         "audit": {"enabled": True, "log_path": ""},
         "workflow": "security"
     }
-    
+
     reviewer = AIReviewer(ai_config)
-    
+
     # Mock LLM 响应：保留 80% 的问题（模拟真实 AI 过滤效果）
     import random
     random.seed(42)  # 固定种子保证可重复
-    
+
+    high_issues = [i for i in raw_issues
+                   if i.get("severity") in ("CRITICAL", "HIGH", "ERROR")]
+
     mock_response = json.dumps([
         {
             "rule_id": issue["rule_id"],
@@ -87,16 +90,18 @@ def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files
             "confidence": 0.75 + random.random() * 0.2,  # 0.75-0.95
             "enhanced_fix": "建议修复方案"
         }
-        for issue in raw_issues
+        for issue in high_issues
     ])
-    
+
     # Monkey patch LLM 调用
     reviewer._call_llm = lambda prompt: mock_response
     reviewer._is_available = lambda: True
-    
-    filtered_issues = reviewer.review(raw_issues, {}, {})
-    
+
+    filtered_issues, triage = tiered_ai_review(reviewer, raw_issues, {}, {})
+
     print(f"[3/4] AI 复核后: {len(filtered_issues)} 个问题")
+    print(f"      分层: LLM 精审 {triage['reviewed']} 条, "
+          f"统计层保留 {triage['stats_only']} 条")
     
     # 6. 审计统计
     audit_summary = reviewer.get_audit_summary()

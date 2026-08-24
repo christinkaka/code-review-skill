@@ -3,56 +3,59 @@
     "repo": "Django",
     "repo_path": "repos/django",
     "profile": "default",
-    "timestamp": "2026-08-24 12:24:57",
-    "duration_seconds": 3.69,
+    "timestamp": "2026-08-24 16:03:34",
+    "duration_seconds": 3.68,
     "test_type": "dual-blind"
   },
   "summary": {
-    "total": 101,
-    "critical": 44,
-    "high": 28,
-    "medium": 13,
-    "low": 16,
+    "total": 106,
+    "critical": 40,
+    "high": 32,
+    "medium": 17,
+    "low": 17,
     "by_category": {
       "security": 72,
-      "implementation": 16,
-      "unknown": 13
+      "implementation": 18,
+      "unknown": 15,
+      "custom": 1
     },
     "by_file": {
-      "django/core/management/commands/makemessages.py": 10,
+      "django/core/cache/backends/filebased.py": 8,
       "scripts/tests.py": 8,
-      "django/core/cache/backends/filebased.py": 7,
-      "django/core/management/templates.py": 5,
+      "django/core/management/commands/makemessages.py": 7,
+      "django/core/management/commands/makemigrations.py": 6,
       "django/utils/cache.py": 4,
-      "django/core/management/commands/makemigrations.py": 3,
-      "django/utils/archive.py": 3,
       "scripts/do_django_release.py": 3,
       "scripts/manage_translations.py": 3,
+      "scripts/prepare_commit_msg.py": 3,
+      "django/contrib/auth/views.py": 2,
       "django/core/cache/backends/locmem.py": 2,
-      "django/utils/functional.py": 2,
-      "django/views/generic/edit.py": 2,
+      "django/core/management/commands/optimizemigration.py": 2,
+      "django/core/management/commands/squashmigrations.py": 2,
+      "django/core/management/templates.py": 2,
+      "django/db/backends/oracle/creation.py": 2,
+      "django/db/migrations/writer.py": 2,
+      "django/template/smartif.py": 2,
+      "django/utils/archive.py": 2,
       "docs/_ext/djangodocs.py": 2,
-      "scripts/prepare_commit_msg.py": 2,
-      "django/contrib/admin/checks.py": 1,
-      "django/contrib/admin/static/admin/js/admin/RelatedObjectLookups.js": 1,
-      "django/contrib/auth/checks.py": 1,
-      "django/contrib/auth/hashers.py": 1,
-      "django/contrib/auth/password_validation.py": 1,
-      "django/contrib/auth/views.py": 1
+      "django/utils/functional.py": 2,
+      "django/views/generic/edit.py": 2
     },
     "by_rule": {
-      "path-read-traversal": 39,
-      "path-write-traversal": 17,
-      "naming-python-class-case": 16,
-      "sig-python-weak-hash": 7,
-      "deser-python-pickle": 7,
-      "crypto-hardcoded-key": 6,
+      "path-read-traversal": 36,
+      "path-write-traversal": 18,
+      "naming-python-class-case": 17,
+      "sig-python-weak-hash": 10,
+      "crypto-hardcoded-key": 9,
+      "deser-python-pickle": 6,
       "auth-python-django-mixin": 3,
-      "sqli-python-execute-format": 2,
       "ssrf-deep-detection": 1,
       "priv-python-subprocess-popen": 1,
-      "sqli-python-raw-query": 1,
-      "ssrf-python-requests": 1
+      "custom-hardcoded-password": 1,
+      "sqli-python-execute-format": 1,
+      "ssrf-python-requests": 1,
+      "priv-python-eval": 1,
+      "conc-python-global-mutable": 1
     }
   },
   "diff_summary": {
@@ -66,24 +69,6 @@
     "affected_methods": []
   },
   "issues": [
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/contrib/admin/checks.py",
-      "line": 32,
-      "end_line": 32,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7550021510445334,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
     {
       "rule_id": "ssrf-deep-detection",
       "category": "security",
@@ -102,46 +87,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7946421476297646,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/contrib/auth/checks.py",
-      "line": 13,
-      "end_line": 13,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8853398974845823,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/contrib/auth/hashers.py",
-      "line": 665,
-      "end_line": 665,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7673877665258833,
+      "ai_confidence": 0.7550021510445334,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -163,7 +109,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.755959443887614,
+      "ai_confidence": 0.7946421476297646,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -185,43 +131,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8510710576206725,
+      "ai_confidence": 0.8853398974845823,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/contrib/gis/db/models/lookups.py",
-      "line": 57,
-      "end_line": 58,
-      "message": "Python 类名应使用 PascalCase。",
+      "rule_id": "crypto-hardcoded-key",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "django/contrib/auth/views.py",
+      "line": 262,
+      "end_line": 262,
+      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
       "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-798",
+        "owasp": "A07:2021"
+      },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8589882961206433,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/contrib/gis/gdal/prototypes/generation.py",
-      "line": 22,
-      "end_line": 22,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8678531367751817,
+      "ai_confidence": 0.7673877665258833,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -243,43 +175,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7512997519356122,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/contrib/gis/geos/geometry.py",
-      "line": 40,
-      "end_line": 40,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8896278789976454,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/contrib/gis/geos/prototypes/geom.py",
-      "line": 21,
-      "end_line": 21,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7810958999623563,
+      "ai_confidence": 0.755959443887614,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -301,50 +197,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8173189090225254,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/contrib/staticfiles/storage.py",
-      "line": 161,
-      "end_line": 161,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8707452062733783,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "deser-python-pickle",
-      "category": "unknown",
-      "severity": "CRITICAL",
-      "file": "django/core/cache/backends/db.py",
-      "line": 102,
-      "end_line": 102,
-      "message": "使用 pickle 反序列化不可信数据，攻击者可构造恶意 pickle 数据执行任意代码。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-502",
-        "owasp": "A08:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8959463573387636,
+      "ai_confidence": 0.8510710576206725,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -366,7 +219,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9446231527958742,
+      "ai_confidence": 0.8589882961206433,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -388,7 +241,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8604081262546455,
+      "ai_confidence": 0.8678531367751817,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -410,7 +263,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8737039504728492,
+      "ai_confidence": 0.7512997519356122,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -432,7 +285,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8654704290513524,
+      "ai_confidence": 0.8896278789976454,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -454,7 +307,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7591648767311324,
+      "ai_confidence": 0.7810958999623563,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -476,7 +329,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8078775927204215,
+      "ai_confidence": 0.8173189090225254,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -498,7 +351,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8229664357940168,
+      "ai_confidence": 0.8707452062733783,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -520,7 +373,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7919014061542975,
+      "ai_confidence": 0.8959463573387636,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -542,7 +395,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9373309175424989,
+      "ai_confidence": 0.9446231527958742,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -564,7 +417,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8718262011333977,
+      "ai_confidence": 0.8604081262546455,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/files/base.py",
+      "line": 115,
+      "end_line": 115,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8737039504728492,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -586,7 +461,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8779999519708186,
+      "ai_confidence": 0.8654704290513524,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -608,7 +483,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8869228501979749,
+      "ai_confidence": 0.7591648767311324,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -630,51 +505,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9051999823092489,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/mail/backends/filebased.py",
-      "line": 88,
-      "end_line": 88,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7564200487808076,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/management/commands/makemessages.py",
-      "line": 110,
-      "end_line": 110,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8035481751951405,
+      "ai_confidence": 0.8078775927204215,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -696,7 +527,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9385819428670109,
+      "ai_confidence": 0.8229664357940168,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -718,7 +549,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8129355761596956,
+      "ai_confidence": 0.7919014061542975,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -740,7 +571,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8291263802121329,
+      "ai_confidence": 0.9373309175424989,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -762,51 +593,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8417703705174797,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
-      "file": "django/core/management/commands/makemessages.py",
-      "line": 520,
-      "end_line": 520,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7993255015387967,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/management/commands/makemessages.py",
-      "line": 726,
-      "end_line": 726,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.802548321704587,
+      "ai_confidence": 0.8718262011333977,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -828,7 +615,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9295645767204954,
+      "ai_confidence": 0.8779999519708186,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -850,7 +637,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7938641518314566,
+      "ai_confidence": 0.8869228501979749,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -872,7 +659,51 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8519052587352929,
+      "ai_confidence": 0.9051999823092489,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7564200487808076,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8035481751951405,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -894,7 +725,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8344319933599368,
+      "ai_confidence": 0.9385819428670109,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 368,
+      "end_line": 368,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8129355761596956,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -916,7 +769,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8558228690198274,
+      "ai_confidence": 0.8291263802121329,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -938,7 +791,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9221559404468996,
+      "ai_confidence": 0.8417703705174797,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/optimizemigration.py",
+      "line": 122,
+      "end_line": 122,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7993255015387967,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -960,7 +835,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.857394066081759,
+      "ai_confidence": 0.802548321704587,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -982,7 +857,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8781923597159617,
+      "ai_confidence": 0.9295645767204954,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/squashmigrations.py",
+      "line": 208,
+      "end_line": 208,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7938641518314566,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1004,51 +901,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.940763185504216,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/management/templates.py",
-      "line": 204,
-      "end_line": 204,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8026778101502181,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/management/templates.py",
-      "line": 208,
-      "end_line": 208,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7857303761060263,
+      "ai_confidence": 0.8519052587352929,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1070,29 +923,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9241037139673534,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/management/templates.py",
-      "line": 320,
-      "end_line": 320,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.877789898973201,
+      "ai_confidence": 0.8344319933599368,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1114,7 +945,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.780567853709927,
+      "ai_confidence": 0.8558228690198274,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1135,70 +966,47 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8578758060239251,
+      "ai_confidence": 0.9221559404468996,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "sqli-python-raw-query",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/db/backends/oracle/base.py",
-      "line": 323,
-      "end_line": 327,
-      "message": "SQLAlchemy raw query 使用字符串拼接，存在注入风险。",
+      "rule_id": "crypto-hardcoded-key",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "django/db/backends/oracle/creation.py",
+      "line": 292,
+      "end_line": 292,
+      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
       "code_snippet": "requires login",
       "metadata": {
-        "cwe": "CWE-89"
+        "cwe": "CWE-798",
+        "owasp": "A07:2021"
       },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8560707344390355,
+      "ai_confidence": 0.857394066081759,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "sqli-python-execute-format",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/db/backends/oracle/introspection.py",
-      "line": 178,
-      "end_line": 182,
-      "message": "Python 使用字符串格式化/拼接构建 SQL，存在注入风险。",
+      "rule_id": "custom-hardcoded-password",
+      "category": "custom",
+      "severity": "HIGH",
+      "file": "django/db/backends/oracle/creation.py",
+      "line": 292,
+      "end_line": 292,
+      "message": "疑似硬编码密码，请使用配置中心或环境变量管理敏感配置。",
       "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-89"
-      },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9163331058722359,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/db/backends/sqlite3/_functions.py",
-      "line": 414,
-      "end_line": 414,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7615850332988375,
+      "ai_confidence": 0.8781923597159617,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1219,7 +1027,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9393898890595989,
+      "ai_confidence": 0.940763185504216,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/db/migrations/writer.py",
+      "line": 279,
+      "end_line": 279,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8026778101502181,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1241,61 +1071,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7756782928999526,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/db/models/fields/__init__.py",
-      "line": 1166,
-      "end_line": 1167,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8599607186989888,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/db/models/query_utils.py",
-      "line": 311,
-      "end_line": 311,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.9244866082170515,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/forms/boundfield.py",
-      "line": 201,
-      "end_line": 202,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7923596410884164,
+      "ai_confidence": 0.7857303761060263,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1317,7 +1093,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8959862138179953,
+      "ai_confidence": 0.9241037139673534,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1339,7 +1115,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.812343258260179,
+      "ai_confidence": 0.877789898973201,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1361,7 +1137,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8799756115278907,
+      "ai_confidence": 0.780567853709927,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1383,47 +1159,29 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8535151682071181,
+      "ai_confidence": 0.8578758060239251,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/templatetags/tz.py",
-      "line": 12,
-      "end_line": 12,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8676617436914467,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/utils/archive.py",
-      "line": 199,
-      "end_line": 199,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "rule_id": "crypto-hardcoded-key",
+      "category": "unknown",
+      "severity": "HIGH",
+      "file": "django/template/smartif.py",
+      "line": 175,
+      "end_line": 175,
+      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
       "code_snippet": "requires login",
       "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
+        "cwe": "CWE-798",
+        "owasp": "A07:2021"
       },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7940434768903119,
+      "ai_confidence": 0.8560707344390355,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1445,7 +1203,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9310840026012256,
+      "ai_confidence": 0.9163331058722359,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1467,145 +1225,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7641714699777307,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/utils/cache.py",
-      "line": 125,
-      "end_line": 125,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8837955556592562,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/utils/cache.py",
-      "line": 356,
-      "end_line": 356,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.776462369745005,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/utils/cache.py",
-      "line": 364,
-      "end_line": 364,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8642086186650569,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "sig-python-weak-hash",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/utils/cache.py",
-      "line": 376,
-      "end_line": 376,
-      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-328"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.9069238848581507,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/utils/decorators.py",
-      "line": 7,
-      "end_line": 7,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7880819828723755,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/utils/functional.py",
-      "line": 7,
-      "end_line": 7,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.843404933607335,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/utils/functional.py",
-      "line": 51,
-      "end_line": 51,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8846729094586603,
+      "ai_confidence": 0.7615850332988375,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1627,146 +1247,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7696835742303918,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/utils/timezone.py",
-      "line": 113,
-      "end_line": 113,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8178605210789927,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/utils/translation/__init__.py",
-      "line": 189,
-      "end_line": 189,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7997312667840571,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/views/debug.py",
-      "line": 451,
-      "end_line": 451,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8057090289333881,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "auth-python-django-mixin",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/views/generic/base.py",
-      "line": 231,
-      "end_line": 291,
-      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-862"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.9346531198552026,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "naming-python-class-case",
-      "category": "implementation",
-      "severity": "INFO",
-      "file": "django/views/generic/edit.py",
-      "line": 88,
-      "end_line": 89,
-      "message": "Python 类名应使用 PascalCase。",
-      "code_snippet": "requires login",
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.9222698209523661,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "auth-python-django-mixin",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/views/generic/edit.py",
-      "line": 137,
-      "end_line": 158,
-      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-862"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7601176659049762,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "auth-python-django-mixin",
-      "category": "security",
-      "severity": "WARNING",
-      "file": "django/views/i18n.py",
-      "line": 98,
-      "end_line": 231,
-      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-862"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.9172055170159904,
+      "ai_confidence": 0.9393898890595989,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1788,7 +1269,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9352733966016256,
+      "ai_confidence": 0.7756782928999526,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1810,7 +1291,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7832622221207828,
+      "ai_confidence": 0.8599607186989888,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1832,7 +1313,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7927494598398364,
+      "ai_confidence": 0.9244866082170515,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1854,7 +1335,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7617270799944358,
+      "ai_confidence": 0.7923596410884164,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1876,7 +1357,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9470617687559452,
+      "ai_confidence": 0.8959862138179953,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1898,7 +1379,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9068141203897139,
+      "ai_confidence": 0.812343258260179,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1919,7 +1400,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8346014971980326,
+      "ai_confidence": 0.8799756115278907,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1941,29 +1422,28 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9490845378985427,
+      "ai_confidence": 0.8535151682071181,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
+      "rule_id": "priv-python-eval",
       "category": "security",
-      "severity": "CRITICAL",
+      "severity": "ERROR",
       "file": "scripts/manage_translations.py",
-      "line": 137,
-      "end_line": 137,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "line": 404,
+      "end_line": 404,
+      "message": "eval() 执行用户可控代码，存在任意代码执行风险。",
       "code_snippet": "requires login",
       "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
+        "cwe": "CWE-95"
       },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8936816550592652,
+      "ai_confidence": 0.8676617436914467,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1985,7 +1465,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8658360581632513,
+      "ai_confidence": 0.7940434768903119,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1994,8 +1474,8 @@
       "category": "security",
       "severity": "ERROR",
       "file": "scripts/prepare_commit_msg.py",
-      "line": 100,
-      "end_line": 100,
+      "line": 109,
+      "end_line": 109,
       "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
@@ -2007,7 +1487,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8995951120758128,
+      "ai_confidence": 0.9310840026012256,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2029,7 +1509,51 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9205439784096571,
+      "ai_confidence": 0.7641714699777307,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/prepare_commit_msg.py",
+      "line": 114,
+      "end_line": 114,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8837955556592562,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 56,
+      "end_line": 58,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "fix": "建议修复方案",
+      "ai_confidence": 0.776462369745005,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2051,7 +1575,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8850425107208181,
+      "ai_confidence": 0.8642086186650569,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2073,7 +1597,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.7739773227894249,
+      "ai_confidence": 0.9069238848581507,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2095,29 +1619,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.799243069557725,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "scripts/tests.py",
-      "line": 80,
-      "end_line": 80,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8738763020664206,
+      "ai_confidence": 0.7880819828723755,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2139,7 +1641,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.866734457858245,
+      "ai_confidence": 0.843404933607335,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2161,7 +1663,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.9369412515472855,
+      "ai_confidence": 0.8846729094586603,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2183,7 +1685,7 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8932383601578829,
+      "ai_confidence": 0.7696835742303918,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -2205,9 +1707,482 @@
         "semgrep"
       ],
       "fix": "建议修复方案",
-      "ai_confidence": 0.8291571693582509,
+      "ai_confidence": 0.8178605210789927,
       "attack_vector": "",
       "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/admin/checks.py",
+      "line": 32,
+      "end_line": 32,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/auth/checks.py",
+      "line": 13,
+      "end_line": 13,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/contrib/auth/hashers.py",
+      "line": 665,
+      "end_line": 665,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/db/models/lookups.py",
+      "line": 57,
+      "end_line": 58,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/gdal/prototypes/generation.py",
+      "line": 22,
+      "end_line": 22,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/geos/geometry.py",
+      "line": 40,
+      "end_line": 40,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/contrib/gis/geos/prototypes/geom.py",
+      "line": 21,
+      "end_line": 21,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "conc-python-global-mutable",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "django/contrib/sites/models.py",
+      "line": 72,
+      "end_line": 73,
+      "message": "使用 global 修改全局变量，在多线程/异步环境中可能导致竞态条件。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/contrib/staticfiles/storage.py",
+      "line": 161,
+      "end_line": 161,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/core/cache/backends/filebased.py",
+      "line": 136,
+      "end_line": 136,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/core/cache/utils.py",
+      "line": 7,
+      "end_line": 7,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/db/backends/sqlite3/_functions.py",
+      "line": 414,
+      "end_line": 414,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/db/backends/utils.py",
+      "line": 309,
+      "end_line": 309,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/db/models/fields/__init__.py",
+      "line": 1166,
+      "end_line": 1167,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/db/models/query_utils.py",
+      "line": 311,
+      "end_line": 311,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/forms/boundfield.py",
+      "line": 201,
+      "end_line": 202,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/templatetags/tz.py",
+      "line": 12,
+      "end_line": 12,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 125,
+      "end_line": 125,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 356,
+      "end_line": 356,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "sig-python-weak-hash",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/utils/cache.py",
+      "line": 376,
+      "end_line": 376,
+      "message": "使用 MD5 进行签名/校验，MD5 存在碰撞攻击风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-328"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/decorators.py",
+      "line": 7,
+      "end_line": 7,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/deprecation.py",
+      "line": 168,
+      "end_line": 168,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/functional.py",
+      "line": 7,
+      "end_line": 7,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/functional.py",
+      "line": 51,
+      "end_line": 51,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/timezone.py",
+      "line": 113,
+      "end_line": 113,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/utils/translation/__init__.py",
+      "line": 189,
+      "end_line": 189,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "auth-python-django-mixin",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/views/generic/base.py",
+      "line": 231,
+      "end_line": 291,
+      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "naming-python-class-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "django/views/generic/edit.py",
+      "line": 88,
+      "end_line": 89,
+      "message": "Python 类名应使用 PascalCase。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "auth-python-django-mixin",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/views/generic/edit.py",
+      "line": 137,
+      "end_line": 158,
+      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
+    },
+    {
+      "rule_id": "auth-python-django-mixin",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "django/views/i18n.py",
+      "line": 98,
+      "end_line": 231,
+      "message": "Django CBV 未继承 LoginRequiredMixin，可能存在未授权访问。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ]
     }
   ]
 }

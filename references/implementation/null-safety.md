@@ -88,7 +88,7 @@ int c = count;  // 若 count 为 null，NPE
 ## 检测模式
 
 ```pattern
-int $X = $INTEGER_OBJ;
+int $X = $Y.get(...);
 ```
 
 ```pattern
@@ -96,3 +96,8 @@ Integer $VAR = ...;
 ...
 return $VAR;
 ```
+
+精度约束（P0 降噪，2026-08-24 双盲实测驱动：原 `int $X = $INTEGER_OBJ;`
+在 Spring Boot 50 文件误报 761 次，占检出 29%）：
+- 限定 `int x = y.get(...)` 形态（Map.get / Optional.get 返回 Integer 的经典拆箱 NPE 源）
+- 原宽松模式匹配一切 int 赋值（含基本类型字面量、返回 int 的方法调用），已移除

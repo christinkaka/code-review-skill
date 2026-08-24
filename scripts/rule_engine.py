@@ -790,8 +790,14 @@ class RuleEngine:
         # 恢复省略号为跨行通配
         regex = regex.replace('__ELLIPSIS__', r'[\s\S]*?')
         # 将模式中的固定空白灵活化（允许不同缩进）
-        regex = re.sub(r'(?<!\n) +', r'\\s+', regex)
-        # 将换行灵活化
+        # 将模式中的固定空白灵活化（允许不同缩进）
+        # 注意：re.escape 会把空格转义为 "\ "（反斜杠+空格），
+        # 必须匹配转义后的空格序列，否则会产生 "\\s" 双反斜杠导致永远无法匹配
+        # （2026-08-24 P0 修复：此前 V1 正则引擎对含空格 pattern 全部静默失配）
+        regex = re.sub(r'(?<!\n)(?:\\ )+', r'\\s+', regex)
+        # 将换行灵活化（re.escape 把 "\n" 转为 反斜杠+真实换行，统一替换为 \s+）
+        regex = re.sub(r'\\\n', r'\\s+', regex)
+        # 兼容字面量 \n 写法
         regex = regex.replace(r'\n', r'\s*\n\s*')
 
         try:

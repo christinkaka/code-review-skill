@@ -317,6 +317,38 @@ def build_feedback_examples(feedback_manager, max_examples: int = 10) -> list:
     return recent[:max_examples]
 
 
+def tiered_ai_review(ai_reviewer, raw_issues, diff_result, call_graph, tiered=True):
+    """分层评审：CRITICAL/HIGH/ERROR 进 LLM 精审，WARNING/INFO 直接保留（统计层）
+
+    P0 降噪策略（2026-08-24 双盲实测驱动：WARNING+INFO 占检出近半，
+    逐条送 LLM 成本高且报告可读性差）。
+
+    Args:
+        ai_reviewer: AIReviewer 实例
+        raw_issues: Prefilter 后的候选问题列表
+        diff_result: DiffAnalyzer 结果
+        call_graph: CallGraphBuilder 结果
+        tiered: False 则全量送 LLM（旧行为）
+
+    Returns:
+        (issues, triage): 合并后的问题列表 + 分层统计
+    """
+    # 需 LLM 精审的严重级别（实际枚举: CRITICAL/HIGH/ERROR/WARNING/INFO）
+    review_tier = ("CRITICAL", "HIGH", "ERROR")
+    triage = {"reviewed": len(raw_issues), "stats_only": 0}
+    if not tiered:
+        return ai_reviewer.review(raw_issues, diff_result, call_graph), triage
+
+    high = [i for i in raw_issues if i.get("severity") in review_tier]
+    low = [i for i in raw_issues if i.get("severity") not in review_tier]
+    triage = {"reviewed": len(high), "stats_only": len(low)}
+
+    reviewed = ai_reviewer.review(high, diff_result, call_graph) if high else []
+    if not isinstance(reviewed, list):
+        reviewed = list(reviewed or [])
+    return reviewed + low, triage
+
+
 # ============================================================
 # 配置加载
 # ============================================================
@@ -446,18 +478,25 @@ def run_scan(args):
     except Exception as task_err:
         logger.warning(f"子 Agent 任务文件生成失败（不影响主流程）: {task_err}")
 
-    # 5. AI 增强评审（可选）
+    # 5. AI 增强评审（分层：CRITICAL/ERROR 精审，WARNING/INFO 统计层保留）
     issues = raw_issues
     if config.get("ai_review", {}).get("enabled", False):
-        logger.info("[4/5] AI 增强评审...")
+        logger.info("[4/5] AI 增强评审（分层）...")
         ai_config = config.get("ai_review", {})
         # 从命令行参数获取工作流
         if hasattr(args, "workflow"):
             ai_config["workflow"] = args.workflow
         ai_reviewer = AIReviewer(ai_config)
-        issues = ai_reviewer.review(raw_issues, diff_result, call_graph)
+        tiered = ai_config.get("tiered", True)
+        issues, triage = tiered_ai_review(
+            ai_reviewer, raw_issues, diff_result, call_graph, tiered=tiered
+        )
         logger.info(f"  工作流: {ai_reviewer.get_current_workflow()}")
-        logger.info(f"  AI 过滤后剩余 {len(issues)} 个问题")
+        logger.info(
+            f"  分层: LLM 精审 {triage['reviewed']} 条, "
+            f"统计层保留 {triage['stats_only']} 条"
+        )
+        logger.info(f"  AI 评审后 {len(issues)} 个问题")
     else:
         logger.info("[4/5] AI 增强评审已跳过（未启用）")
 
