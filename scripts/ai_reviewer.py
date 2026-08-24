@@ -60,6 +60,11 @@ class AIReviewer:
         self.max_retries = config.get("max_retries", 2)
         self._client = None
 
+        # 投票配置（Self-Consistency, Wang et al. 2022）
+        # votes=1（默认）禁用投票；votes=3 表示 3 次采样、至少 2 票一致才保留
+        voting_config = config.get("voting", {})
+        self.voting_votes = voting_config.get("votes", 1)
+
         # 审计轨迹配置（P0-①：AI 过滤决策必须留痕）
         audit_config = config.get("audit", {})
         self.audit_enabled = audit_config.get("enabled", True)
@@ -203,6 +208,19 @@ class AIReviewer:
             logger.warning("AI 评审不可用（LLM 未配置），返回原始结果")
             return issues
 
+        # 投票模式（Self-Consistency）：多次采样取多数票
+        if self.voting_votes > 1:
+            return self._review_with_voting(issues, diff_result, call_graph)
+
+        return self._review_pass(issues, diff_result, call_graph)
+
+    def _review_pass(
+        self,
+        issues: List[Dict],
+        diff_result: Dict,
+        call_graph: Dict,
+    ) -> List[Dict]:
+        """单次评审（投票模式下的一票）"""
         logger.info(f"AI 评审开始，工作流: {self.workflow}，输入 {len(issues)} 个问题")
 
         # 审计：记录本次评审的输入总量
@@ -224,6 +242,67 @@ class AIReviewer:
             f"其中误杀 ERROR 级 {summary['dropped_errors']}，fail-open {summary['fail_open_events']} 次）"
         )
         return filtered_issues
+
+    def _review_with_voting(
+        self,
+        issues: List[Dict],
+        diff_result: Dict,
+        call_graph: Dict,
+    ) -> List[Dict]:
+        """
+        多次采样投票评审（Self-Consistency, Wang et al. 2022）
+
+        每票独立调用 LLM 评审，一个问题至少获得多数票（votes//2+1）
+        才保留。某票 LLM 失败时该票 fail-open（保留全部），
+        不会导致整个投票流程崩溃。
+
+        Returns:
+            多数票过滤后的问题列表（含最后一次保留版本的 AI 增强字段）
+        """
+        votes = self.voting_votes
+        majority = votes // 2 + 1  # 3 票需 >= 2 票
+
+        logger.info(
+            f"AI 投票评审开始：{votes} 票采样，多数票阈值 {majority}"
+        )
+
+        # 每票独立评审（深拷贝隔离各票状态，避免 ai_confidence 等字段互相污染）
+        import copy
+        vote_results = []
+        for vote_index in range(votes):
+            result = self._review_pass(
+                copy.deepcopy(issues), diff_result, call_graph
+            )
+            vote_results.append(result)
+
+        # 统计每个问题被保留的票数，多数票过滤
+        kept_issues: List[Dict] = []
+        for issue in issues:
+            key = self._issue_key(issue)
+            vote_count = sum(
+                1 for result in vote_results
+                if any(self._issue_key(i) == key for i in result)
+            )
+            if vote_count >= majority:
+                # 取最后一次保留该问题的版本（含 AI 增强字段）
+                for result in reversed(vote_results):
+                    matched = [
+                        i for i in result if self._issue_key(i) == key
+                    ]
+                    if matched:
+                        kept_issues.append(matched[0])
+                        break
+
+        logger.info(
+            f"AI 投票评审完成：输入 {len(issues)}，"
+            f"多数票保留 {len(kept_issues)}"
+        )
+        return kept_issues
+
+    @staticmethod
+    def _issue_key(issue: Dict) -> tuple:
+        """问题的唯一标识（用于投票统计）"""
+        return (issue.get("rule_id"), issue.get("file"), issue.get("line"))
 
     def _is_available(self) -> bool:
         """检查 AI 评审是否可用"""

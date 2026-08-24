@@ -249,23 +249,22 @@ class RuleCompiler:
         bad_example = self._extract_code_block(content, "违规代码")
         good_example = self._extract_code_block(content, "安全代码")
         
-        # 调用 AI 生成 Semgrep 规则
-        semgrep_rule = self._generate_semgrep_rule_with_ai(
+        # 生成 + 验证 + 失败反馈重试（CEGIS 核心：反例驱动修复）
+        semgrep_rule, validation = self._generate_and_validate_with_retry(
             metadata=metadata,
             violation_scenario=violation_scenario,
             safe_approach=safe_approach,
             bad_example=bad_example,
             good_example=good_example
         )
-
-        # Golden test 强制验证（P1-①：pattern 必须命中违规示例、不命中安全示例）
-        validation = self._run_golden_test(semgrep_rule, bad_example, good_example)
         for r in semgrep_rule.get("rules", []):
             r.setdefault("metadata", {})["validation"] = validation
         if validation["status"] == "failed":
             logger.warning(
                 f"Golden test 未通过（漏检={not validation['bad_matched']}, "
-                f"误报={validation['good_matched']}），规则标记为不可部署"
+                f"误报={validation['good_matched']}，"
+                f"pass_rate={validation.get('pass_rate', 0):.0%}），"
+                f"规则标记为不可部署"
             )
 
         # 保存编译结果
@@ -283,10 +282,102 @@ class RuleCompiler:
             "validation": validation,
         }
 
+    # ============================================================
+    # 生成 + 验证 + 失败反馈重试（CEGIS 核心，2026-08-24）
+    # ============================================================
+
+    MAX_REPAIR_ROUNDS = 3
+
+    def _generate_and_validate_with_retry(
+        self,
+        metadata: Dict,
+        violation_scenario: str,
+        safe_approach: str,
+        bad_example: str,
+        good_example: str,
+    ) -> Tuple[Dict, Dict]:
+        """
+        生成规则并验证，golden test 失败时带反馈重试。
+
+        反例累积（CEGIS 精神）：
+        - 每轮失败的反馈累积到 failure_history
+        - 下一轮生成的 prompt 看到全部历史失败（避免重复犯错）
+        - 预算上限 MAX_REPAIR_ROUNDS 轮，防止无限循环
+
+        Returns:
+            (semgrep_rule, validation)
+        """
+        failure_history: List[Dict] = []
+
+        # 第 1 次生成（无反馈）
+        semgrep_rule = self._generate_semgrep_rule_with_ai(
+            metadata=metadata,
+            violation_scenario=violation_scenario,
+            safe_approach=safe_approach,
+            bad_example=bad_example,
+            good_example=good_example,
+            failure_feedback=None,
+        )
+
+        validation: Dict = {"status": "skipped", "reason": "not_run"}
+
+        for round_num in range(self.MAX_REPAIR_ROUNDS + 1):
+            validation = self._run_golden_test(
+                semgrep_rule, bad_example, good_example
+            )
+
+            # 验证通过（或无法验证）时停止重试
+            if validation["status"] != "failed":
+                break
+
+            # 累积失败反馈
+            failure_history.append({
+                "round": round_num + 1,
+                "failure": self._describe_validation_failure(validation),
+            })
+            logger.info(
+                f"Golden test 第 {round_num + 1} 轮失败: "
+                f"{failure_history[-1]['failure']}"
+            )
+
+            # 预算耗尽则停止
+            if round_num >= self.MAX_REPAIR_ROUNDS:
+                logger.warning(
+                    f"修复预算耗尽（{self.MAX_REPAIR_ROUNDS} 轮），"
+                    f"validation=failed"
+                )
+                break
+
+            # 带全部历史失败反馈重新生成
+            semgrep_rule = self._generate_semgrep_rule_with_ai(
+                metadata=metadata,
+                violation_scenario=violation_scenario,
+                safe_approach=safe_approach,
+                bad_example=bad_example,
+                good_example=good_example,
+                failure_feedback=failure_history,
+            )
+
+        # 记录修复轮次（可追溯）
+        if failure_history:
+            validation["repair_rounds"] = len(failure_history)
+
+        return semgrep_rule, validation
+
+    @staticmethod
+    def _describe_validation_failure(validation: Dict) -> str:
+        """将验证失败转为 LLM 可理解的反馈描述"""
+        parts = []
+        if not validation.get("bad_matched"):
+            parts.append("pattern 未命中违规示例（漏检，检出能力不足）")
+        if validation.get("good_matched"):
+            parts.append("pattern 误命中安全示例（误报，模式过于宽泛）")
+        return "；".join(parts) if parts else "未知原因"
+
     def _extract_metadata(self, content: str) -> Dict:
         """提取规约元数据"""
         metadata = {}
-        
+
         # 提取标题
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         if title_match:
@@ -340,7 +431,8 @@ class RuleCompiler:
         violation_scenario: str,
         safe_approach: str,
         bad_example: str,
-        good_example: str
+        good_example: str,
+        failure_feedback: Optional[List[Dict]] = None,
     ) -> Dict:
         """
         生成 Semgrep 规则：LLM 可用时由 AI 生成 pattern，否则降级启发式。
@@ -349,7 +441,26 @@ class RuleCompiler:
         - "ai"：pattern 来自 LLM（temperature=0 保证确定性采样）
         - "heuristic_fallback"：LLM 不可用/失败时的启发式推断（质量存疑，
           后续 golden test 会拦截无效 pattern）
+
+        Args:
+            failure_feedback: 历史失败记录列表（重试时注入 prompt，
+                              每项 {"round": int, "failure": str}）
         """
+        # 构建失败反馈段（重试时帮助 LLM 避免重复犯错）
+        feedback_section = ""
+        if failure_feedback:
+            feedback_lines = "\n".join(
+                f"- 第 {f['round']} 轮尝试失败：{f['failure']}"
+                for f in failure_feedback
+            )
+            feedback_section = f"""
+## 之前尝试的失败记录（必须避免重复犯错）
+
+{feedback_lines}
+
+请在生成 pattern 时针对上述失败原因改进。
+"""
+
         # 构建 AI prompt
         prompt = f"""你是一个安全专家，需要将以下自然语言安全规约转换为 Semgrep 规则。
 
@@ -374,7 +485,7 @@ class RuleCompiler:
 ```
 {good_example}
 ```
-
+{feedback_section}
 ## 任务
 
 请生成一个 Semgrep 规则，能够检测上述违规场景。规则应该：
@@ -555,6 +666,16 @@ class RuleCompiler:
                 validation["good_matched"] = good_findings > 0
                 if not has_good:
                     validation["reason"] = "no_good_example_detection_only"
+
+                # pass_rate 计算：违规示例必须命中 + 安全示例不得命中
+                # 随测试用例增多（多 golden example、累积反例）阈值才有区分度
+                total_tests = 1 + (1 if has_good else 0)
+                passed_tests = 1 if bad_findings > 0 else 0
+                if has_good and good_findings == 0:
+                    passed_tests += 1
+                validation["pass_rate"] = round(
+                    passed_tests / total_tests, 4
+                ) if total_tests else 0.0
 
                 if bad_findings > 0 and good_findings == 0:
                     validation["status"] = "passed"
@@ -814,22 +935,40 @@ class RuleCompiler:
         with open(rule_file, "r", encoding="utf-8") as f:
             rule = yaml.safe_load(f)
 
-        # 部署闸门（P1-①）：golden test 未通过的规则拒绝部署
+        # 部署闸门（P1-① + 通过率阈值）：golden test 未通过 / 通过率不足的规则拒绝部署
         first_rule = (rule.get("rules") or [{}])[0] if isinstance(rule, dict) else {}
         validation = (first_rule.get("metadata") or {}).get("validation")
         warnings = []
+        pass_rate_threshold = 0.9
 
         if validation and validation.get("status") == "failed":
+            pass_rate = validation.get("pass_rate")
+            rate_msg = (
+                f"，pass_rate={pass_rate:.0%} < {pass_rate_threshold:.0%}"
+                if pass_rate is not None else ""
+            )
             return {
                 "status": "refused",
                 "message": (
                     "规则未通过 golden test 验证"
                     f"（漏检={not validation.get('bad_matched')}，"
-                    f"误报={validation.get('good_matched')}），拒绝部署。"
+                    f"误报={validation.get('good_matched')}{rate_msg}），拒绝部署。"
                     "请调整规约描述或示例后重新编译。"
                 ),
                 "validation": validation,
             }
+        # pass_rate 存在但低于阈值时同样拒绝（向后兼容：无 pass_rate 的旧规则不受影响）
+        if validation and validation.get("pass_rate") is not None:
+            if validation["pass_rate"] < pass_rate_threshold:
+                return {
+                    "status": "refused",
+                    "message": (
+                        f"规则通过率不足：pass_rate="
+                        f"{validation['pass_rate']:.0%} < "
+                        f"{pass_rate_threshold:.0%}，拒绝部署。"
+                    ),
+                    "validation": validation,
+                }
         if validation and validation.get("status") == "skipped":
             warnings.append(
                 f"规则验证被跳过（{validation.get('reason', '未知原因')}），"
