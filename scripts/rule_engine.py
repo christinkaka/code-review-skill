@@ -359,6 +359,7 @@ class RuleEngine:
             engine_results.append(("regex", regex_issues))
 
         merged = self._merge_multi_engine(engine_results)
+        merged = self._apply_entropy_gate(merged)
 
         for engine_name, engine_issues in engine_results:
             logger.info(f"{engine_name} 引擎检出 {len(engine_issues)} 个问题")
@@ -368,6 +369,55 @@ class RuleEngine:
             f"(多引擎同时检出 {multi} 个)"
         )
         return merged
+
+    _ENTROPY_GATE_RULE_KEYWORD = "hardcoded"
+
+    def _apply_entropy_gate(self, issues: List[Dict]) -> List[Dict]:
+        """对硬编码类规则应用信息论熵门控（数学理论降噪，见 noise_theory.py）
+
+        判决依据：Shannon 熵 + Miller-Madow 修正 + 字符集分层检验，
+        全部为确定性函数（同输入同输出），替代经验长度阈值。
+        每条被拒绝的检出记录拒绝理由（decision_trace），可审计。
+        """
+        try:
+            from noise_theory import is_high_entropy_secret
+        except ImportError:
+            return issues
+
+        kept: List[Dict] = []
+        gate_stats = {"evaluated": 0, "rejected": 0}
+        for issue in issues:
+            if self._ENTROPY_GATE_RULE_KEYWORD not in issue.get("rule_id", ""):
+                kept.append(issue)
+                continue
+
+            snippet = issue.get("code_snippet", "") or ""
+            # 提取被赋值的字符串字面量
+            literal_match = re.search(r'"([^"]*)"', snippet)
+            if not literal_match:
+                # 无可评估字面量：保守保留（门控只对可提取字面量的检出生效）
+                kept.append(issue)
+                continue
+
+            verdict, detail = is_high_entropy_secret(literal_match.group(1))
+            gate_stats["evaluated"] += 1
+            if verdict:
+                issue["entropy"] = detail
+                kept.append(issue)
+            else:
+                gate_stats["rejected"] += 1
+                issue["entropy_gate_rejected"] = detail
+                logger.debug(
+                    f"熵门控拒绝 {issue.get('rule_id')}@{issue.get('file')}:"
+                    f"{issue.get('line')} - {detail.get('reason')}"
+                )
+
+        if gate_stats["evaluated"]:
+            logger.info(
+                f"熵门控: 评估 {gate_stats['evaluated']} 条硬编码检出, "
+                f"拒绝 {gate_stats['rejected']} 条低熵/占位符"
+            )
+        return kept
 
     def _run_with_ast(self, repo_path: str, changed_files: List[Dict]) -> List[Dict]:
         """Tree-sitter AST 引擎（builtin_engine_v2，精确语法分析，优先级最高）"""
@@ -404,8 +454,14 @@ class RuleEngine:
         同一 (rule_id, file, line) 被多个引擎检出时：
         - 保留最高优先级引擎的检出内容（覆盖 message/severity 等）
         - engines 列表记录所有检出该位置的引擎
-        - 多引擎同时检出时 confidence = 1.0（双引擎互证）
+        - confidence = 贝叶斯后验 P(TP|引擎一致检出)（校准概率，
+          见 noise_theory.engine_agreement_posterior，替代任意常数）
         """
+        try:
+            from noise_theory import engine_agreement_posterior
+        except ImportError:
+            engine_agreement_posterior = None
+
         ordered = sorted(
             engine_results, key=lambda kv: cls.ENGINE_PRIORITY.get(kv[0], 0)
         )
@@ -422,9 +478,12 @@ class RuleEngine:
                     # 高优先级引擎（后处理）的检出内容覆盖低优先级
                     existing.update({k: v for k, v in issue.items() if k != "engines"})
                     existing["engines"] = engines
-                    existing["confidence"] = 1.0
+                    if engine_agreement_posterior is not None:
+                        existing["confidence"] = engine_agreement_posterior(engines)
                 else:
                     issue["engines"] = [engine_name]
+                    if engine_agreement_posterior is not None:
+                        issue["confidence"] = engine_agreement_posterior([engine_name])
                     merged[key] = issue
         return list(merged.values())
 

@@ -123,7 +123,17 @@ def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files
         count = severity_counts.get(sev, 0)
         if count > 0:
             print(f"    {sev}: {count}")
-    
+
+    # 7.5 数学理论降噪指标（noise_theory.py，确定性判据）
+    from noise_theory import fdr_report, flag_noise_rules
+    confs = [i.get("confidence", 0.5) for i in filtered_issues]
+    fdr = fdr_report(confs)
+    print(f"  期望误报(信息论): {fdr['expected_fp']:.1f} 条 "
+          f"(期望 FDR {fdr['expected_fdr']:.1%})")
+    flagged = flag_noise_rules(dict(rule_counts))
+    if flagged:
+        print(f"  z-score 离群规则(|z|>=2): {', '.join(flagged[:3])}")
+
     # 8. 生成报告
     output_dir = Path('reports') / f'dual-blind-{repo_name.lower().replace(" ", "-")}'
     output_dir.mkdir(parents=True, exist_ok=True)

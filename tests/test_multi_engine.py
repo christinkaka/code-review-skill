@@ -12,6 +12,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from rule_engine import RuleEngine
@@ -48,7 +50,8 @@ class TestMergePriority:
         assert merged[0]["engine"] == "ast"
         assert merged[0]["message"] == "ast 消息"
         assert set(merged[0]["engines"]) == {"ast", "semgrep"}
-        assert merged[0]["confidence"] == 1.0
+        # 贝叶斯后验: LR = 18*8 = 144, P = 144/145 ≈ 0.9931
+        assert merged[0]["confidence"] == pytest.approx(144 / 145, abs=1e-6)
 
     def test_semgrep_overrides_regex_same_location(self):
         """同一位置被 Semgrep 与正则检出：Semgrep 内容胜出"""
@@ -61,7 +64,8 @@ class TestMergePriority:
         assert len(merged) == 1
         assert merged[0]["engine"] == "semgrep"
         assert merged[0]["message"] == "semgrep 消息"
-        assert merged[0]["confidence"] == 1.0
+        # LR = 8*3 = 24, P = 24/25 = 0.96
+        assert merged[0]["confidence"] == pytest.approx(24 / 25, abs=1e-6)
 
     def test_three_engines_same_location(self):
         """三引擎同位置：AST 胜出，engines 记录全部三个"""
@@ -76,7 +80,8 @@ class TestMergePriority:
         assert len(merged) == 1
         assert merged[0]["engine"] == "ast"
         assert set(merged[0]["engines"]) == {"ast", "semgrep", "regex"}
-        assert merged[0]["confidence"] == 1.0
+        # LR = 18*8*3 = 432, P = 432/433
+        assert merged[0]["confidence"] == pytest.approx(432 / 433, abs=1e-6)
 
     def test_different_rule_ids_not_deduped(self):
         """同文件同行但规则 ID 不同：不合并"""
@@ -89,14 +94,15 @@ class TestMergePriority:
         )
         assert len(merged) == 2
 
-    def test_single_engine_no_confidence_boost(self):
-        """单引擎独有检出：confidence 不强制 1.0"""
+    def test_single_engine_calibrated_confidence(self):
+        """单引擎独有检出：校准后验而非常数（semgrep 单独 = 8/9）"""
         eng = make_engine()
         merged = eng._merge_multi_engine(
             [("semgrep", [issue("ssrf", "e.py", 2, "ssrf", "semgrep")])]
         )
         assert len(merged) == 1
-        assert "confidence" not in merged[0] or merged[0].get("confidence") != 1.0
+        assert merged[0]["confidence"] == pytest.approx(8 / 9, abs=1e-6)
+        assert merged[0]["confidence"] < 1.0
 
 
 class TestRunEngineOrchestration:

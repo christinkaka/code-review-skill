@@ -33,10 +33,11 @@ def engine():
 
 
 def run_builtin(engine, tmp_path, filename, code):
-    """用内置引擎扫描临时 Java 文件，返回该文件的命中 rule_id 列表"""
+    """用内置引擎扫描临时 Java 文件（含熵门控，对齐 run() 完整管线），返回命中 rule_id 列表"""
     src = tmp_path / filename
     src.write_text(code, encoding="utf-8")
     issues = engine._run_with_builtin(str(tmp_path), [{"path": filename}])
+    issues = engine._apply_entropy_gate(issues)
     return [i["rule_id"] for i in issues if i.get("file") == filename]
 
 

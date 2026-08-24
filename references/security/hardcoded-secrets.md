@@ -85,11 +85,14 @@ owasp: A07:2021
 ## 检测模式
 
 ```pattern-regex
-(?i)String\s+\w*(password|passwd|secret|api_?key|apikey|token|credential)\w*\s*=\s*"(?![^"]*\$\{)[^"]{8,}"
+(?i)String\s+\w*(password|passwd|secret|api_?key|apikey|token|credential)\w*\s*=\s*"[^"]+"
 ```
 
-精度约束（P0 降噪，2026-08-24 双盲实测驱动：原 `String $VAR = "...";` 在
-Spring Boot 50 文件误报 706 次，占检出 27%）：
-- 变量名必须包含敏感关键词（password/passwd/secret/api_key/apikey/token/credential）
-- 字面量长度 >= 8，排除 "test"、"123" 等短占位值
-- 排除 `${...}` 模板占位符（配置注入写法，非硬编码）
+两层降噪设计（2026-08-24，P0 数学理论降噪）：
+- **结构层（本 pattern）**：变量名包含敏感关键词，正则只做候选预筛，不设经验长度阈值
+- **数学层（noise_theory.py 熵门控）**：对候选字面量做确定性判决
+  - Shannon 熵 + Miller-Madow 有限样本修正：Ĥ_MM = Ĥ + (K-1)/(2n·ln2)
+  - 字符集分层检验：hex/base62/base64/符号混合字符集 H_MM ≥ 3.5 bits/char（均匀抽取的估计余量）
+  - 总熵门限：n·H_MM ≥ 32 bits（低于 2^32 暴力破解边界的弱凭据不报）
+  - 自然字符集（含空白文案）与 `${}` 模板占位符直接拒绝
+  - 理论依据与已知局限详见 `scripts/noise_theory.py` 模块文档
