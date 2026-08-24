@@ -359,7 +359,7 @@ class RuleEngine:
             engine_results.append(("regex", regex_issues))
 
         merged = self._merge_multi_engine(engine_results)
-        merged = self._apply_entropy_gate(merged)
+        merged = self._apply_entropy_gate(merged, repo_path)
 
         for engine_name, engine_issues in engine_results:
             logger.info(f"{engine_name} 引擎检出 {len(engine_issues)} 个问题")
@@ -372,12 +372,23 @@ class RuleEngine:
 
     _ENTROPY_GATE_RULE_KEYWORD = "hardcoded"
 
-    def _apply_entropy_gate(self, issues: List[Dict]) -> List[Dict]:
+    # TRAE 管理的 semgrep 对匹配代码脱敏，extra.lines 恒返回此值
+    # （检出本身正常：rule_id/file/line 准确，仅代码内容被脱敏）
+    _REDACTED_SNIPPET = "requires login"
+
+    def _apply_entropy_gate(
+        self, issues: List[Dict], repo_path: str = None
+    ) -> List[Dict]:
         """对硬编码类规则应用信息论熵门控（数学理论降噪，见 noise_theory.py）
 
         判决依据：Shannon 熵 + Miller-Madow 修正 + 字符集分层检验，
         全部为确定性函数（同输入同输出），替代经验长度阈值。
         每条被拒绝的检出记录拒绝理由（decision_trace），可审计。
+
+        snippet 脱敏回退（2026-08-24 端到端验证发现）：
+        管理环境的 semgrep 会把 extra.lines 脱敏为固定文案，
+        导致字面量提取失败、门控失效。回退策略：snippet 无双引号
+        字面量且提供 repo_path 时，回读源文件对应行提取字面量。
         """
         try:
             from noise_theory import is_high_entropy_secret
@@ -385,7 +396,7 @@ class RuleEngine:
             return issues
 
         kept: List[Dict] = []
-        gate_stats = {"evaluated": 0, "rejected": 0}
+        gate_stats = {"evaluated": 0, "rejected": 0, "file_fallback": 0}
         for issue in issues:
             if self._ENTROPY_GATE_RULE_KEYWORD not in issue.get("rule_id", ""):
                 kept.append(issue)
@@ -394,6 +405,17 @@ class RuleEngine:
             snippet = issue.get("code_snippet", "") or ""
             # 提取被赋值的字符串字面量
             literal_match = re.search(r'"([^"]*)"', snippet)
+            snippet_source = "snippet"
+
+            if not literal_match and repo_path:
+                # 回退：回读源文件行（snippet 被脱敏/无字面量时）
+                source_line = self._read_source_line(repo_path, issue)
+                if source_line:
+                    literal_match = re.search(r'"([^"]*)"', source_line)
+                    snippet_source = "source_file"
+                    if literal_match:
+                        gate_stats["file_fallback"] += 1
+
             if not literal_match:
                 # 无可评估字面量：保守保留（门控只对可提取字面量的检出生效）
                 kept.append(issue)
@@ -403,21 +425,48 @@ class RuleEngine:
             gate_stats["evaluated"] += 1
             if verdict:
                 issue["entropy"] = detail
+                issue["entropy_snippet_source"] = snippet_source
                 kept.append(issue)
             else:
                 gate_stats["rejected"] += 1
                 issue["entropy_gate_rejected"] = detail
+                issue["entropy_snippet_source"] = snippet_source
                 logger.debug(
                     f"熵门控拒绝 {issue.get('rule_id')}@{issue.get('file')}:"
                     f"{issue.get('line')} - {detail.get('reason')}"
                 )
 
         if gate_stats["evaluated"]:
+            fallback_msg = (
+                f", 其中 {gate_stats['file_fallback']} 条经源文件回读"
+                if gate_stats["file_fallback"] else ""
+            )
             logger.info(
                 f"熵门控: 评估 {gate_stats['evaluated']} 条硬编码检出, "
-                f"拒绝 {gate_stats['rejected']} 条低熵/占位符"
+                f"拒绝 {gate_stats['rejected']} 条低熵/占位符{fallback_msg}"
             )
         return kept
+
+    @staticmethod
+    def _read_source_line(repo_path: str, issue: Dict) -> str:
+        """读取 issue 对应的源文件行（snippet 脱敏时的回退来源）
+
+        Returns:
+            行内容；文件不存在/行号越界/读取异常时返回空串
+        """
+        try:
+            file_path = Path(repo_path) / issue.get("file", "")
+            if not file_path.exists():
+                return ""
+            line_no = int(issue.get("line", 0) or 0)
+            if line_no <= 0:
+                return ""
+            lines = file_path.read_text(encoding="utf-8", errors="replace").split("\n")
+            if line_no > len(lines):
+                return ""
+            return lines[line_no - 1]
+        except (OSError, ValueError):
+            return ""
 
     def _run_with_ast(self, repo_path: str, changed_files: List[Dict]) -> List[Dict]:
         """Tree-sitter AST 引擎（builtin_engine_v2，精确语法分析，优先级最高）"""
