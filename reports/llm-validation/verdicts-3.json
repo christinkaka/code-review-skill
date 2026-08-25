@@ -1,0 +1,114 @@
+[
+  {
+    "seq": 1,
+    "rule_id": "deser-java-object-input-stream",
+    "file": "repos/spring-boot/module/spring-boot-devtools/src/main/java/org/springframework/boot/devtools/restart/server/HttpRestartServer.java",
+    "line": 80,
+    "verdict": "FP",
+    "reason": "readObject 前第 81 行立即设置 ObjectInputFilter（ClassLoaderFilesObjectInputFilter），白名单仅允许 ClassLoaderFiles/ClassLoaderFile/SourceDirectory/Enum/Map 等少数类，其余一律 REJECTED，常规反序列化 gadget 链无法通过；且该类属于 devtools 远程重启组件，默认被打包插件 excludeDevtools 排除，不在生产制品中运行。"
+  },
+  {
+    "seq": 2,
+    "rule_id": "deser-java-object-input-stream",
+    "file": "repos/spring-boot/core/spring-boot/src/main/java/org/springframework/boot/logging/logback/SpringBootJoranConfigurator.java",
+    "line": 342,
+    "verdict": "FP",
+    "reason": "反序列化的数据来自 getClass().getClassLoader().getResourceAsStream(\"META-INF/spring/logback-model\")（第 339-340 行），是构建期由 ModelWriter 自行生成并打包进 jar 的 classpath 资源，属框架自产可信数据，非外部用户输入。"
+  },
+  {
+    "seq": 3,
+    "rule_id": "xxe-deep-detection",
+    "file": "repos/spring-boot/module/spring-boot-jooq/src/main/java/org/springframework/boot/jooq/autoconfigure/JooqAutoConfiguration.java",
+    "line": 165,
+    "verdict": "FP",
+    "reason": "第 165 行 SAXParserFactory.newInstance() 之后第 166-169 行显式设置 disallow-doctype-decl=true、FEATURE_SECURE_PROCESSING=true、XIncludeAware(false)，javadoc 也注明遵循 OWASP XXE Prevention；且输入是 spring.jooq.config 指向的本地配置资源，非攻击者可控。"
+  },
+  {
+    "seq": 4,
+    "rule_id": "xxe-deep-detection",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/main/java/org/springframework/boot/maven/AbstractPackagerMojo.java",
+    "line": 234,
+    "verdict": "FP",
+    "reason": "第 234-237 行 DocumentBuilderFactory.newInstance() 后立即设置 FEATURE_SECURE_PROCESSING=true 和 disallow-doctype-decl=true；解析的是开发者提供的 layers.xml（Maven 插件构建期输入），构建工具场景下无外部实体注入风险。"
+  },
+  {
+    "seq": 5,
+    "rule_id": "ssrf-java-url-connection",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/launch/PropertiesLauncher.java",
+    "line": 219,
+    "verdict": "FP",
+    "reason": "第 219 行 new URL(config) 的 config 来自 loader.config.location 系统属性或 loader.properties（见第 156-168 行 initializeProperties），由运维在 JVM 启动参数中指定，属部署方可信输入而非 Web 请求可控数据，不构成 SSRF 攻击面。"
+  },
+  {
+    "seq": 6,
+    "rule_id": "ssrf-java-url-connection",
+    "file": "repos/spring-boot/module/spring-boot-jetty/src/main/java/org/springframework/boot/jetty/servlet/JasperInitializer.java",
+    "line": 147,
+    "verdict": "FP",
+    "reason": "第 147 行位于自定义 war: 协议的 WarURLConnection 内，URL 由 Tomcat JarFactory 生成的 jar:file: 形式地址（指向应用自身 WAR 包内条目）经 parseURL 转换而来，是框架内部资源寻址，目标地址不受 HTTP 请求方控制，与 SSRF 语义不符。"
+  },
+  {
+    "seq": 7,
+    "rule_id": "sig-java-verify-skip",
+    "file": "repos/spring-boot/module/spring-boot-cloudfoundry/src/main/java/org/springframework/boot/cloudfoundry/autoconfigure/actuate/endpoint/servlet/TokenValidator.java",
+    "line": 97,
+    "verdict": "FP",
+    "reason": "第 100 行 return signature.verify(token.getSignature()) 的返回值被直接返回并在第 84 行调用处 if (!hasValidSignature(token, key)) throw CloudFoundryAuthorizationException 校验失败即拒绝，验签结果并未被忽略。"
+  },
+  {
+    "seq": 8,
+    "rule_id": "sig-java-verify-skip",
+    "file": "repos/spring-boot/module/spring-boot-cloudfoundry/src/main/java/org/springframework/boot/cloudfoundry/autoconfigure/actuate/endpoint/reactive/TokenValidator.java",
+    "line": 105,
+    "verdict": "FP",
+    "reason": "第 108 行 return signature.verify(token.getSignature()) 返回值由第 74 行 getTokenKey(token).filter((tokenKey) -> hasValidSignature(token, tokenKey)) 消费，验签失败走 switchIfEmpty 抛 INVALID_SIGNATURE，验签结果未被忽略。"
+  },
+  {
+    "seq": 9,
+    "rule_id": "hardcoded-password",
+    "file": "repos/spring-boot/module/spring-boot-security/src/test/java/org/springframework/boot/security/autoconfigure/UserDetailsServiceAutoConfigurationTests.java",
+    "line": 193,
+    "verdict": "FP",
+    "reason": "位于 src/test/java 测试类中，第 193 行 String password = \"{bcrypt}$2a$10$...\" 是密码编码测试的固定样例（bcrypt 哈希而非明文口令），仅用于断言 PasswordEncoder 透传行为，不构成生产环境硬编码凭证。"
+  },
+  {
+    "seq": 10,
+    "rule_id": "hardcoded-password",
+    "file": "repos/spring-boot/module/spring-boot-security/src/test/java/org/springframework/boot/security/autoconfigure/ReactiveUserDetailsServiceAutoConfigurationTests.java",
+    "line": 146,
+    "verdict": "FP",
+    "reason": "同为 src/test/java 测试代码，第 146 行是 {bcrypt}$2a$10$... 哈希样例，用于 testPasswordEncoding 验证已编码密码原样存储，属测试夹具而非生产凭证。"
+  },
+  {
+    "seq": 11,
+    "rule_id": "conc-java-unsafe-hashmap",
+    "file": "repos/spring-boot/core/spring-boot-docker-compose/src/main/java/org/springframework/boot/docker/compose/core/DockerCli.java",
+    "line": 47,
+    "verdict": "FP",
+    "reason": "第 47 行静态 HashMap 缓存仅在构造函数第 66 行 computeIfAbsent 处写入，生产代码中唯一实例化点是 DockerComposeLifecycleManager（应用启动单线程阶段），正常生产路径不存在多线程并发访问该 Map 的调用链，属按模式匹配的静态缓存告警而非实际并发缺陷。"
+  },
+  {
+    "seq": 12,
+    "rule_id": "err-java-throw-in-finally",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/net/protocol/nested/NestedUrlConnection.java",
+    "line": 219,
+    "verdict": "TP",
+    "reason": "ConnectionInputStream.close() 的 finally 块（第 219-226 行）在 catch UncheckedIOException 后 throw ex.getCause()，若第 217 行 super.close() 先抛 IOException 且 cleanup.clean()（releaseAll 会再次关闭同一 inputStream）再抛异常，finally 中抛出的新异常将静默替换原始异常且未 addSuppressed，符合该规则描述的异常掩盖问题；不确定点：双重失败触发窗口较窄且为刻意的清理失败上抛设计。"
+  },
+  {
+    "seq": 13,
+    "rule_id": "sqli-java-string-concat",
+    "file": "repos/spring-boot/module/spring-boot-jdbc/src/main/java/org/springframework/boot/jdbc/DatabaseDriver.java",
+    "line": 51,
+    "verdict": "FP",
+    "reason": "第 51 行是 DERBY 枚举常量定义中的字面量 \"SELECT 1 FROM SYSIBM.SYSDUMMY1\"（连接验证查询），纯编译期常量，无任何外部输入拼接，与 SQL 注入语义完全不符。"
+  },
+  {
+    "seq": 14,
+    "rule_id": "xss-js-outerhtml",
+    "file": "repos/spring-boot/smoke-test/spring-boot-smoke-test-web-groovy-templates/src/main/resources/static/js/jquery-1.7.2.js",
+    "line": 6153,
+    "verdict": "FP",
+    "reason": "第 6153 行 dest.outerHTML = src.outerHTML 位于 vendored 第三方库 jQuery 1.7.2 的 cloneFixAttributes（IE6-8 克隆 object 元素的兼容性修复）中，src 是被克隆的既有 DOM 节点而非用户可控输入，且文件属于 smoke-test 静态资源，非应用业务代码。"
+  }
+]

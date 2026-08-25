@@ -1,5 +1,22 @@
 # 命名规范测试案例
 
+## 违规代码 - Java 布尔变量语义空泛名
+
+```java
+public class Job {
+    public void run() {
+        boolean flag = true;
+        boolean tmp = false;
+        boolean b1 = queue.isEmpty();
+    }
+}
+```
+
+**预期命中**: `naming-java-boolean-vague`
+**文件类型**: `.java`
+
+---
+
 ## 违规代码 - Java 常量未使用大写
 
 ```java
@@ -28,6 +45,23 @@ class data_processor:
 
 **预期命中**: `naming-python-class-case`
 **文件类型**: `.py`
+
+---
+
+## 正确代码 - Java 布尔变量命名语义明确
+
+```java
+public class Job {
+    public void run() {
+        boolean isValid = true;
+        boolean found = false;
+        boolean preserveTimestamps = config.isPreserveTimestamps();
+    }
+}
+```
+
+**预期命中**: 无（`naming-java-boolean-prefix` 已停用：JavaBeans 主流约定为字段无前缀 + 访问器带 is 前缀，spring-boot 185 个布尔字段 0 个带前缀）
+**文件类型**: `.java`
 
 ---
 

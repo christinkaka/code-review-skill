@@ -1,0 +1,122 @@
+[
+  {
+    "seq": 1,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/cli/spring-boot-cli/src/intTest/java/org/springframework/boot/cli/infrastructure/CommandLineInvoker.java",
+    "line": 87,
+    "verdict": "FP",
+    "reason": "第87行 new FileInputStream(zip) 的路径由 BuildOutput 根目录 + 常量 \"distributions/spring-boot-cli-\" + Versions.getBootVersion()（构建版本常量）拼成，读取的是本项目构建产物，无任何用户或外部配置可控值进入该路径。"
+  },
+  {
+    "seq": 2,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/main/java/org/springframework/boot/maven/AbstractPackagerMojo.java",
+    "line": 202,
+    "verdict": "FP",
+    "reason": "configuration 来自 Maven POM 中 <layers><configuration> 的 @Parameter（第147-148行 private Layers layers），是构建作者本机的受信配置源；按设计读取该 layers 配置文件，不存在越权访问的信任边界跨越。"
+  },
+  {
+    "seq": 3,
+    "rule_id": "deser-java-object-input-stream",
+    "file": "repos/spring-boot/module/spring-boot-devtools/src/main/java/org/springframework/boot/devtools/restart/server/HttpRestartServer.java",
+    "line": 80,
+    "verdict": "FP",
+    "reason": "虽反序列化来源是 request.getBody()，但该处理器仅在 RemoteDevToolsAutoConfiguration 中暴露且需 spring.devtools.remote.secret（Dispatcher.handle 先 accessManager.isAllowed 再分发），且第81行在 readObject 前设置 ObjectInputFilter 白名单（ClassLoaderFilesObjectInputFilter 只允许 ClassLoaderFiles 相关类与 Map），无法构造 gadget 链。不确定点：持有 secret 的客户端本就可上传类定义，属该功能设计内信任而非反序列化漏洞。"
+  },
+  {
+    "seq": 4,
+    "rule_id": "deser-java-object-input-stream",
+    "file": "repos/spring-boot/core/spring-boot/src/main/java/org/springframework/boot/logging/logback/SpringBootJoranConfigurator.java",
+    "line": 341,
+    "verdict": "FP",
+    "reason": "第339-341行 modelInput 来自 getClass().getClassLoader().getResourceAsStream(\"META-INF/spring/logback-model\")，是构建期由 ModelWriter 生成并打进 spring-boot jar 的类路径资源，属框架内部受信数据流，非不可信输入。"
+  },
+  {
+    "seq": 5,
+    "rule_id": "deser-java-object-input-stream",
+    "file": "repos/spring-boot/core/spring-boot/src/main/java/org/springframework/boot/logging/logback/SpringBootJoranConfigurator.java",
+    "line": 342,
+    "verdict": "FP",
+    "reason": "第342行 readObject 反序列化的正是上述构建期生成、随 jar 分发的 logback 模型类路径资源，同属受信内部数据流；能替换该资源者早已控制整个 classpath。"
+  },
+  {
+    "seq": 6,
+    "rule_id": "path-log-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 184,
+    "verdict": "FP",
+    "reason": "buildLogFile = new File(new File(this.temp,\"target\"),\"build.log\")，路径全部由内部临时目录与常量文件名构成，无外部输入参与；该处仅是创建构建日志文件，与规则\"日志内容含路径拼接\"含义不符。"
+  },
+  {
+    "seq": 7,
+    "rule_id": "path-log-traversal",
+    "file": "repos/spring-boot/configuration-metadata/spring-boot-configuration-metadata-changelog-generator/src/main/java/org/springframework/boot/configurationmetadata/changelog/ChangelogWriter.java",
+    "line": 59,
+    "verdict": "FP",
+    "reason": "第59行 new FileWriter(out) 的 out 由 ChangelogGenerator.main(args)（第48行）传入，是构建期 CLI 工具的输出路径参数，由构建脚本而非远程用户控制；写入内容为配置元数据变更说明，并非日志路径穿越场景。"
+  },
+  {
+    "seq": 8,
+    "rule_id": "ssrf-java-url-connection",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/launch/PropertiesLauncher.java",
+    "line": 219,
+    "verdict": "FP",
+    "reason": "getURLResource(config) 的 config 来自 loader.config.location 系统属性/loader.properties（本机运维受信配置，Javadoc 明确支持 classpath:/file:/URL 前缀），不存在远程用户可控 URL；启动器按运维配置取回自身配置是预期语义，不构成 SSRF。"
+  },
+  {
+    "seq": 9,
+    "rule_id": "ssrf-java-url-connection",
+    "file": "repos/spring-boot/module/spring-boot-jetty/src/main/java/org/springframework/boot/jetty/servlet/JasperInitializer.java",
+    "line": 147,
+    "verdict": "FP",
+    "reason": "第147行 new URL(url.getFile()).openConnection() 位于 war: 协议的 WarURLConnection，其 URL 由 Tomcat JarFactory 扫描本机 WAR 内 jar 条目生成并解析回 jar:file: 本地资源（见类 Javadoc），无用户可控 URL，非服务端请求伪造。"
+  },
+  {
+    "seq": 10,
+    "rule_id": "sig-java-verify-skip",
+    "file": "repos/spring-boot/module/spring-boot-cloudfoundry/src/main/java/org/springframework/boot/cloudfoundry/autoconfigure/actuate/endpoint/servlet/TokenValidator.java",
+    "line": 97,
+    "verdict": "FP",
+    "reason": "hasValidSignature 中第100行 return signature.verify(token.getSignature())，返回值在调用方第84行被完整检查（if (!hasValidSignature(token, key)) throw ...INVALID_SIGNATURE），验签结果未跳过，规则前提不成立。"
+  },
+  {
+    "seq": 11,
+    "rule_id": "sig-java-verify-skip",
+    "file": "repos/spring-boot/module/spring-boot-cloudfoundry/src/main/java/org/springframework/boot/cloudfoundry/autoconfigure/actuate/endpoint/reactive/TokenValidator.java",
+    "line": 105,
+    "verdict": "FP",
+    "reason": "第108行 return signature.verify(...) 的结果被调用方以 .filter((tokenKey) -> hasValidSignature(token, tokenKey)).switchIfEmpty(Mono.error(INVALID_SIGNATURE))（第74-76行）强制校验，验签失败即抛异常，不存在跳过检查。"
+  },
+  {
+    "seq": 12,
+    "rule_id": "conc-java-unsafe-hashmap",
+    "file": "repos/spring-boot/core/spring-boot-docker-compose/src/main/java/org/springframework/boot/docker/compose/core/DockerCli.java",
+    "line": 47,
+    "verdict": "FP",
+    "reason": "静态 dockerCommandsCache 仅在构造器 computeIfAbsent（第66行）写入，生产代码唯一创建链路是 DockerComposeListener(ApplicationPreparedEvent) → DockerComposeLifecycleManager.start() → DockerCompose.get()，都在启动主线程单线程执行，模块内无并发调用路径。不确定点：若多线程并行启动多个 SpringApplication 上下文理论上存在竞态，但属极端场景且本代码库无此用法。"
+  },
+  {
+    "seq": 13,
+    "rule_id": "err-java-throw-in-finally",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/net/protocol/nested/NestedUrlConnection.java",
+    "line": 219,
+    "verdict": "TP",
+    "reason": "close() 的 finally 块内 catch (UncheckedIOException ex) { throw ex.getCause(); }（第223-225行）会在 finally 中抛出 IOException，若 super.close() 已抛出异常，原始异常将被该清理异常掩盖丢失，确属规则所指的 finally 抛异常掩盖原始异常模式。"
+  },
+  {
+    "seq": 14,
+    "rule_id": "sqli-java-string-concat",
+    "file": "repos/spring-boot/module/spring-boot-jdbc/src/main/java/org/springframework/boot/jdbc/DatabaseDriver.java",
+    "line": 51,
+    "verdict": "FP",
+    "reason": "第51行是 DERBY 枚举常量的字面量校验 SQL \"SELECT 1 FROM SYSIBM.SYSDUMMY1\"（连接池测试查询常量），无任何字符串拼接，也无外部输入参与。"
+  },
+  {
+    "seq": 15,
+    "rule_id": "ssrf-deep-detection",
+    "file": "repos/spring-boot/module/spring-boot-jetty/src/main/java/org/springframework/boot/jetty/servlet/JasperInitializer.java",
+    "line": 147,
+    "verdict": "FP",
+    "reason": "与第9条同处：war: URL 由容器扫描本地 WAR 生成（兼容 Tomcat JarFactory.getJarEntryURL），openConnection 实际解析的是本地 jar:file: 嵌套资源，数据流不含用户可控 URL，不构成服务端请求伪造。"
+  }
+]

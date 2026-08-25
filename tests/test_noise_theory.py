@@ -148,6 +148,44 @@ class TestEntropyGate:
         r2 = is_high_entropy_secret(value)
         assert r1 == r2
 
+    # ----------------------------------------------------------
+    # 结构判据（2026-08-24 spring-boot 端到端实测驱动的补充）
+    # ----------------------------------------------------------
+
+    def test_uri_path_rejected(self):
+        """URI 路径（/oauth2/token）非凭据，结构判据拒绝"""
+        ok, detail = is_high_entropy_secret("/oauth2/token")
+        assert not ok
+        assert "URI" in detail["reason"] or "路径" in detail["reason"]
+
+    def test_url_rejected(self):
+        """URL（含 ://）非凭据"""
+        ok, detail = is_high_entropy_secret("https://api.example.com/v2")
+        assert not ok
+        assert "URL" in detail["reason"] or "URI" in detail["reason"]
+
+    def test_http_header_name_rejected(self):
+        """HTTP 头名（X-AUTH-TOKEN，大写+连字符）非凭据"""
+        ok, detail = is_high_entropy_secret("X-AUTH-TOKEN")
+        assert not ok
+        assert "头" in detail["reason"] or "header" in detail["reason"].lower()
+
+    def test_hyphenated_natural_words_rejected(self):
+        """连字符自然词（self-contained）非凭据"""
+        ok, detail = is_high_entropy_secret("self-contained")
+        assert not ok
+        assert "自然" in detail["reason"] or "词" in detail["reason"]
+
+    def test_real_secret_still_accepted_with_structure_checks(self):
+        """结构判据不误伤真凭据（含数字/混合大小写）"""
+        for secret in (
+            "sk-9f2kQz7mXv4bN8pL3wR6",   # 混合大小写+数字+符号
+            "4f7a2b91c8e3d5f6a0b7c9d2",   # hex 含数字
+            "AKIA5K2M9XQ3PL7R8T9WZ",       # 全大写含数字（无连字符）
+        ):
+            ok, detail = is_high_entropy_secret(secret)
+            assert ok, f"{secret} 不应被结构判据误拒: {detail['reason']}"
+
     def test_decision_trace_complete(self):
         """每条判决都有可追溯依据"""
         _, detail = is_high_entropy_secret("sk-9f2kQz7mXv4bN8pL3wR6")

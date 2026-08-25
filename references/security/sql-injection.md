@@ -93,25 +93,95 @@ $STMT.executeQuery($SQL);
 
 ---
 
-# SQL 注入 - MyBatis ${} 占位符滥用
+# SQL 注入 - MyBatis ${} 占位符滥用（已重构 - 限定真实 MyBatis 上下文）
 
 > MyBatis 使用 ${} 占位符直接拼接变量，存在 SQL 注入风险。
+> 注意：2026-08-25 盲评实测，旧模式 `\$\{[a-zA-Z_.]+\}`（languages: [java]）
+> 在 spring-boot 全库 4/4 误报——命中的全是 Maven `@Parameter("${project...}")`
+> 属性插值与 Spring `@Value` 表达式，与 SQL 无关。MyBatis ${} 注入的真实
+> 发生地是 XML mapper 的 SQL 标签文本与 @Select 系注解字符串，故拆分为
+> 两条定向规则。
 
 ```yaml
 id: sqli-java-mybatis-dollar
 languages: [java]
 severity: ERROR
 cwe: CWE-89
+enabled: false
+```
+
+## 检测模式（已停用）
+
+```pattern-regex
+\$\{[a-zA-Z_.]+\}
+```
+
+---
+
+# SQL 注入 - MyBatis 注解 ${} 占位符
+
+> MyBatis @Select/@Update/@Insert/@Delete 注解字符串中使用 ${} 拼接变量。
+
+```yaml
+id: sqli-java-mybatis-annotation
+languages: [java]
+severity: ERROR
+cwe: CWE-89
+```
+
+## 违规示例
+
+```java
+@Select("SELECT * FROM users WHERE id = ${id}")
+User findById(@Param("id") long id);
 ```
 
 ## 正确示例
 
-使用 `#{}` 参数化占位符替代 `${}`。
+```java
+@Select("SELECT * FROM users WHERE id = #{id}")
+User findById(@Param("id") long id);
+```
 
 ## 检测模式
 
 ```pattern-regex
-\$\{[a-zA-Z_.]+\}
+@(?:Select|Update|Insert|Delete)\s*(?:\([^)]*value\s*=\s*)?\(?\"[^\"]*\$\{[a-zA-Z_.]+\}
+```
+
+---
+
+# SQL 注入 - MyBatis XML mapper ${} 占位符
+
+> MyBatis XML mapper 的 select/update/insert/delete 标签文本中使用 ${} 拼接。
+
+```yaml
+id: sqli-xml-mybatis-dollar
+languages: [xml]
+severity: ERROR
+cwe: CWE-89
+```
+
+## 违规示例
+
+```xml
+<select id="findUser">
+    SELECT * FROM users WHERE name = ${name}
+</select>
+```
+
+## 正确示例
+
+```xml
+<select id="findUser">
+    SELECT * FROM users WHERE name = #{name}
+</select>
+```
+
+## 检测模式
+
+```pattern-regex
+(?:SELECT|select|INSERT|insert|UPDATE|update|DELETE|delete)[^<>]*\$\{[a-zA-Z_.]+\}
 ```
 
 ---

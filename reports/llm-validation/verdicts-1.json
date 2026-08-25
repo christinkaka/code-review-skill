@@ -1,0 +1,114 @@
+[
+  {
+    "seq": 1,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 174,
+    "verdict": "FP",
+    "reason": "行174是 request.setUserSettingsFile(new File(this.temp, \"settings.xml\"))，拼接的是字符串常量\"settings.xml\"，无任何用户可控输入；且该文件位于 src/intTest 集成测试支持代码中，仅为测试夹具写临时目录，不构成生产环境路径穿越风险。"
+  },
+  {
+    "seq": 2,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/test-support/spring-boot-gradle-test-support/src/main/java/org/springframework/boot/testsupport/gradle/testkit/GradleBuild.java",
+    "line": 175,
+    "verdict": "FP",
+    "reason": "行175 copyTransformedScript(this.script, new File(this.projectDir, \"build\" + this.dsl.getExtension()))，路径片段为常量\"build\"拼接DSL扩展名(gradle/kts)，且位于 spring-boot-gradle-test-support 纯测试支撑模块，写入目标是测试专用 projectDir，无用户可控穿越输入。"
+  },
+  {
+    "seq": 3,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/JarIntegrationTests.java",
+    "line": 371,
+    "verdict": "FP",
+    "reason": "行371 new File(project, \"jar/target/jar-layered-0.0.1.BUILD-SNAPSHOT.jar\") 是纯硬编码常量路径的测试断言代码(@TestTemplate)，无外部输入，也不存在写入操作（只是读取jar做断言），与路径穿越写入规则完全不符。"
+  },
+  {
+    "seq": 4,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/JarIntegrationTests.java",
+    "line": 320,
+    "verdict": "FP",
+    "reason": "行320 new File(project, \"target/jar-with-kotlin-module-0.0.1.BUILD-SNAPSHOT.jar\") 为@TestTemplate测试方法中的硬编码常量路径，仅用于断言jar内容，无用户输入也无写入行为，属典型测试代码误报。"
+  },
+  {
+    "seq": 5,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/test-support/spring-boot-gradle-test-support/src/main/java/org/springframework/boot/testsupport/gradle/testkit/GradleBuild.java",
+    "line": 177,
+    "verdict": "FP",
+    "reason": "行177 copyTransformedScript(this.settings, new File(this.projectDir, \"settings.gradle\"))，目标路径为常量\"settings.gradle\"，源路径this.settings由测试自身指定的测试脚本；位于test-support模块，仅服务于Gradle测试套件，非生产路径穿越风险。"
+  },
+  {
+    "seq": 6,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/WarIntegrationTests.java",
+    "line": 155,
+    "verdict": "FP",
+    "reason": "行155 new File(project, \"war/target/war-layered-0.0.1.BUILD-SNAPSHOT.war\") 是@TestTemplate测试方法中的硬编码常量路径，读取的是测试构建产物war包用于断言，无用户可控输入。"
+  },
+  {
+    "seq": 7,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 174,
+    "verdict": "FP",
+    "reason": "行174 request.setUserSettingsFile(new File(this.temp, \"settings.xml\")) 与第1条同一行代码，读取路径由常量\"settings.xml\"与测试临时目录拼接而成，无用户可控成分，且属集成测试基础设施。"
+  },
+  {
+    "seq": 8,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 178,
+    "verdict": "FP",
+    "reason": "行178 File target = new File(this.temp, \"target\") 拼接的是常量\"target\"，用于在测试临时目录创建构建日志目录，无外部输入，且位于intTest测试代码，不构成生产环境读取穿越。"
+  },
+  {
+    "seq": 9,
+    "rule_id": "sqli-java-mybatis-dollar",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/main/java/org/springframework/boot/maven/BuildImageMojo.java",
+    "line": 82,
+    "verdict": "FP",
+    "reason": "行82是Maven插件注解 @Parameter(defaultValue = \"${project.build.finalName}\", readonly = true, required = true)，${}是Maven属性插值语法而非MyBatis SQL拼接；整行没有任何SQL语句，规则语义完全不符。"
+  },
+  {
+    "seq": 10,
+    "rule_id": "sqli-java-mybatis-dollar",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/main/java/org/springframework/boot/maven/BuildInfoMojo.java",
+    "line": 73,
+    "verdict": "FP",
+    "reason": "行73 @Parameter(defaultValue = \"${project.build.outputDirectory}/META-INF/build-info.properties\") 是Maven @Parameter注解中的Maven属性占位符，不是MyBatis mapper的${}SQL拼接，无SQL上下文。"
+  },
+  {
+    "seq": 11,
+    "rule_id": "sqli-java-mybatis-dollar",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/launch/PropertiesLauncher.java",
+    "line": 153,
+    "verdict": "FP",
+    "reason": "行153 return new File(getPropertyWithDefault(HOME, \"${user.dir}\")) 中的 ${user.dir} 是launcher.properties默认属性值占位符（后续做属性替换），与MyBatis/SQL完全无关，且该类不含任何SQL。"
+  },
+  {
+    "seq": 12,
+    "rule_id": "sqli-java-mybatis-dollar",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/main/java/org/springframework/boot/maven/AbstractRunMojo.java",
+    "line": 74,
+    "verdict": "FP",
+    "reason": "行74 @Parameter(defaultValue = \"${session}\", readonly = true) 是Maven插件依赖注入注解，${session}为Maven容器注入的会话对象，非MyBatis SQL拼接，规则命中与代码语义完全不符。"
+  },
+  {
+    "seq": 13,
+    "rule_id": "sig-bypass-version-skip",
+    "file": "repos/spring-boot/module/spring-boot-websocket/src/main/java/org/springframework/boot/websocket/autoconfigure/servlet/WebSocketMessagingAutoConfiguration.java",
+    "line": 161,
+    "verdict": "FP",
+    "reason": "行161 if (taskExecutors.size() == 1) { return taskExecutors.values().iterator().next(); } 只是WebFlux/消息代理任务执行器的选择逻辑，类中不存在任何签名校验或版本判断被跳过的代码，规则含义与该行完全不符。"
+  },
+  {
+    "seq": 14,
+    "rule_id": "sig-bypass-version-skip",
+    "file": "repos/spring-boot/core/spring-boot/src/main/java/org/springframework/boot/env/ConfigTreePropertySource.java",
+    "line": 249,
+    "verdict": "FP",
+    "reason": "行249 return relativePath.toString() 位于getName()中，仅将配置树相对路径转成属性名（前面还有hasHiddenPathElement对\"..\"的过滤），整个类无签名校验/版本判断逻辑，与规则语义毫不相关。"
+  }
+]

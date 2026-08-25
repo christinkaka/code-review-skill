@@ -1,0 +1,114 @@
+[
+  {
+    "seq": 1,
+    "rule_id": "sig-bypass-version-skip",
+    "file": "repos/spring-boot/core/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/condition/OnBeanCondition.java",
+    "line": 194,
+    "verdict": "FP",
+    "reason": "该行是 `if (nonFallbackBeans.size() == 1)`，属于 @ConditionalOnSingleCandidate 的 bean 条件评估逻辑，整个方法 evaluateConditionalOnSingleCandidate 中根本不存在签名校验或版本判断，代码语义与规则含义完全不符。"
+  },
+  {
+    "seq": 2,
+    "rule_id": "sig-bypass-version-skip",
+    "file": "repos/spring-boot/loader/spring-boot-loader-tools/src/main/java/org/springframework/boot/loader/tools/LayersIndex.java",
+    "line": 146,
+    "verdict": "FP",
+    "reason": "该行是 `if (this.layers.size() == 1)`，位于分层 jar 索引(buildIndex)构建逻辑中，判断节点是否只属于一个 layer，与签名校验/版本判断毫无关系，属规则误匹配。"
+  },
+  {
+    "seq": 3,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/loader/spring-boot-loader-tools/src/main/java/org/springframework/boot/loader/tools/SizeCalculatingEntryWriter.java",
+    "line": 64,
+    "verdict": "FP",
+    "reason": "`new FileInputStream(file)` 中的 file 来自 initializeTempFile() 里 `File.createTempFile(\"springboot-\", \"-entrycontent\")` 创建的内部临时文件，路径不含任何外部配置值或用户输入，不存在路径穿越。"
+  },
+  {
+    "seq": 4,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/zip/ZipContent.java",
+    "line": 371,
+    "verdict": "FP",
+    "reason": "该行 `open(new Source(path.toAbsolutePath(), nestedEntryName))` 是类库公开 API，语义就是打开调用方指定的 zip 路径，调用方为 Boot loader 自身加载嵌套 jar，无配置值拼接到文件路径，不构成越权访问。"
+  },
+  {
+    "seq": 5,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/cli/spring-boot-cli/src/json-shade/java/org/springframework/boot/cli/json/JSONStringer.java",
+    "line": 137,
+    "verdict": "FP",
+    "reason": "该行是 `return open(Scope.EMPTY_ARRAY, \"[\")`，纯 JSON 字符串构造（Android JSONStringer 的 shaded 副本），完全不涉及文件路径，代码与规则含义毫不相关。"
+  },
+  {
+    "seq": 6,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/cli/spring-boot-cli/src/intTest/java/org/springframework/boot/cli/infrastructure/Versions.java",
+    "line": 35,
+    "verdict": "FP",
+    "reason": "`new FileInputStream(\"../../gradle.properties\")` 使用硬编码常量相对路径读取构建版本号，且该类位于 src/intTest 集成测试目录，既无外部输入也无用户可控路径。"
+  },
+  {
+    "seq": 7,
+    "rule_id": "ssrf-java-http-client",
+    "file": "repos/spring-boot/module/spring-boot-rabbitmq/src/main/java/org/springframework/boot/rabbitmq/testcontainers/RabbitMqContainerConnectionDetailsFactory.java",
+    "line": 71,
+    "verdict": "FP",
+    "reason": "`URI.create(getContainer().getAmqpUrl())` 只是对 Testcontainers 本地启动的 RabbitMQ 容器生成的 URL 做解析以提取 host/port，不发起任何 HTTP 请求，URL 来源是本机测试容器而非用户输入。"
+  },
+  {
+    "seq": 8,
+    "rule_id": "ssrf-java-http-client",
+    "file": "repos/spring-boot/module/spring-boot-elasticsearch/src/main/java/org/springframework/boot/elasticsearch/autoconfigure/ElasticsearchRestClientConfigurations.java",
+    "line": 309,
+    "verdict": "FP",
+    "reason": "`createNode(URI.create(uri))` 中 uri 来自 spring.elasticsearch.uris 应用配置属性（部署方受信配置），URI.create 仅做解析构造 Node 连接信息，这是框架连接已配置 ES 集群的预期语义，非终端用户可控的 SSRF。"
+  },
+  {
+    "seq": 9,
+    "rule_id": "path-log-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 184,
+    "verdict": "FP",
+    "reason": "buildLogFile 是 `new File(new File(this.temp, \"target\"), \"build.log\")`，temp 来自 `Files.createTempDirectory(\"maven-build\")`，文件名为常量；写入内容是 Maven 构建输出，且本类位于 src/intTest 测试代码中，无用户可控路径或日志注入。"
+  },
+  {
+    "seq": 10,
+    "rule_id": "path-log-traversal",
+    "file": "repos/spring-boot/module/spring-boot-web-server/src/testFixtures/java/org/springframework/boot/web/server/servlet/AbstractServletWebServerFactoryTests.java",
+    "line": 1544,
+    "verdict": "FP",
+    "reason": "`FileCopyUtils.copy(\"test\", new FileWriter(new File(this.tempDir, \"test.txt\")))` 是测试夹具代码向临时目录写入常量内容 \"test\" 用于静态资源测试，既非日志也无任何用户输入，与日志路径穿越规则无关。"
+  },
+  {
+    "seq": 11,
+    "rule_id": "ssrf-deep-detection",
+    "file": "repos/spring-boot/module/spring-boot-tomcat/src/main/java/org/springframework/boot/tomcat/servlet/TomcatServletWebServerFactory.java",
+    "line": 553,
+    "verdict": "FP",
+    "reason": "`new URL(resource.substring(0, resource.length() - 2))` 只是构造 URL 对象用于向 Tomcat 注册静态资源 jar 的 WebResourceSet，不发起网络请求；resource 来源于 StaticResourceJars 扫描应用 classpath 得到的 jar URL，非用户可控。"
+  },
+  {
+    "seq": 12,
+    "rule_id": "ssrf-deep-detection",
+    "file": "repos/spring-boot/module/spring-boot-tomcat/src/main/java/org/springframework/boot/tomcat/servlet/TomcatServletWebServerFactory.java",
+    "line": 536,
+    "verdict": "FP",
+    "reason": "`URL url = new URL(resource)` 仅解析 classpath 扫描（StaticResourceJars.getUrls() 遍历 ClassLoader 的 URL）得到的静态资源 jar 地址，随后 addJarResources/createWebResourceSet 注册为只读资源集，没有任何服务端请求发起，不构成 SSRF。"
+  },
+  {
+    "seq": 13,
+    "rule_id": "xss-js-innerhtml",
+    "file": "repos/spring-boot/smoke-test/spring-boot-smoke-test-web-groovy-templates/src/main/resources/static/js/jquery-1.7.2.js",
+    "line": 1572,
+    "verdict": "FP",
+    "reason": "`div.innerHTML = \"<table><tr><td style='\" + paddingMarginBorder + \"0;display:none'>...\"` 中 paddingMarginBorder 是本函数第 1549 行定义的常量字符串，整段 HTML 为常量拼接的浏览器特性探测代码，无任何用户可控内容。"
+  },
+  {
+    "seq": 14,
+    "rule_id": "xss-js-innerhtml",
+    "file": "repos/spring-boot/smoke-test/spring-boot-smoke-test-web-groovy-templates/src/main/resources/static/js/jquery-1.7.2.js",
+    "line": 6306,
+    "verdict": "FP",
+    "reason": "`div.innerHTML = elem.outerHTML` 是 vendored jQuery 1.7.2 内部 shimCloneNode 对已存在 DOM 元素做 IE<=8 克隆的兼容 shim，输入是待克隆的 DOM 节点序列化而非用户可控字符串；且该文件是 smoke-test 示例应用中的第三方静态资源库。"
+  }
+]

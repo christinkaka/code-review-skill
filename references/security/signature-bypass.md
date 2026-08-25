@@ -125,22 +125,13 @@ if (version == 1) {
 
 ## 检测模式
 
-```pattern
-if ($VAR == 1) {
-  ...
-}
-```
+> 2026-08-25 盲评修正：原 `if ($VAR == 1)` 类 pattern 匹配一切 `== 1`
+> 比较（实测 `size() == 1` 误报 6/6，CRITICAL 级语义错配）。漏洞的
+> 真实结构需双证据：**变量名含版本语义 + 分支内提前 return**（低版本
+> 短路返回，跳过后续验证逻辑）。
 
-```pattern
-if ($VAR < 2) {
-  ...
-}
-```
-
-```pattern
-if ($VAR <= 1) {
-  ...
-}
+```pattern-regex
+\bif\s*\(\s*\w*(?:ersion|ERSION)\w*\s*(?:==|!=|<|<=)\s*\d+\s*\)\s*\{[^{}]*\breturn\b
 ```
 
 ---

@@ -3,8 +3,8 @@
     "repo": "freeCodeCamp",
     "repo_path": "repos/freeCodeCamp",
     "profile": "default",
-    "timestamp": "2026-08-24 16:03:30",
-    "duration_seconds": 6.63,
+    "timestamp": "2026-08-25 07:53:19",
+    "duration_seconds": 8.42,
     "test_type": "dual-blind"
   },
   "summary": {
@@ -78,6 +78,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7550021510445334,
       "attack_vector": "",
@@ -100,6 +101,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7946421476297646,
       "attack_vector": "",
@@ -122,6 +124,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8853398974845823,
       "attack_vector": "",
@@ -144,6 +147,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7673877665258833,
       "attack_vector": "",
@@ -166,6 +170,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.755959443887614,
       "attack_vector": "",
@@ -188,6 +193,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8510710576206725,
       "attack_vector": "",
@@ -210,6 +216,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8589882961206433,
       "attack_vector": "",
@@ -232,6 +239,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8678531367751817,
       "attack_vector": "",
@@ -254,6 +262,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7512997519356122,
       "attack_vector": "",
@@ -276,6 +285,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8896278789976454,
       "attack_vector": "",
@@ -298,6 +308,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7810958999623563,
       "attack_vector": "",
@@ -320,6 +331,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8173189090225254,
       "attack_vector": "",
@@ -342,6 +354,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8707452062733783,
       "attack_vector": "",
@@ -364,6 +377,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8959463573387636,
       "attack_vector": "",
@@ -386,6 +400,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9446231527958742,
       "attack_vector": "",
@@ -408,6 +423,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8604081262546455,
       "attack_vector": "",
@@ -430,6 +446,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8737039504728492,
       "attack_vector": "",
@@ -452,6 +469,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8654704290513524,
       "attack_vector": "",
@@ -474,6 +492,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7591648767311324,
       "attack_vector": "",
@@ -496,6 +515,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8078775927204215,
       "attack_vector": "",
@@ -518,6 +538,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8229664357940168,
       "attack_vector": "",
@@ -540,6 +561,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7919014061542975,
       "attack_vector": "",
@@ -562,6 +584,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9373309175424989,
       "attack_vector": "",
@@ -584,6 +607,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8718262011333977,
       "attack_vector": "",
@@ -606,6 +630,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8779999519708186,
       "attack_vector": "",
@@ -628,6 +653,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8869228501979749,
       "attack_vector": "",
@@ -650,6 +676,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9051999823092489,
       "attack_vector": "",
@@ -672,6 +699,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7564200487808076,
       "attack_vector": "",
@@ -694,6 +722,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8035481751951405,
       "attack_vector": "",
@@ -716,6 +745,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9385819428670109,
       "attack_vector": "",
@@ -738,6 +768,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8129355761596956,
       "attack_vector": "",
@@ -760,6 +791,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8291263802121329,
       "attack_vector": "",
@@ -782,6 +814,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8417703705174797,
       "attack_vector": "",
@@ -804,6 +837,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7993255015387967,
       "attack_vector": "",
@@ -826,6 +860,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.802548321704587,
       "attack_vector": "",
@@ -848,6 +883,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9295645767204954,
       "attack_vector": "",
@@ -870,6 +906,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7938641518314566,
       "attack_vector": "",
@@ -892,6 +929,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8519052587352929,
       "attack_vector": "",
@@ -914,6 +952,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8344319933599368,
       "attack_vector": "",
@@ -936,6 +975,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8558228690198274,
       "attack_vector": "",
@@ -958,6 +998,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9221559404468996,
       "attack_vector": "",
@@ -980,6 +1021,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.857394066081759,
       "attack_vector": "",
@@ -1002,6 +1044,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8781923597159617,
       "attack_vector": "",
@@ -1024,6 +1067,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.940763185504216,
       "attack_vector": "",
@@ -1046,6 +1090,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8026778101502181,
       "attack_vector": "",
@@ -1068,6 +1113,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7857303761060263,
       "attack_vector": "",
@@ -1090,6 +1136,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9241037139673534,
       "attack_vector": "",
@@ -1112,6 +1159,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.877789898973201,
       "attack_vector": "",
@@ -1134,6 +1182,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.780567853709927,
       "attack_vector": "",
@@ -1156,6 +1205,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8578758060239251,
       "attack_vector": "",
@@ -1178,6 +1228,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8560707344390355,
       "attack_vector": "",
@@ -1200,6 +1251,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9163331058722359,
       "attack_vector": "",
@@ -1222,6 +1274,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7615850332988375,
       "attack_vector": "",
@@ -1244,6 +1297,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9393898890595989,
       "attack_vector": "",
@@ -1266,6 +1320,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7756782928999526,
       "attack_vector": "",
@@ -1288,6 +1343,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8599607186989888,
       "attack_vector": "",
@@ -1310,6 +1366,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9244866082170515,
       "attack_vector": "",
@@ -1330,7 +1387,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1347,7 +1405,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1364,7 +1423,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1381,7 +1441,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1398,7 +1459,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1415,7 +1477,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1432,7 +1495,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1449,7 +1513,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1466,7 +1531,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1483,7 +1549,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1500,7 +1567,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1517,7 +1585,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1534,7 +1603,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1551,7 +1621,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1568,7 +1639,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1585,7 +1657,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "ssrf-js-fetch",
@@ -1602,7 +1675,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "path-traversal-pattern",
@@ -1616,7 +1690,8 @@
       "cwe": "CWE-22",
       "engines": [
         "ast"
-      ]
+      ],
+      "confidence": 0.947368
     }
   ]
 }

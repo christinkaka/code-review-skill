@@ -94,6 +94,28 @@ class TestCustomTestSourceSets:
         assert prefilter_issues(issues, {}) == []
 
 
+class TestBlindReviewTestDirs:
+    """2026-08-25 盲评实测缺口：smoke-test / test-support / testFixtures"""
+
+    def test_smoke_test_dir_filtered(self):
+        """真实案例：smoke-test/spring-boot-smoke-test-web-groovy-templates/.../jquery-1.7.2.js"""
+        issues = [make_issue(
+            "xss-js-innerhtml",
+            "smoke-test/spring-boot-smoke-test-web-groovy-templates/"
+            "src/main/resources/static/js/jquery-1.7.2.js")]
+        assert prefilter_issues(issues, {}) == []
+
+    def test_test_support_dir_filtered(self):
+        issues = [make_issue("path-config-traversal",
+                             "spring-boot-tools/test-support/java/org/app/Support.java")]
+        assert prefilter_issues(issues, {}) == []
+
+    def test_test_fixtures_dir_filtered(self):
+        issues = [make_issue("path-log-traversal",
+                             "plugin/src/testFixtures/java/org/app/Fixture.java")]
+        assert prefilter_issues(issues, {}) == []
+
+
 # ===================================================================
 # 前端测试约定
 # ===================================================================
@@ -211,8 +233,8 @@ class TestWhitelistV2Expansion:
         issues = [make_issue("naming-java-class", "src/main/java/org/app/Specification.java")]
         assert prefilter_issues(issues, {}) != []
 
-    def test_default_whitelist_has_17_patterns(self):
-        """默认白名单必须恰好 17 类模式（与架构图声明一致）"""
+    def test_default_whitelist_has_20_patterns(self):
+        """默认白名单必须恰好 20 类模式（17 类 + 盲评补充 3 类测试目录）"""
         import inspect
         import scan
         source = inspect.getsource(scan.prefilter_issues)
@@ -222,4 +244,4 @@ class TestWhitelistV2Expansion:
         block = source[start:end]
         patterns = [ln.strip().strip(',').strip('"') for ln in block.splitlines()
                     if ln.strip().startswith('"**')]
-        assert len(patterns) == 17, f"默认白名单应为 17 类，实际 {len(patterns)}: {patterns}"
+        assert len(patterns) == 20, f"默认白名单应为 20 类，实际 {len(patterns)}: {patterns}"

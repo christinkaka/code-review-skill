@@ -376,6 +376,10 @@ class RuleEngine:
     # （检出本身正常：rule_id/file/line 准确，仅代码内容被脱敏）
     _REDACTED_SNIPPET = "requires login"
 
+    # --include 参数最大数量（argv 长度保护，macOS 默认 ~1MB，
+    # 按每对参数 ~120 字节保守取 4000；超出后改走结果路径过滤兜底）
+    _INCLUDE_ARG_MAX = 4000
+
     def _apply_entropy_gate(
         self, issues: List[Dict], repo_path: str = None
     ) -> List[Dict]:
@@ -677,6 +681,19 @@ class RuleEngine:
                 ".",
             ]
 
+            # 2026-08-25 修复：按 changed_files 收窄扫描范围。
+            # 此前 target="." 无视变更清单扫全仓库（实测 50 文件输入时
+            # 1096/1097 条检出来自范围外文件，diff 扫描会误报未变更代码）。
+            # 超过 _INCLUDE_ARG_MAX 时不传 --include（避免 argv 上限），
+            # 改为对结果做路径过滤兜底。
+            include_paths = {
+                fi.get("path", "").strip() for fi in (changed_files or [])
+                if fi.get("path", "").strip()
+            }
+            if 0 < len(include_paths) <= self._INCLUDE_ARG_MAX:
+                for p in sorted(include_paths):
+                    cmd[1:1] = ["--include", p]
+
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -735,6 +752,16 @@ class RuleEngine:
                         issues.append(issue)
                 except json.JSONDecodeError:
                     logger.error("Semgrep 输出解析失败")
+
+            # 兜底路径过滤：--include 未生效（文件数超限）时，
+            # 确保结果不泄漏范围外文件的检出
+            if include_paths and len(include_paths) > self._INCLUDE_ARG_MAX:
+                before = len(issues)
+                issues = [i for i in issues if i.get("file") in include_paths]
+                logger.info(
+                    f"路径兜底过滤: {before} -> {len(issues)} "
+                    f"(changed_files 超过 {self._INCLUDE_ARG_MAX}，未传 --include)"
+                )
 
             # P0-2 修复: 基于 (rule_id, file, line) 去重
             seen = set()

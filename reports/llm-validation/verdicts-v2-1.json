@@ -1,0 +1,130 @@
+[
+  {
+    "seq": 1,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 174,
+    "verdict": "FP",
+    "reason": "行174 request.setUserSettingsFile(new File(this.temp, \"settings.xml\")) 第二参数是字面常量，this.temp 由 Files.createTempDirectory(\"maven-build\") 创建（行84），整条路径无任何外部输入参与拼接。"
+  },
+  {
+    "seq": 2,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/integration-test/spring-boot-server-integration-tests/src/intTest/java/org/springframework/boot/context/embedded/IdeApplicationLauncher.java",
+    "line": 117,
+    "verdict": "FP",
+    "reason": "行117 new File(this.exploded, \"src/main/webapp\") 拼接的是硬编码常量目录名，this.exploded 是构建输出目录下的内部解包目录，不存在用户可控数据。"
+  },
+  {
+    "seq": 3,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/module/spring-boot-webmvc/src/main/java/org/springframework/boot/webmvc/autoconfigure/JspTemplateAvailabilityProvider.java",
+    "line": 65,
+    "verdict": "FP",
+    "reason": "行65 new File(this.warSourceDirectory, resourceName).exists() 是文件存在性检查而非写入，与规则语义不符；且 resourceName 由 spring.mvc.view.prefix/suffix 受信配置加框架内部固定视图名拼出，调用方（ErrorMvcAutoConfiguration 传 \"error\"、WelcomePage 传 \"index\"、DefaultErrorViewResolver 传状态码派生的 \"error/4xx\"）均非终端用户输入。"
+  },
+  {
+    "seq": 4,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/integration-test/spring-boot-server-integration-tests/src/intTest/java/org/springframework/boot/context/embedded/BootRunApplicationLauncher.java",
+    "line": 101,
+    "verdict": "FP",
+    "reason": "行101 new File(this.exploded, \"src/main/webapp\") 为常量字面量拼接，写入目标是自身临时解包目录下的固定子目录，无外部输入。"
+  },
+  {
+    "seq": 5,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/integration-test/spring-boot-server-integration-tests/src/intTest/java/org/springframework/boot/context/embedded/BootRunApplicationLauncher.java",
+    "line": 74,
+    "verdict": "FP",
+    "reason": "行74 FileSystemUtils.deleteRecursively(new File(this.exploded, \"org\")) 删除的是常量 \"org\" 目录且位于自身临时解包目录内，路径不含用户可控数据。"
+  },
+  {
+    "seq": 6,
+    "rule_id": "path-write-traversal",
+    "file": "repos/spring-boot/integration-test/spring-boot-server-integration-tests/src/intTest/java/org/springframework/boot/context/embedded/IdeApplicationLauncher.java",
+    "line": 86,
+    "verdict": "FP",
+    "reason": "行86 new File(this.exploded, \"built/classes\") 为字面常量拼接，目标为内部临时目录的固定子路径，无任何外部输入。"
+  },
+  {
+    "seq": 7,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 174,
+    "verdict": "FP",
+    "reason": "行174 setUserSettingsFile(new File(this.temp, \"settings.xml\")) 只是给 Maven Invoker 请求设置参数，本身并非文件读写，且 \"settings.xml\" 为常量、temp 为内部临时目录，无外部输入。"
+  },
+  {
+    "seq": 8,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 178,
+    "verdict": "FP",
+    "reason": "行178 File target = new File(this.temp, \"target\") 拼接的是字面常量 \"target\"，基路径为 createTempDirectory 生成的临时目录，无用户可控数据。"
+  },
+  {
+    "seq": 9,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/build-plugin/spring-boot-maven-plugin/src/intTest/java/org/springframework/boot/maven/MavenBuild.java",
+    "line": 183,
+    "verdict": "FP",
+    "reason": "行183 new File(target, \"build.log\") 的两个组成部分均为常量 \"build.log\" 与内部临时目录 target，路径中无任何外部输入。"
+  },
+  {
+    "seq": 10,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/integration-test/spring-boot-server-integration-tests/src/intTest/java/org/springframework/boot/context/embedded/BootRunApplicationLauncher.java",
+    "line": 78,
+    "verdict": "FP",
+    "reason": "行78 new File(this.exploded, \"built/classes\") 为常量字面量拼接，仅做 mkdirs 与内部拷贝，无外部输入参与路径。"
+  },
+  {
+    "seq": 11,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/module/spring-boot-devtools/src/main/java/org/springframework/boot/devtools/restart/server/RestartServer.java",
+    "line": 105,
+    "verdict": "FP",
+    "reason": "行105 new File(directory, name) 中 directory 来自应用自身 classpath URL（受信），name 来自 ClassLoaderFiles；其唯一外部入口 HttpRestartServer.handle 的请求必须先通过 Dispatcher(行72) 的 HttpHeaderAccessManager 共享密钥认证，且整个 RemoteDevToolsAutoConfiguration 需 @ConditionalOnEnabledDevTools + spring.devtools.remote.secret（开发期专用、生产默认不启用），通过认证的客户端本就具备替换任意应用类并重启的设计能力，写入又受 file.exists() && file.canWrite() 限制，不构成额外越权。不确定点：若仅按 HTTP 反序列化污点流（name 无路径校验）判定也可视为 TP，但倾向 FP。"
+  },
+  {
+    "seq": 12,
+    "rule_id": "path-read-traversal",
+    "file": "repos/spring-boot/module/spring-boot-web-server/src/main/java/org/springframework/boot/web/server/servlet/SessionStoreDirectory.java",
+    "line": 51,
+    "verdict": "FP",
+    "reason": "行51 只是把相对路径 dir 解析到 ApplicationHome 目录下，dir 来源于 server.servlet.session.store-dir 配置（Session.java:105 setDirectory(storeDir)），属运维受信配置而非用户输入，且该行本身不发生文件读取。"
+  },
+  {
+    "seq": 13,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/loader/spring-boot-loader-tools/src/main/java/org/springframework/boot/loader/tools/SizeCalculatingEntryWriter.java",
+    "line": 64,
+    "verdict": "FP",
+    "reason": "行64 new FileInputStream(file) 读取的 file 是本类 initializeTempFile() 中 File.createTempFile(\"springboot-\", \"-entrycontent\") 创建的内部临时文件，路径不含任何配置值或外部输入。"
+  },
+  {
+    "seq": 14,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/loader/spring-boot-loader/src/main/java/org/springframework/boot/loader/zip/ZipContent.java",
+    "line": 371,
+    "verdict": "FP",
+    "reason": "行371 open(new Source(path.toAbsolutePath(), nestedEntryName)) 的调用方全部是 loader 内部（NestedPath/NestedByteChannel/NestedJarFileResources/NestedUrlConnectionResources），path 与 nestedEntryName 均来自应用自身 jar 的 classpath/清单结构（构建期受信产物），无配置值或用户输入注入。"
+  },
+  {
+    "seq": 15,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/cli/spring-boot-cli/src/json-shade/java/org/springframework/boot/cli/json/JSONStringer.java",
+    "line": 137,
+    "verdict": "FP",
+    "reason": "行137 return open(Scope.EMPTY_ARRAY, \"[\") 是 JSON 序列化时向 StringBuilder 追加 \"[\" 括号字符，与文件路径、配置值毫无关系，行号处代码与规则含义完全不符。"
+  },
+  {
+    "seq": 16,
+    "rule_id": "path-config-traversal",
+    "file": "repos/spring-boot/cli/spring-boot-cli/src/intTest/java/org/springframework/boot/cli/infrastructure/Versions.java",
+    "line": 35,
+    "verdict": "FP",
+    "reason": "行35 new FileInputStream(\"../../gradle.properties\") 是硬编码常量相对路径，不含任何配置值或用户可控输入，与『配置值拼入文件路径』的规则含义不符。"
+  }
+]

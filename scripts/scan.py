@@ -90,11 +90,16 @@ def prefilter_issues(issues: list, config: dict) -> list:
     # - JUnit 命名: *Test.*（单数）、*Tests.*（复数）、*IT.*（Failsafe）、*TestCase.*
     # - pytest: test_*.py、*_test.py
     # - 前端/Ruby: *.spec.*、*.test.*、*Spec.*
+    # - 2026-08-25 盲评补充: smoke-test/**、test-support/**、testFixtures/**
+    #   （spring-boot 实测：冒烟/测试支撑源集目录，非生产代码）
     file_patterns = whitelist.get("file_patterns", [
         "**/test/**",
         "**/tests/**",
         "**/dockerTest/**",
         "**/integrationTest/**",
+        "**/smoke-test/**",
+        "**/test-support/**",
+        "**/testFixtures/**",
         "**/*_test.*",
         "**/*Test.*",
         "**/*Tests.*",

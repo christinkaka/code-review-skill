@@ -47,6 +47,9 @@ $URL.openConnection();
 # SSRF - Java HttpClient 请求用户可控 URL
 
 > HttpClient 请求用户可控 URL，存在 SSRF 风险。
+> 2026-08-25 盲评修正：`URI.create($USER_INPUT)` 为纯解析构造，不产生
+> 网络流量（实测 2/2 误报：Testcontainers 本地容器 URL、部署配置项）。
+> 判别信号改为 URI 构造后真实发起请求（client.send）。
 
 ```yaml
 id: ssrf-java-http-client
@@ -59,6 +62,8 @@ cwe: CWE-918
 
 ```pattern
 URI.create($USER_INPUT)
+...
+$C.send(...)
 ```
 
 ---

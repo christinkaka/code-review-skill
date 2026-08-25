@@ -135,6 +135,14 @@ _BASE64 = re.compile(r"^[0-9a-zA-Z+/=]+$")
 _ALNUM_SYM = re.compile(r"^[0-9a-zA-Z_\-./~!@#$%^&*()+\[\]{}<>?|\\]+$")
 _PLACEHOLDER = re.compile(r"\$\{|\{%|\$\{\{|<<|>>")
 
+# 结构判据：非凭据命名空间的语法形态
+# HTTP 头名：大写字母数字段以连字符连接（X-AUTH-TOKEN、CONTENT-TYPE-2）
+_HTTP_HEADER_NAME = re.compile(r"[A-Z0-9]+(?:-[A-Z0-9]+)+")
+# 连字符自然词：纯字母段以连字符连接（self-contained、Content-Type）；
+# 真实机器凭据即使带连字符前缀（sk-…），后段也含数字/混合大小写，
+# 不会落在纯字母分段形态里
+_HYPHEN_NATURAL_WORD = re.compile(r"[A-Za-z]+(?:-[A-Za-z]+)+")
+
 CREDENTIAL_CHARSETS = ("hex", "base62", "base64", "alnum_sym")
 
 
@@ -184,9 +192,12 @@ def is_high_entropy_secret(
 
     判决逻辑（每一步均有数学依据）：
     1. placeholder      -> 拒绝（结构判决：模板注入，非硬编码）
-    2. n < min_len      -> 拒绝（统计判决：样本不足，熵估计不可靠）
-    3. charset == natural -> 拒绝（假设检验：非凭据字符集，H0 无法拒绝）
-    4. 凭据字符集:
+    2. 结构判据         -> 拒绝（URL/URI 路径/HTTP 头名/连字符自然词：
+                          语法结构上不属于凭据命名空间，先验 P(TP)≈0，
+                          无需进入熵检验）
+    3. n < min_len      -> 拒绝（统计判决：样本不足，熵估计不可靠）
+    4. charset == natural -> 拒绝（假设检验：非凭据字符集，H0 无法拒绝）
+    5. 凭据字符集:
        H_MM >= min_per_char       （单位熵检验：接近均匀抽取）
        且 n · H_MM >= min_total_bits （总熵检验：非弱凭据）
 
@@ -203,6 +214,25 @@ def is_high_entropy_secret(
 
     if detail["charset"] == "placeholder":
         detail["reason"] = "模板占位符（${}/{%%}/<<>>），非硬编码"
+        return (False, detail)
+
+    # ---- 结构判据（2026-08-24 spring-boot 端到端实测驱动）----
+    # 凭据不存在于这些语法命名空间：URL、URI 路径、HTTP 头名、
+    # 连字符自然词。它们可能满足熵门限（如 /oauth2/token 的
+    # H_MM≈3.6），但"高熵"来自路径语义而非随机抽取——这正是
+    # Shannon 熵无法区分"结构熵"与"随机熵"的已知局限，需以
+    # 结构先验补足。
+    if "://" in value:
+        detail["reason"] = "URL 结构（含 ://），非凭据"
+        return (False, detail)
+    if value.startswith("/"):
+        detail["reason"] = "URI 路径（以 / 开头），非凭据"
+        return (False, detail)
+    if _HTTP_HEADER_NAME.fullmatch(value):
+        detail["reason"] = "HTTP 头名结构（大写字母数字+连字符），非凭据"
+        return (False, detail)
+    if _HYPHEN_NATURAL_WORD.fullmatch(value):
+        detail["reason"] = "连字符自然词（纯字母分段），非凭据"
         return (False, detail)
 
     if len(value) < min_len:

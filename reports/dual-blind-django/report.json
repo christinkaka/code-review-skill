@@ -3,54 +3,55 @@
     "repo": "Django",
     "repo_path": "repos/django",
     "profile": "default",
-    "timestamp": "2026-08-24 16:03:34",
-    "duration_seconds": 3.68,
+    "timestamp": "2026-08-25 07:53:24",
+    "duration_seconds": 4.59,
     "test_type": "dual-blind"
   },
   "summary": {
-    "total": 106,
-    "critical": 40,
-    "high": 32,
-    "medium": 17,
+    "total": 101,
+    "critical": 43,
+    "high": 31,
+    "medium": 10,
     "low": 17,
     "by_category": {
-      "security": 72,
+      "security": 74,
       "implementation": 18,
-      "unknown": 15,
+      "unknown": 8,
       "custom": 1
     },
     "by_file": {
-      "django/core/cache/backends/filebased.py": 8,
       "scripts/tests.py": 8,
-      "django/core/management/commands/makemessages.py": 7,
+      "django/core/cache/backends/filebased.py": 7,
+      "django/core/management/commands/makemessages.py": 6,
       "django/core/management/commands/makemigrations.py": 6,
+      "django/utils/archive.py": 4,
+      "scripts/manage_translations.py": 4,
       "django/utils/cache.py": 4,
-      "scripts/do_django_release.py": 3,
-      "scripts/manage_translations.py": 3,
       "scripts/prepare_commit_msg.py": 3,
-      "django/contrib/auth/views.py": 2,
       "django/core/cache/backends/locmem.py": 2,
       "django/core/management/commands/optimizemigration.py": 2,
       "django/core/management/commands/squashmigrations.py": 2,
       "django/core/management/templates.py": 2,
-      "django/db/backends/oracle/creation.py": 2,
       "django/db/migrations/writer.py": 2,
-      "django/template/smartif.py": 2,
-      "django/utils/archive.py": 2,
-      "docs/_ext/djangodocs.py": 2,
       "django/utils/functional.py": 2,
-      "django/views/generic/edit.py": 2
+      "django/views/generic/edit.py": 2,
+      "django/contrib/admin/static/admin/js/admin/RelatedObjectLookups.js": 1,
+      "django/contrib/auth/password_validation.py": 1,
+      "django/contrib/auth/views.py": 1,
+      "django/contrib/gis/geos/factory.py": 1,
+      "django/contrib/sessions/backends/file.py": 1
     },
     "by_rule": {
-      "path-read-traversal": 36,
-      "path-write-traversal": 18,
+      "path-read-traversal": 38,
+      "path-write-traversal": 17,
       "naming-python-class-case": 17,
       "sig-python-weak-hash": 10,
-      "crypto-hardcoded-key": 9,
       "deser-python-pickle": 6,
       "auth-python-django-mixin": 3,
+      "crypto-hardcoded-key": 2,
       "ssrf-deep-detection": 1,
       "priv-python-subprocess-popen": 1,
+      "sqli-python-raw-query": 1,
       "custom-hardcoded-password": 1,
       "sqli-python-execute-format": 1,
       "ssrf-python-requests": 1,
@@ -86,6 +87,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7550021510445334,
       "attack_vector": "",
@@ -108,6 +110,7 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7946421476297646,
       "attack_vector": "",
@@ -130,30 +133,18 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
+      "entropy": {
+        "value_len": 21,
+        "charset": "alnum_sym",
+        "entropy_plugin": 3.427333,
+        "entropy_miller_madow": 3.805182,
+        "total_bits": 79.91,
+        "reason": "高熵凭据（charset=alnum_sym, H_MM=3.81, 总熵=79.9 bits）"
+      },
+      "entropy_snippet_source": "source_file",
       "fix": "建议修复方案",
       "ai_confidence": 0.8853398974845823,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "django/contrib/auth/views.py",
-      "line": 262,
-      "end_line": 262,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7673877665258833,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -174,8 +165,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.755959443887614,
+      "ai_confidence": 0.7673877665258833,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -196,30 +188,32 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8510710576206725,
+      "ai_confidence": 0.755959443887614,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "django/core/cache/backends/filebased.py",
-      "line": 36,
-      "end_line": 36,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "rule_id": "deser-python-pickle",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "django/core/cache/backends/db.py",
+      "line": 102,
+      "end_line": 102,
+      "message": "使用 pickle 反序列化不可信数据，攻击者可构造恶意 pickle 数据执行任意代码。",
       "code_snippet": "requires login",
       "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
+        "cwe": "CWE-502",
+        "owasp": "A08:2021"
       },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8589882961206433,
+      "ai_confidence": 0.8510710576206725,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -240,8 +234,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8678531367751817,
+      "ai_confidence": 0.8589882961206433,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -262,8 +257,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7512997519356122,
+      "ai_confidence": 0.8678531367751817,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -284,8 +280,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8896278789976454,
+      "ai_confidence": 0.7512997519356122,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -306,8 +303,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7810958999623563,
+      "ai_confidence": 0.8896278789976454,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -328,30 +326,32 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8173189090225254,
+      "ai_confidence": 0.7810958999623563,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "deser-python-pickle",
-      "category": "unknown",
-      "severity": "CRITICAL",
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
       "file": "django/core/cache/backends/filebased.py",
-      "line": 154,
-      "end_line": 154,
-      "message": "使用 pickle 反序列化不可信数据，攻击者可构造恶意 pickle 数据执行任意代码。",
+      "line": 98,
+      "end_line": 98,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
-        "cwe": "CWE-502",
-        "owasp": "A08:2021"
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
       },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8707452062733783,
+      "ai_confidence": 0.8173189090225254,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -372,8 +372,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8959463573387636,
+      "ai_confidence": 0.8707452062733783,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -394,8 +395,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9446231527958742,
+      "ai_confidence": 0.8959463573387636,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -416,8 +418,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8604081262546455,
+      "ai_confidence": 0.9446231527958742,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -438,8 +441,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8737039504728492,
+      "ai_confidence": 0.8604081262546455,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -460,8 +464,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8654704290513524,
+      "ai_confidence": 0.8737039504728492,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -482,8 +487,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7591648767311324,
+      "ai_confidence": 0.8654704290513524,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -504,8 +510,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8078775927204215,
+      "ai_confidence": 0.7591648767311324,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -513,9 +520,9 @@
       "rule_id": "path-read-traversal",
       "category": "security",
       "severity": "ERROR",
-      "file": "django/core/management/commands/makemessages.py",
-      "line": 116,
-      "end_line": 116,
+      "file": "django/core/mail/backends/filebased.py",
+      "line": 88,
+      "end_line": 88,
       "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
@@ -526,8 +533,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8229664357940168,
+      "ai_confidence": 0.8078775927204215,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -548,8 +556,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7919014061542975,
+      "ai_confidence": 0.8229664357940168,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -570,8 +579,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9373309175424989,
+      "ai_confidence": 0.7919014061542975,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -592,19 +602,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8718262011333977,
+      "ai_confidence": 0.9373309175424989,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
+      "rule_id": "path-write-traversal",
       "category": "security",
-      "severity": "ERROR",
+      "severity": "CRITICAL",
       "file": "django/core/management/commands/makemessages.py",
-      "line": 734,
-      "end_line": 734,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "line": 520,
+      "end_line": 520,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -614,8 +625,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8779999519708186,
+      "ai_confidence": 0.8718262011333977,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -636,8 +648,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8869228501979749,
+      "ai_confidence": 0.8779999519708186,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -658,19 +671,43 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8869228501979749,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/commands/makemigrations.py",
+      "line": 364,
+      "end_line": 364,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9051999823092489,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
+      "rule_id": "path-write-traversal",
       "category": "security",
-      "severity": "ERROR",
+      "severity": "CRITICAL",
       "file": "django/core/management/commands/makemigrations.py",
       "line": 364,
       "end_line": 364,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -680,19 +717,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7564200487808076,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
+      "rule_id": "path-read-traversal",
       "category": "security",
-      "severity": "CRITICAL",
+      "severity": "ERROR",
       "file": "django/core/management/commands/makemigrations.py",
-      "line": 364,
-      "end_line": 364,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "line": 368,
+      "end_line": 368,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -702,19 +740,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8035481751951405,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
+      "rule_id": "path-write-traversal",
       "category": "security",
-      "severity": "ERROR",
+      "severity": "CRITICAL",
       "file": "django/core/management/commands/makemigrations.py",
       "line": 368,
       "end_line": 368,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -724,19 +763,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9385819428670109,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
+      "rule_id": "path-read-traversal",
       "category": "security",
-      "severity": "CRITICAL",
+      "severity": "ERROR",
       "file": "django/core/management/commands/makemigrations.py",
-      "line": 368,
-      "end_line": 368,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "line": 502,
+      "end_line": 502,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -746,19 +786,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8129355761596956,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
+      "rule_id": "path-write-traversal",
       "category": "security",
-      "severity": "ERROR",
+      "severity": "CRITICAL",
       "file": "django/core/management/commands/makemigrations.py",
       "line": 502,
       "end_line": 502,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -768,34 +809,13 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8291263802121329,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
-      "file": "django/core/management/commands/makemigrations.py",
-      "line": 502,
-      "end_line": 502,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8417703705174797,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
       "rule_id": "path-read-traversal",
       "category": "security",
       "severity": "ERROR",
@@ -812,8 +832,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7993255015387967,
+      "ai_confidence": 0.8417703705174797,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -834,8 +855,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.802548321704587,
+      "ai_confidence": 0.7993255015387967,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -856,8 +878,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9295645767204954,
+      "ai_confidence": 0.802548321704587,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -878,8 +901,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7938641518314566,
+      "ai_confidence": 0.9295645767204954,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -900,41 +924,43 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7938641518314566,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/core/management/templates.py",
+      "line": 204,
+      "end_line": 204,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8519052587352929,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
+      "rule_id": "path-read-traversal",
       "category": "security",
-      "severity": "CRITICAL",
-      "file": "django/core/management/templates.py",
-      "line": 208,
-      "end_line": 208,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8344319933599368,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
+      "severity": "ERROR",
       "file": "django/core/management/templates.py",
       "line": 320,
       "end_line": 320,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -944,8 +970,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8558228690198274,
+      "ai_confidence": 0.8344319933599368,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -965,30 +992,31 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9221559404468996,
+      "ai_confidence": 0.8558228690198274,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "django/db/backends/oracle/creation.py",
-      "line": 292,
-      "end_line": 292,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
+      "rule_id": "sqli-python-raw-query",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/db/backends/oracle/base.py",
+      "line": 323,
+      "end_line": 327,
+      "message": "SQLAlchemy raw query 使用字符串拼接，存在注入风险。",
       "code_snippet": "requires login",
       "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
+        "cwe": "CWE-89"
       },
       "engine": "semgrep",
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.857394066081759,
+      "ai_confidence": 0.9221559404468996,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1005,8 +1033,18 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
+      "entropy": {
+        "value_len": 12,
+        "charset": "alnum_sym",
+        "entropy_plugin": 3.188722,
+        "entropy_miller_madow": 3.729733,
+        "total_bits": 44.76,
+        "reason": "高熵凭据（charset=alnum_sym, H_MM=3.73, 总熵=44.8 bits）"
+      },
+      "entropy_snippet_source": "source_file",
       "fix": "建议修复方案",
-      "ai_confidence": 0.8781923597159617,
+      "ai_confidence": 0.857394066081759,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1014,9 +1052,9 @@
       "rule_id": "sqli-python-execute-format",
       "category": "security",
       "severity": "ERROR",
-      "file": "django/db/backends/sqlite3/base.py",
-      "line": 331,
-      "end_line": 331,
+      "file": "django/db/backends/oracle/introspection.py",
+      "line": 178,
+      "end_line": 182,
       "message": "Python 使用字符串格式化/拼接构建 SQL，存在注入风险。",
       "code_snippet": "requires login",
       "metadata": {
@@ -1026,8 +1064,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.940763185504216,
+      "ai_confidence": 0.8781923597159617,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1048,8 +1087,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8026778101502181,
+      "ai_confidence": 0.940763185504216,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1070,8 +1110,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7857303761060263,
+      "ai_confidence": 0.8026778101502181,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1092,30 +1133,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9241037139673534,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "django/template/base.py",
-      "line": 746,
-      "end_line": 746,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.877789898973201,
+      "ai_confidence": 0.7857303761060263,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1136,52 +1156,55 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9241037139673534,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "django/utils/archive.py",
+      "line": 199,
+      "end_line": 199,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.877789898973201,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "django/utils/archive.py",
+      "line": 199,
+      "end_line": 199,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.780567853709927,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "django/template/smartif.py",
-      "line": 172,
-      "end_line": 172,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8578758060239251,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "django/template/smartif.py",
-      "line": 175,
-      "end_line": 175,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8560707344390355,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1202,8 +1225,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9163331058722359,
+      "ai_confidence": 0.8578758060239251,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1224,30 +1248,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7615850332988375,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "django/utils/text.py",
-      "line": 409,
-      "end_line": 409,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.9393898890595989,
+      "ai_confidence": 0.8560707344390355,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1268,30 +1271,18 @@
       "engines": [
         "semgrep"
       ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7756782928999526,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "docs/_ext/djangodocs.py",
-      "line": 287,
-      "end_line": 287,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
+      "confidence": 0.888889,
+      "entropy": {
+        "value_len": 12,
+        "charset": "alnum_sym",
+        "entropy_plugin": 3.084963,
+        "entropy_miller_madow": 3.565861,
+        "total_bits": 42.79,
+        "reason": "高熵凭据（charset=alnum_sym, H_MM=3.57, 总熵=42.8 bits）"
       },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
+      "entropy_snippet_source": "source_file",
       "fix": "建议修复方案",
-      "ai_confidence": 0.8599607186989888,
+      "ai_confidence": 0.9163331058722359,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1312,8 +1303,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.9244866082170515,
+      "ai_confidence": 0.7615850332988375,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1334,52 +1326,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7923596410884164,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "scripts/do_django_release.py",
-      "line": 136,
-      "end_line": 136,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8959862138179953,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
-      "file": "scripts/do_django_release.py",
-      "line": 136,
-      "end_line": 136,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.812343258260179,
+      "ai_confidence": 0.9393898890595989,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1399,8 +1348,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8799756115278907,
+      "ai_confidence": 0.7756782928999526,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1421,8 +1371,32 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8535151682071181,
+      "ai_confidence": 0.8599607186989888,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/manage_translations.py",
+      "line": 137,
+      "end_line": 137,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9244866082170515,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1442,8 +1416,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.8676617436914467,
+      "ai_confidence": 0.7923596410884164,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1464,8 +1439,32 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
-      "ai_confidence": 0.7940434768903119,
+      "ai_confidence": 0.8959862138179953,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/prepare_commit_msg.py",
+      "line": 100,
+      "end_line": 100,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.812343258260179,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1486,6 +1485,99 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8799756115278907,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/prepare_commit_msg.py",
+      "line": 114,
+      "end_line": 114,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8535151682071181,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-read-traversal",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 56,
+      "end_line": 58,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8676617436914467,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/tests.py",
+      "line": 56,
+      "end_line": 58,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7940434768903119,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-write-traversal",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "scripts/tests.py",
+      "line": 60,
+      "end_line": 60,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9310840026012256,
       "attack_vector": "",
@@ -1495,9 +1587,9 @@
       "rule_id": "path-read-traversal",
       "category": "security",
       "severity": "ERROR",
-      "file": "scripts/prepare_commit_msg.py",
-      "line": 114,
-      "end_line": 114,
+      "file": "scripts/tests.py",
+      "line": 80,
+      "end_line": 80,
       "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
@@ -1508,19 +1600,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.7641714699777307,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
+      "rule_id": "path-read-traversal",
       "category": "security",
-      "severity": "CRITICAL",
-      "file": "scripts/prepare_commit_msg.py",
-      "line": 114,
-      "end_line": 114,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "severity": "ERROR",
+      "file": "scripts/tests.py",
+      "line": 108,
+      "end_line": 108,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -1530,19 +1623,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8837955556592562,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
+      "rule_id": "path-write-traversal",
       "category": "security",
-      "severity": "ERROR",
+      "severity": "CRITICAL",
       "file": "scripts/tests.py",
-      "line": 56,
-      "end_line": 58,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "line": 108,
+      "end_line": 108,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -1552,19 +1646,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.776462369745005,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-write-traversal",
+      "rule_id": "path-read-traversal",
       "category": "security",
-      "severity": "CRITICAL",
+      "severity": "ERROR",
       "file": "scripts/tests.py",
-      "line": 56,
-      "end_line": 58,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
+      "line": 110,
+      "end_line": 110,
+      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -1574,19 +1669,20 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.8642086186650569,
       "attack_vector": "",
       "cvss_score": 0.0
     },
     {
-      "rule_id": "path-read-traversal",
+      "rule_id": "path-write-traversal",
       "category": "security",
-      "severity": "ERROR",
+      "severity": "CRITICAL",
       "file": "scripts/tests.py",
-      "line": 60,
-      "end_line": 60,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
+      "line": 110,
+      "end_line": 110,
+      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
       "code_snippet": "requires login",
       "metadata": {
         "cwe": "CWE-22",
@@ -1596,118 +1692,9 @@
       "engines": [
         "semgrep"
       ],
+      "confidence": 0.888889,
       "fix": "建议修复方案",
       "ai_confidence": 0.9069238848581507,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
-      "file": "scripts/tests.py",
-      "line": 60,
-      "end_line": 60,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7880819828723755,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "scripts/tests.py",
-      "line": 108,
-      "end_line": 108,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.843404933607335,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
-      "file": "scripts/tests.py",
-      "line": 108,
-      "end_line": 108,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8846729094586603,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-read-traversal",
-      "category": "security",
-      "severity": "ERROR",
-      "file": "scripts/tests.py",
-      "line": 110,
-      "end_line": 110,
-      "message": "文件读取操作使用用户输入路径，攻击者可通过 `../` 读取敏感文件（如 `/etc/passwd`、数据库配置等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7696835742303918,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-write-traversal",
-      "category": "security",
-      "severity": "CRITICAL",
-      "file": "scripts/tests.py",
-      "line": 110,
-      "end_line": 110,
-      "message": "文件写入操作使用用户输入路径，攻击者可通过 `../` 覆盖系统关键文件（如 `/etc/passwd`、`crontab`、配置文件等）。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-22",
-        "owasp": "A01:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "fix": "建议修复方案",
-      "ai_confidence": 0.8178605210789927,
       "attack_vector": "",
       "cvss_score": 0.0
     },
@@ -1723,7 +1710,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1737,7 +1725,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1754,7 +1743,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1768,7 +1758,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1782,7 +1773,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1796,7 +1788,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1810,7 +1803,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "conc-python-global-mutable",
@@ -1824,7 +1818,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1841,7 +1836,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1858,7 +1854,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1875,7 +1872,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1892,7 +1890,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1909,7 +1908,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1923,7 +1923,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1937,7 +1938,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1951,7 +1953,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -1965,7 +1968,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1982,7 +1986,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -1999,7 +2004,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -2016,7 +2022,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "sig-python-weak-hash",
@@ -2033,7 +2040,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2047,7 +2055,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2061,7 +2070,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2075,7 +2085,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2089,7 +2100,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2103,7 +2115,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2117,7 +2130,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "auth-python-django-mixin",
@@ -2134,7 +2148,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "naming-python-class-case",
@@ -2148,7 +2163,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "auth-python-django-mixin",
@@ -2165,7 +2181,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     },
     {
       "rule_id": "auth-python-django-mixin",
@@ -2182,7 +2199,8 @@
       "engine": "semgrep",
       "engines": [
         "semgrep"
-      ]
+      ],
+      "confidence": 0.888889
     }
   ]
 }

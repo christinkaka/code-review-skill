@@ -226,8 +226,12 @@ if (urlObj.getHost().equals("169.254.169.254")) {
 
 ## 检测模式
 
+> 2026-08-25 盲评修正：Java 侧 `new URL($USER_INPUT)` 裸构造不产生网络
+> 流量（如注册 Tomcat 静态资源），误报实测 2/2。SSRF 的判别信号是
+> **连接建立**（openConnection / send），而非 URL 对象构造。
+
 ```pattern
-new URL($USER_INPUT)
+new URL($USER_INPUT).openConnection()
 ```
 
 ```pattern
@@ -296,6 +300,10 @@ factory.setFeature("http://xml.org/sax/features/external-parameter-entities", fa
 
 ## 检测模式
 
+> 2026-08-25 盲评修正：工厂创建后紧邻设置 disallow-doctype-decl /
+> secure-processing 属 OWASP 推荐加固写法（实测 2/2 误报），以
+> pattern-not 豁免。
+
 ```pattern
 DocumentBuilderFactory.newInstance()
 ```
@@ -310,4 +318,16 @@ XMLReaderFactory.createXMLReader()
 
 ```pattern
 etree.parse($USER_INPUT)
+```
+
+```pattern-not
+$F = $FACTORY.newInstance()
+...
+$F.setFeature("...disallow-doctype-decl...", true)
+```
+
+```pattern-not
+$F = $FACTORY.newInstance()
+...
+$F.setFeature("...secure-processing...", true)
 ```
