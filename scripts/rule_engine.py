@@ -165,6 +165,23 @@ class MarkdownRuleParser:
                     if current_lang:
                         entry["lang"] = current_lang
                     rule["patterns"].append(entry)
+
+                # taint 数据流块：每行一个独立 pattern
+                # （sources/sinks/sanitizers 是行级条目，不是整体代码片段）
+                elif block_type in (
+                    "pattern-sources", "pattern-sinks", "pattern-sanitizers",
+                ):
+                    key = block_type[len("pattern-"):]
+                    taint = rule.setdefault("taint", {})
+                    bucket = taint.setdefault(key, [])
+                    for raw_line in block_lines:
+                        content = raw_line.strip()
+                        if not content:
+                            continue
+                        entry = {"content": content}
+                        if current_lang:
+                            entry["lang"] = current_lang
+                        bucket.append(entry)
             else:
                 i += 1
 
@@ -219,6 +236,26 @@ class RuleEngine:
                                 rule["severity"] = severity_override
                             all_rules.append(rule)
                         logger.debug(f"从 {os.path.basename(file_path)} 解析出 {len(rules)} 条规则")
+
+                        # 纯自然语言规约（无 DSL 块，解析不出规则）时，
+                        # 回退加载预编译产物 compiled/<stem>.approved.yaml。
+                        # 这是"自然语言规约 → LLM 预编译 → 人工审批 → 引擎消费"
+                        # 链路的最后一环（2026-08-25 打通）。
+                        if not rules:
+                            approved = (
+                                self.specs_dir / "compiled"
+                                / f"{Path(file_path).stem}.approved.yaml"
+                            )
+                            if approved.exists():
+                                compiled_rules = self._load_yaml_rules(str(approved))
+                                for rule in compiled_rules:
+                                    if severity_override:
+                                        rule["severity"] = severity_override
+                                all_rules.extend(compiled_rules)
+                                logger.info(
+                                    f"{os.path.basename(file_path)} 为自然语言规约，"
+                                    f"加载已批准编译产物: {len(compiled_rules)} 条规则"
+                                )
                     except Exception as e:
                         logger.error(f"解析规约文件失败 {file_path}: {e}")
 
@@ -299,6 +336,29 @@ class RuleEngine:
                                 "content": p["pattern-not"]
                             })
 
+            # taint 数据流规则（mode: taint + pattern-sources/sinks）：
+            # 转内部 taint 结构，供 _build_taint_rule 重建；
+            # 不做启发式降级（数据流语义无法从文本推断）
+            taint_keys = {
+                "sources": "pattern-sources",
+                "sinks": "pattern-sinks",
+                "sanitizers": "pattern-sanitizers",
+            }
+            if rule.get("mode") == "taint" or "pattern-sources" in rule:
+                taint = {}
+                for internal_key, yaml_key in taint_keys.items():
+                    entries = rule.get(yaml_key) or []
+                    for entry in entries:
+                        content = (
+                            entry.get("pattern") if isinstance(entry, dict) else entry
+                        )
+                        if content:
+                            taint.setdefault(internal_key, []).append(
+                                {"content": content}
+                            )
+                if taint.get("sources") and taint.get("sinks"):
+                    internal_rule["taint"] = taint
+
             rules.append(internal_rule)
 
         return rules
@@ -354,6 +414,16 @@ class RuleEngine:
             semgrep_issues = self._run_with_semgrep(repo_path, changed_files)
             engine_results.append(("semgrep", semgrep_issues))
         else:
+            taint_count = sum(
+                1 for r in self.rules
+                if r.get("taint", {}).get("sources")
+                and r.get("taint", {}).get("sinks")
+            )
+            if taint_count:
+                logger.warning(
+                    f"Semgrep 不可用：{taint_count} 条 taint 数据流规则本次无法执行"
+                    "（AST/正则引擎不支持数据流分析），相关检出将缺失"
+                )
             logger.info("Semgrep 不可用，启用内置正则引擎（回退方案）")
             regex_issues = self._run_with_builtin(repo_path, changed_files)
             engine_results.append(("regex", regex_issues))
@@ -576,6 +646,10 @@ class RuleEngine:
                 continue
             filtered_patterns.append(p)
 
+        # taint 规则：结构由 sources/sinks/sanitizers 组成，单独构建
+        if rule.get("taint"):
+            return self._build_taint_rule(rule, languages, rule_id, target_lang)
+
         # 构建 patterns
         pattern_list = []
         pattern_not_list = []
@@ -609,7 +683,61 @@ class RuleEngine:
         if "fix" in rule:
             semgrep_rule["fix"] = rule["fix"]
         if rule.get("metadata"):
-            semgrep_rule["metadata"] = rule["metadata"]
+            semgrep_rule["metadata"] = self._sanitize_semgrep_metadata(rule["metadata"])
+
+        return semgrep_rule
+
+    @staticmethod
+    def _sanitize_semgrep_metadata(metadata: Dict) -> Dict:
+        """递归转换 metadata 中的浮点值为字符串。
+
+        semgrep 的 YAML 解析器不接受浮点标量（实测 validation.pass_rate: 1.0
+        导致整份规则文件被拒、rc=2、检出静默清零）。编译产物会把 validation
+        （含 pass_rate 浮点）嵌入 metadata，必须转换。
+        """
+        def _walk(value):
+            if isinstance(value, dict):
+                return {k: _walk(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [_walk(v) for v in value]
+            if isinstance(value, float):
+                return str(value)
+            return value
+
+        return _walk(metadata)
+
+    def _build_taint_rule(
+        self, rule: Dict, languages: List[str], rule_id: Optional[str], target_lang
+    ) -> Dict:
+        """构建 Semgrep taint 模式规则（数据流分析）
+
+        仅当 sources 与 sinks 同时存在时有效；sanitizers 可选。
+        taint 规则只能由 Semgrep 执行（AST/正则引擎不支持数据流分析）。
+        """
+        semgrep_rule = {
+            "id": rule_id or rule["id"],
+            "mode": "taint",
+            "message": rule.get("message", rule.get("title", "Issue detected")),
+            "severity": rule.get("severity", "WARNING"),
+            "languages": languages,
+        }
+
+        for key in ("sources", "sinks", "sanitizers"):
+            entries = rule["taint"].get(key, [])
+            if target_lang:
+                entries = [
+                    e for e in entries
+                    if not e.get("lang") or e["lang"] == target_lang
+                ]
+            if entries:
+                semgrep_rule[f"pattern-{key}"] = [
+                    {"pattern": e["content"]} for e in entries
+                ]
+
+        if "fix" in rule:
+            semgrep_rule["fix"] = rule["fix"]
+        if rule.get("metadata"):
+            semgrep_rule["metadata"] = self._sanitize_semgrep_metadata(rule["metadata"])
 
         return semgrep_rule
 
@@ -622,12 +750,17 @@ class RuleEngine:
         semgrep_rules = {"rules": []}
 
         for rule in self.rules:
-            if not rule.get("patterns"):
+            if not rule.get("patterns") and not rule.get("taint"):
                 continue
 
-            has_positive_pattern = any(
+            # taint 规则以 sources+sinks 为正向结构，可无普通 pattern
+            is_taint = bool(
+                rule.get("taint", {}).get("sources")
+                and rule.get("taint", {}).get("sinks")
+            )
+            has_positive_pattern = is_taint or any(
                 p.get("type") in ("pattern", "pattern-regex")
-                for p in rule["patterns"]
+                for p in rule.get("patterns", [])
             )
             if not has_positive_pattern:
                 logger.debug(
@@ -642,13 +775,16 @@ class RuleEngine:
                 semgrep_rules["rules"].append(semgrep_rule)
             else:
                 for lang in languages:
-                    has_pattern = False
-                    for p in rule["patterns"]:
-                        p_lang = p.get("lang")
-                        if not p_lang or p_lang == lang:
-                            has_pattern = True
-                            break
-                    if not has_pattern:
+                    has_pattern = any(
+                        not p.get("lang") or p.get("lang") == lang
+                        for p in rule.get("patterns", [])
+                    )
+                    has_taint = any(
+                        not e.get("lang") or e.get("lang") == lang
+                        for key in ("sources", "sinks")
+                        for e in rule.get("taint", {}).get(key, [])
+                    )
+                    if not has_pattern and not has_taint:
                         continue
 
                     suffixed_id = f"{rule['id']}__{lang}"
@@ -701,6 +837,16 @@ class RuleEngine:
                 timeout=300,
                 cwd=repo_path,
             )
+
+            # semgrep 对个别规则 pattern 解析失败会 rc=2 但仍运行其余规则
+            # （stdout 含有效结果）；仅当 stdout 无可解析结果时才是整份
+            # 配置报废（如 YAML 结构非法）。此前不区分：配置级失败静默
+            # 0 检出无任何日志（2026-08-25 修复）
+            if result.returncode not in (0, 1):
+                logger.error(
+                    f"Semgrep 异常退出 (rc={result.returncode}): "
+                    f"{result.stderr[:300]}"
+                )
 
             issues = []
             if result.stdout:

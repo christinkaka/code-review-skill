@@ -32,6 +32,10 @@ specs:
     enabled: true
   - path: security/path-traversal.md
     enabled: true
+  # 自然语言规约：无 DSL 块，编译产物经人工审批后由引擎自动加载
+  # （references/security/compiled/ 下同名 .approved.yaml）
+  - path: security/path-traversal-natural-language.md
+    enabled: true
   - path: security/privilege-escalation.md
     enabled: true
   - path: security/signature-bypass.md

@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from rule_sandbox import RuleSandbox
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 REFERENCES_DIR = Path(__file__).parent.parent / "references"
@@ -56,11 +58,40 @@ class TestDefaultProfileCompleteness:
             )
 
     def test_all_security_rules_have_yaml(self):
-        """security 目录下所有规则都应有对应的 .yaml 文件"""
+        """security 目录下所有规则都应有对应的 .yaml 文件
+
+        例外：*‑natural-language.md 为纯自然语言规约，无静态孪生 yaml——
+        其机器可读产物是编译输出（compiled/<stem>.yaml，经人工审批后为
+        .approved.yaml），由编译链路测试与部署闸门负责校验，生命周期
+        与结构化规约不同。
+        """
         security_dir = REFERENCES_DIR / "security"
         md_files = {Path(f).stem for f in glob.glob(str(security_dir / "*.md"))}
         yaml_files = {Path(f).stem for f in glob.glob(str(security_dir / "*.yaml"))}
-        missing_yaml = md_files - yaml_files
+        nl_specs = {s for s in md_files if s.endswith("-natural-language")}
+        missing_yaml = (md_files - nl_specs) - yaml_files
         assert not missing_yaml, (
             f"以下规则缺少 .yaml 文件: {missing_yaml}"
         )
+
+    def test_natural_language_specs_have_compiled_artifact_or_are_pending(self):
+        """自然语言规约：已编译的应有 compiled 产物；未编译的允许待编译状态"""
+        security_dir = REFERENCES_DIR / "security"
+        compiled_dir = security_dir / "compiled"
+        md_files = {Path(f).stem for f in glob.glob(str(security_dir / "*.md"))}
+        nl_specs = {s for s in md_files if s.endswith("-natural-language")}
+
+        for stem in sorted(nl_specs):
+            has_compiled = any(
+                (compiled_dir / f"{stem}{suffix}").exists()
+                for suffix in (".yaml", ".approved.yaml")
+            )
+            # 待编译（LLM 不可用环境）不视为错误，但已编译必须可被结构校验
+            if has_compiled:
+                for suffix in (".yaml", ".approved.yaml"):
+                    artifact = compiled_dir / f"{stem}{suffix}"
+                    if artifact.exists():
+                        content = yaml.safe_load(artifact.read_text(encoding="utf-8"))
+                        for rule in content.get("rules", []):
+                            valid, reason = RuleSandbox.validate_structure(rule)
+                            assert valid, f"{artifact.name}: {reason}"

@@ -153,7 +153,10 @@ class TestAC1RuleParsingAndYaml:
             assert "message" in sr, f"Semgrep rule {sr.get('id')} missing 'message'"
             assert "severity" in sr, f"Semgrep rule {sr.get('id')} missing 'severity'"
             assert "languages" in sr, f"Semgrep rule {sr.get('id')} missing 'languages'"
-            assert "pattern" in sr or "patterns" in sr or "pattern-regex" in sr, (
+            assert (
+                "pattern" in sr or "patterns" in sr or "pattern-regex" in sr
+                or ("mode" in sr and sr["mode"] == "taint")
+            ), (
                 f"Semgrep rule {sr['id']} missing pattern/patterns/pattern-regex"
             )
 
@@ -206,10 +209,13 @@ class TestAC1RuleParsingAndYaml:
             f"{[rid for rid in rule_ids if rule_ids.count(rid) > 1]}"
         )
 
-        # 验证每条规则都有 pattern/patterns
+        # 验证每条规则都有 pattern/patterns（taint 规则以 mode: taint 表达结构）
         semgrep_rules = engine._rules_to_semgrep()
         for sr in semgrep_rules["rules"]:
-            assert "pattern" in sr or "patterns" in sr or "pattern-regex" in sr, (
+            assert (
+                "pattern" in sr or "patterns" in sr or "pattern-regex" in sr
+                or ("mode" in sr and sr["mode"] == "taint")
+            ), (
                 f"Rule {sr.get('id')} missing pattern/patterns/pattern-regex"
             )
 

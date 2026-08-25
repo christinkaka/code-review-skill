@@ -70,9 +70,13 @@ class TestStructuralValidation:
         assert "languages" in reason
 
     def test_invalid_severity_flagged(self):
-        """严重等级不在标准集合 -> 隔离（避免破坏报告分级）"""
+        """严重等级不在标准集合 -> 隔离（避免破坏报告分级）
+
+        注：CRITICAL/HIGH 与 scan.py 分层评审口径一致，属合法值；
+        非法值用 BOGUS 表示。
+        """
         rule = {"id": "bad-sev", "languages": ["java"],
-                "pattern": "$X", "severity": "CRITICAL"}
+                "pattern": "$X", "severity": "BOGUS"}
         valid, reason = RuleSandbox.validate_structure(rule)
         assert valid is False
         assert "severity" in reason

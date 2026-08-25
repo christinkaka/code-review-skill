@@ -27,8 +27,9 @@ logger = logging.getLogger("code-review.sandbox")
 PATTERN_FIELDS = ("pattern", "patterns", "pattern-regex", "pattern-either",
                   "pattern-sources", "pattern-sinks", "pattern-propagators")
 
-# 内部报告系统使用的严重等级
-VALID_SEVERITIES = ("ERROR", "WARNING", "INFO")
+# 内部报告系统使用的严重等级（与 scan.py 分层评审口径一致：
+# CRITICAL/HIGH/ERROR 进 LLM 精审，WARNING/INFO 统计层）
+VALID_SEVERITIES = ("CRITICAL", "HIGH", "ERROR", "WARNING", "INFO")
 
 
 class RuleSandbox:

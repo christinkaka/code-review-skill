@@ -11,6 +11,7 @@
 5. 人工确认后生成最终规则
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -240,22 +241,27 @@ class RuleCompiler:
         
         # 提取规约元数据
         metadata = self._extract_metadata(content)
-        
+
         # 提取违规场景和安全做法
         violation_scenario = self._extract_section(content, "违规场景")
         safe_approach = self._extract_section(content, "安全做法")
-        
+
+        # 检测方式（可选）：声明"数据流/污点追踪"时走 taint 编译
+        detection_method = self._extract_section(content, "检测方式")
+        detection_type = "taint" if self._is_taint_detection(detection_method) else "search"
+
         # 提取示例代码
         bad_example = self._extract_code_block(content, "违规代码")
         good_example = self._extract_code_block(content, "安全代码")
-        
+
         # 生成 + 验证 + 失败反馈重试（CEGIS 核心：反例驱动修复）
         semgrep_rule, validation = self._generate_and_validate_with_retry(
             metadata=metadata,
             violation_scenario=violation_scenario,
             safe_approach=safe_approach,
             bad_example=bad_example,
-            good_example=good_example
+            good_example=good_example,
+            detection_type=detection_type,
         )
         for r in semgrep_rule.get("rules", []):
             r.setdefault("metadata", {})["validation"] = validation
@@ -295,6 +301,7 @@ class RuleCompiler:
         safe_approach: str,
         bad_example: str,
         good_example: str,
+        detection_type: str = "search",
     ) -> Tuple[Dict, Dict]:
         """
         生成规则并验证，golden test 失败时带反馈重试。
@@ -311,6 +318,12 @@ class RuleCompiler:
         - 因此首轮 golden test 失败后直接停止重试；golden test 仍执行
           1 次，validation=failed 状态照常标记
 
+        taint 类型（2026-08-25）：
+        - taint 规则无启发式降级（数据流语义无法从示例文本机械推断），
+          LLM 不可用/生成失败时 rules 为空 → validation=failed 且
+          不做 semgrep 空跑（rule_generation_failed）
+        - 该失败进 deploy 闸门：approved 无法产生，规约不可部署
+
         Returns:
             (semgrep_rule, validation)
         """
@@ -324,14 +337,29 @@ class RuleCompiler:
             bad_example=bad_example,
             good_example=good_example,
             failure_feedback=None,
+            detection_type=detection_type,
         )
 
         validation: Dict = {"status": "skipped", "reason": "not_run"}
 
         for round_num in range(self.MAX_REPAIR_ROUNDS + 1):
-            validation = self._run_golden_test(
-                semgrep_rule, bad_example, good_example
-            )
+            if not semgrep_rule.get("rules"):
+                # 生成失败（taint 无 LLM / LLM 返回不可解析）：
+                # 无规则可测，golden test 跳过，直接标记失败
+                validation = {
+                    "status": "failed",
+                    "reason": "rule_generation_failed",
+                    "bad_matched": False,
+                    "good_matched": False,
+                    "bad_findings": 0,
+                    "good_findings": 0,
+                    "pass_rate": 0.0,
+                    "checked_at": datetime.now().isoformat(),
+                }
+            else:
+                validation = self._run_golden_test(
+                    semgrep_rule, bad_example, good_example
+                )
 
             # 验证通过（或无法验证）时停止重试
             if validation["status"] != "failed":
@@ -374,6 +402,7 @@ class RuleCompiler:
                 bad_example=bad_example,
                 good_example=good_example,
                 failure_feedback=failure_history,
+                detection_type=detection_type,
             )
 
         # 记录修复轮次（可追溯）
@@ -451,6 +480,7 @@ class RuleCompiler:
         bad_example: str,
         good_example: str,
         failure_feedback: Optional[List[Dict]] = None,
+        detection_type: str = "search",
     ) -> Dict:
         """
         生成 Semgrep 规则：LLM 可用时由 AI 生成 pattern，否则降级启发式。
@@ -460,9 +490,16 @@ class RuleCompiler:
         - "heuristic_fallback"：LLM 不可用/失败时的启发式推断（质量存疑，
           后续 golden test 会拦截无效 pattern）
 
+        taint 类型（2026-08-25）：
+        - 生成 mode: taint 规则（pattern-sources/-sinks/-sanitizers）
+        - 无启发式降级：LLM 不可用/输出不可解析时返回 {"rules": []}，
+          由调用方标记 validation=failed 拒绝部署（数据流语义无法
+          从示例文本机械推断，宁可不部署也不伪装成可用规则）
+
         Args:
             failure_feedback: 历史失败记录列表（重试时注入 prompt，
                               每项 {"round": int, "failure": str}）
+            detection_type: "search"（模式匹配）或 "taint"（数据流追踪）
         """
         # 构建失败反馈段（重试时帮助 LLM 避免重复犯错）
         feedback_section = ""
@@ -478,6 +515,17 @@ class RuleCompiler:
 
 请在生成 pattern 时针对上述失败原因改进。
 """
+
+        # taint 类型：走独立的数据流规则生成（sources/sinks/sanitizers）
+        if detection_type == "taint":
+            return self._generate_taint_rule_with_ai(
+                metadata=metadata,
+                violation_scenario=violation_scenario,
+                safe_approach=safe_approach,
+                bad_example=bad_example,
+                good_example=good_example,
+                failure_feedback=failure_feedback,
+            )
 
         # 构建 AI prompt
         prompt = f"""你是一个安全专家，需要将以下自然语言安全规约转换为 Semgrep 规则。
@@ -541,19 +589,8 @@ class RuleCompiler:
                 bad_example, metadata.get("languages", ["java"])[0]
             )
 
-        # 生成规则 ID：从标题提取关键词，转为小写，替换空格和特殊字符为连字符
-        title = metadata.get("title", "unknown")
-        # 提取前几个关键词
-        keywords = title.split()[:5]  # 取前5个词
-        rule_id = "-".join(keywords).lower()
-        # 移除非字母数字字符（保留连字符）
-        rule_id = re.sub(r'[^a-z0-9-]', '', rule_id)
-        # 移除多余的连字符
-        rule_id = re.sub(r'-+', '-', rule_id)
-        # 移除首尾连字符
-        rule_id = rule_id.strip('-')
-        # 限制长度
-        rule_id = rule_id[:50]
+        # 生成规则 ID（中文标题退化哈希，见 _make_rule_id）
+        rule_id = self._make_rule_id(metadata.get("title", "unknown"))
 
         return {
             "rules": [
@@ -573,6 +610,194 @@ class RuleCompiler:
                 }
             ]
         }
+
+    @staticmethod
+    def _is_taint_detection(detection_method: str) -> bool:
+        """检测方式章节是否声明数据流/污点追踪"""
+        if not detection_method:
+            return False
+        keywords = ("数据流", "污点", "taint", "dataflow", "data flow")
+        text = detection_method.lower()
+        return any(k in text for k in keywords)
+
+    @staticmethod
+    def _make_rule_id(title: str) -> str:
+        """从标题生成规则 ID：英文关键词转连字符；中文标题退化为标题哈希"""
+        keywords = (title or "unknown").split()[:5]
+        rule_id = "-".join(keywords).lower()
+        rule_id = re.sub(r'[^a-z0-9-]', '', rule_id)
+        rule_id = re.sub(r'-+', '-', rule_id).strip('-')[:50]
+        if not rule_id:
+            digest = hashlib.sha1((title or "unknown").encode("utf-8")).hexdigest()[:8]
+            rule_id = f"rule-{digest}"
+        return rule_id
+
+    def _generate_taint_rule_with_ai(
+        self,
+        metadata: Dict,
+        violation_scenario: str,
+        safe_approach: str,
+        bad_example: str,
+        good_example: str,
+        failure_feedback: Optional[List[Dict]] = None,
+    ) -> Dict:
+        """生成 Semgrep taint 模式规则（数据流追踪）
+
+        LLM 输出 YAML（pattern-sources/-sinks/-sanitizers），解析校验后
+        组装 mode: taint 规则。LLM 不可用或输出不可解析时返回空 rules，
+        由调用方拒绝部署（不做启发式伪装）。
+        """
+        feedback_section = ""
+        if failure_feedback:
+            feedback_lines = "\n".join(
+                f"- 第 {f['round']} 轮尝试失败：{f['failure']}"
+                for f in failure_feedback
+            )
+            feedback_section = f"""
+## 之前尝试的失败记录（必须避免重复犯错）
+
+{feedback_lines}
+"""
+
+        prompt = f"""你是一个安全专家，需要将以下自然语言安全规约转换为 Semgrep taint 模式规则（数据流分析）。
+
+## 规约内容
+
+标题：{metadata.get('title', 'Unknown')}
+语言：{', '.join(metadata.get('languages', ['java']))}
+严重等级：{metadata.get('severity', 'WARNING')}
+
+### 违规场景
+{violation_scenario}
+
+### 安全做法
+{safe_approach}
+
+### 违规代码示例
+```
+{bad_example}
+```
+
+### 安全代码示例
+```
+{good_example}
+```
+{feedback_section}
+## 任务
+
+生成 taint 规则的三要素：
+- pattern-sources：污点来源（不可信数据进入代码的位置，如请求参数、上传文件名、反序列化）
+- pattern-sinks：污点汇聚（危险操作，不可信数据到达即违规）
+- pattern-sanitizers：净化操作（数据经此处理后视为安全，如 basename、路径规范化；从安全做法中提取，没有则省略该键）
+
+要求：
+1. 使用 Semgrep pattern 语法，元变量用 $VAR 表示，... 表示任意参数
+2. sources 和 sinks 尽量覆盖规约描述的全部场景，但不要编造规约未提及的 API
+3. 只输出 YAML，不要任何解释
+
+输出格式（示例）：
+pattern-sources:
+  - pattern: $REQ.getParameter(...)
+pattern-sinks:
+  - pattern: new File(...)
+pattern-sanitizers:
+  - pattern: $F.getName()
+"""
+
+        if self.llm_client is None or not self.llm_client.is_available():
+            logger.warning(
+                "taint 规则需要 LLM 生成（无启发式降级），当前 LLM 不可用"
+            )
+            return {"rules": []}
+
+        try:
+            raw = self.llm_client.chat(
+                prompt,
+                system="你是 Semgrep taint 规则专家，只输出 YAML 本身，不要任何解释。",
+                temperature=0.0,
+            )
+        except Exception as e:
+            logger.warning(f"AI 生成 taint 规则失败: {e}")
+            return {"rules": []}
+
+        taint_spec = self._parse_taint_response(raw)
+        if not taint_spec:
+            logger.warning("AI 返回的 taint 规则不可解析（缺 sources/sinks）")
+            return {"rules": []}
+
+        rule_id = self._make_rule_id(metadata.get("title", "unknown"))
+        rule = {
+            "id": rule_id,
+            "mode": "taint",
+            "message": metadata.get("title", "Security issue detected"),
+            "severity": metadata.get("severity", "WARNING"),
+            "languages": metadata.get("languages", ["java"]),
+            "metadata": {
+                "detection_type": "taint",
+                "violation_scenario": violation_scenario,
+                "safe_approach": safe_approach,
+                "compiled_at": datetime.now().isoformat(),
+                "source_file": metadata.get("title", "unknown"),
+                "generation_method": "ai",
+            },
+        }
+        rule.update(taint_spec)
+        logger.info(
+            f"AI 生成 taint 规则 {rule_id}: "
+            f"sources={len(taint_spec['pattern-sources'])}, "
+            f"sinks={len(taint_spec['pattern-sinks'])}"
+        )
+        return {"rules": [rule]}
+
+    @staticmethod
+    def _parse_taint_response(raw: str) -> Optional[Dict]:
+        """解析 LLM 返回的 taint YAML，校验 sources/sinks 非空
+
+        Returns:
+            {"pattern-sources": [...], "pattern-sinks": [...],
+             "pattern-sanitizers": [...]}；不合法返回 None
+        """
+        if not raw or not raw.strip():
+            return None
+
+        text = raw.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            lines = lines[1:]
+            if lines and lines[-1].strip().startswith("```"):
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+
+        try:
+            data = yaml.safe_load(text)
+        except yaml.YAMLError:
+            return None
+        if not isinstance(data, dict):
+            return None
+
+        def _entries(key: str) -> List[Dict]:
+            result = []
+            for entry in data.get(key) or []:
+                pattern = (
+                    entry.get("pattern") if isinstance(entry, dict) else entry
+                )
+                if isinstance(pattern, str) and pattern.strip():
+                    result.append({"pattern": pattern.strip()})
+            return result
+
+        sources = _entries("pattern-sources")
+        sinks = _entries("pattern-sinks")
+        sanitizers = _entries("pattern-sanitizers")
+        if not sources or not sinks:
+            return None
+
+        spec = {
+            "pattern-sources": sources,
+            "pattern-sinks": sinks,
+        }
+        if sanitizers:
+            spec["pattern-sanitizers"] = sanitizers
+        return spec
 
     @staticmethod
     def _clean_pattern_response(raw: str) -> str:
@@ -954,7 +1179,14 @@ class RuleCompiler:
             rule = yaml.safe_load(f)
 
         # 部署闸门（P1-① + 通过率阈值）：golden test 未通过 / 通过率不足的规则拒绝部署
-        first_rule = (rule.get("rules") or [{}])[0] if isinstance(rule, dict) else {}
+        rules_list = rule.get("rules") if isinstance(rule, dict) else None
+        if not rules_list:
+            # 空规则文件（taint 编译在 LLM 不可用时产生）：直接拒绝
+            return {
+                "status": "refused",
+                "message": "规则文件不含任何规则（生成失败，如 taint 规则在 LLM 不可用时无法生成），拒绝部署。",
+            }
+        first_rule = rules_list[0]
         validation = (first_rule.get("metadata") or {}).get("validation")
         warnings = []
         pass_rate_threshold = 0.9

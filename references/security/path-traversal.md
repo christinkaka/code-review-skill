@@ -4,11 +4,13 @@
 
 ```yaml
 id: path-read-traversal
-languages: [java, python, javascript, typescript]
+languages: [python, javascript, typescript]
 severity: ERROR
 cwe: CWE-22
 owasp: A01:2021
 ```
+
+> 说明：Java 场景由 `path-traversal-taint`（数据流分析）接管，本规则不再覆盖 Java。
 
 ## 风险说明
 
@@ -55,36 +57,6 @@ return Files.readAllBytes(target);
 
 ## 检测模式
 
-### Java
-
-```pattern
-new File($DIR, $USER_INPUT)
-```
-
-```pattern-not
-$FILE.getCanonicalPath()
-```
-
-```pattern-not
-$FILE.getCanonicalFile()
-```
-
-```pattern-not
-$PATH.normalize()
-```
-
-```pattern-not
-if (!$PATH.startsWith($BASE_DIR)) { ... }
-```
-
-```pattern-not
-new File($X.getCanonicalFile(), $Y)
-```
-
-```pattern-not
-new File($X.toFile(), $Y)
-```
-
 ### Python
 
 ```pattern
@@ -121,11 +93,13 @@ fs.readFile($USER_INPUT, ...)
 
 ```yaml
 id: path-write-traversal
-languages: [java, python, javascript, typescript]
+languages: [python, javascript, typescript]
 severity: CRITICAL
 cwe: CWE-22
 owasp: A01:2021
 ```
+
+> 说明：Java 场景由 `path-traversal-taint`（数据流分析）接管，本规则不再覆盖 Java。
 
 ## 风险说明
 
@@ -212,44 +186,6 @@ Files.write(target, content);
 
 ## 检测模式
 
-### Java
-
-```pattern
-new File($DIR, $USER_INPUT)
-```
-
-```pattern
-new FileWriter($PATH, ...)
-```
-
-```pattern
-new FileWriter($PATH)
-```
-
-```pattern-not
-$FILE.getCanonicalPath()
-```
-
-```pattern-not
-$FILE.getCanonicalFile()
-```
-
-```pattern-not
-$PATH.normalize()
-```
-
-```pattern-not
-if (!$PATH.startsWith($BASE_DIR)) { ... }
-```
-
-```pattern-not
-new File($X.getCanonicalFile(), $Y)
-```
-
-```pattern-not
-new File($X.toFile(), $Y)
-```
-
 ### Python
 
 ```pattern
@@ -296,11 +232,13 @@ fs.writeFileSync($PATH, ...)
 
 ```yaml
 id: path-upload-traversal
-languages: [java, python, javascript, typescript]
+languages: [python, javascript, typescript]
 severity: CRITICAL
 cwe: CWE-22
 owasp: A01:2021
 ```
+
+> 说明：Java 上传场景由 `path-traversal-taint`（数据流分析，源含 getOriginalFilename，汇聚含 transferTo）接管。
 
 ## 风险说明
 
@@ -373,22 +311,6 @@ public String upload(@RequestParam("file") MultipartFile file) {
 
 ## 检测模式
 
-### Java
-
-```pattern
-String $FILENAME = $FILE.getOriginalFilename();
-...
-$FILE.transferTo($DEST);
-```
-
-```pattern-not
-String $FILENAME = $FILE.getOriginalFilename();
-...
-$PATH.normalize();
-...
-$FILE.transferTo($DEST);
-```
-
 ### Python
 
 ```pattern
@@ -409,11 +331,13 @@ file.mv($PATH)
 
 ```yaml
 id: path-config-traversal
-languages: [java, python, javascript, typescript]
+languages: [python, javascript, typescript]
 severity: HIGH
 cwe: CWE-22
 owasp: A01:2021
 ```
+
+> 说明：Java 场景由 `path-traversal-taint`（数据流分析）接管，本规则不再覆盖 Java。
 
 ## 风险说明
 
@@ -450,20 +374,10 @@ props.load(new FileInputStream(configPath));
 
 ## 检测模式
 
-```pattern
-new FileInputStream($USER_INPUT)
-```
+### Python
 
 ```pattern
 open($USER_INPUT, ...)
-```
-
-```pattern-not
-$FILE.getCanonicalPath()
-```
-
-```pattern-not
-$FILE.getCanonicalFile()
 ```
 
 ```pattern-not
@@ -474,10 +388,6 @@ os.path.realpath($USER_INPUT)
 pathlib.Path($USER_INPUT).resolve()
 ```
 
-```pattern-not
-new FileInputStream($X.toFile())
-```
-
 ---
 
 # 目录穿越 - 日志文件路径使用用户输入
@@ -486,11 +396,13 @@ new FileInputStream($X.toFile())
 
 ```yaml
 id: path-log-traversal
-languages: [java, python, javascript, typescript]
+languages: [python, javascript, typescript]
 severity: HIGH
 cwe: CWE-22
 owasp: A01:2021
 ```
+
+> 说明：Java 场景由 `path-traversal-taint`（数据流分析）接管，本规则不再覆盖 Java。
 
 ## 风险说明
 
@@ -513,20 +425,68 @@ logging.basicConfig(filename=log_file)  # 攻击者可传入 ../../../var/log/au
 
 ## 检测模式
 
-```pattern
-new FileHandler($USER_INPUT)
-```
+### Python
 
 ```pattern
 logging.basicConfig(filename=$USER_INPUT)
 ```
 
-```pattern
-new FileWriter($USER_INPUT, ...)
+---
+
+# 目录穿越 - 用户输入流入文件路径（数据流分析）
+
+> 用户可控数据（HTTP 请求、上传文件名、反序列化结果）经任何赋值/拼接传播后流入文件路径操作。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配：常量拼接与已净化（basename / 规范化）场景不再误报。
+
+```yaml
+id: path-traversal-taint
+languages: [java]
+severity: CRITICAL
+cwe: CWE-22
+owasp: A01:2021
 ```
 
-```pattern
-new FileWriter($USER_INPUT)
+## 检测原理
+
+- **污点源**：Servlet 请求参数/头/流、Spring 上传原始文件名、ObjectInputStream 反序列化结果
+- **污点汇聚**：文件构造与读写 API（File、流、NIO、transferTo）
+- **净化器**：basename（getName/getFileName）、路径规范化（getCanonicalPath/getCanonicalFile/normalize/toRealPath）
+
+常量目录拼接常量文件名（如 `new File("/data", "a.txt")`）无污点源，不报；
+`baseDir.resolve(userInput)` 不在汇聚点内，配合 startsWith 白名单校验的场景不报。
+
+## 检测模式
+
+```pattern-sources
+$REQ.getParameter(...)
+$REQ.getHeader(...)
+$REQ.getQueryString()
+$REQ.getInputStream()
+$REQ.getReader()
+$FILE.getOriginalFilename()
+(ObjectInputStream $O).readObject()
+```
+
+```pattern-sinks
+new File(...)
+new FileInputStream(...)
+new FileOutputStream(...)
+new FileWriter(...)
+Paths.get(...)
+Files.newInputStream(...)
+Files.newOutputStream(...)
+Files.readAllBytes(...)
+Files.write(...)
+$RES.getResourceAsStream(...)
+$FILE.transferTo(...)
+```
+
+```pattern-sanitizers
+$F.getName()
+$P.getFileName()
+$F.getCanonicalPath()
+$F.getCanonicalFile()
+$P.normalize()
+$P.toRealPath(...)
 ```
 
 ---
@@ -617,7 +577,7 @@ owasp: A01:2021
 ```
 
 ```pattern
-"..\"
+"..\\"
 ```
 
 ```pattern
