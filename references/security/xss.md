@@ -1,99 +1,49 @@
-# XSS - Servlet 响应直接写入用户输入
+# XSS - 用户可控数据流入 HTTP 响应（数据流分析）
 
-> Servlet 响应直接写入用户输入未做 HTML 转义，存在反射型 XSS 风险。
+> 用户可控数据（HTTP 请求参数/头）经赋值、拼接、字符串构造传播后流入 HTTP 响应输出 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。
 
 ```yaml
-id: xss-java-servlet-output
+id: xss-taint
 languages: [java]
 severity: ERROR
 cwe: CWE-79
 owasp: A03:2021
 ```
 
-## 问题说明
+## 检测原理
 
-将用户输入直接写入 HTTP 响应，攻击者可以注入恶意脚本（`<script>alert(1)</script>`），在其他用户的浏览器中执行。
+- **污点源**：Servlet 请求参数/头/查询串/输入流
+- **污点汇聚**：HTTP 响应输出 API（PrintWriter.write/println/print、ServletOutputStream.write/print）
+- **净化器**：HTML 转义函数（HtmlUtils.htmlEscape、escapeHtml、StringEscapeUtils.escapeHtml4、ESAPI.encoder().encodeForHTML）
 
-## 违规示例
-
-```java
-String name = request.getParameter("name");
-response.getWriter().write("Hello, " + name);
-```
-
-## 正确示例
-
-```java
-String name = request.getParameter("name");
-response.getWriter().write("Hello, " + HtmlUtils.htmlEscape(name));
-```
+`request.getParameter("name")` 之后 `response.getWriter().write("Hello, " + name)` 命中（污点随字符串拼接传播）；
+常量字符串输出无污点源，不报；
+经 `HtmlUtils.htmlEscape(...)` 转义后的数据不报。
 
 ## 检测模式
 
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.println(... + $PARAM + ...);
+```pattern-sources
+$REQ.getParameter(...)
+$REQ.getHeader(...)
+$REQ.getQueryString()
+$REQ.getInputStream()
+$REQ.getReader()
 ```
 
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.println($PARAM);
+```pattern-sinks
+$WRITER.write(...)
+$WRITER.println(...)
+$WRITER.print(...)
+$OUT.write(...)
+$OUT.print(...)
+$OUT.println(...)
 ```
 
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.write(... + $PARAM + ...);
-```
-
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.write(... + $PARAM);
-```
-
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.write($PARAM);
-```
-
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.print(... + $PARAM + ...);
-```
-
-```pattern
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.print(... + $PARAM);
-```
-
-```pattern-not
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.println(HtmlUtils.htmlEscape($PARAM));
-```
-
-```pattern-not
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.println(escapeHtml($PARAM));
-```
-
-```pattern-not
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.write(HtmlUtils.htmlEscape($PARAM));
-```
-
-```pattern-not
-String $PARAM = $REQUEST.getParameter(...);
-...
-$OUT.write(escapeHtml($PARAM));
+```pattern-sanitizers
+HtmlUtils.htmlEscape(...)
+escapeHtml(...)
+StringEscapeUtils.escapeHtml4(...)
+ESAPI.encoder().encodeForHTML(...)
 ```
 
 ---

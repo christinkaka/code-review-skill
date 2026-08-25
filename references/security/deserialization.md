@@ -1,61 +1,44 @@
-# 反序列化漏洞 - Java 不安全反序列化
+# 反序列化漏洞 - 用户可控数据流入反序列化/JNDI（数据流分析）
 
-> 使用 ObjectInputStream 反序列化不可信数据，攻击者可构造恶意序列化对象执行远程代码（RCE）。
+> 用户可控数据（HTTP 请求参数/头/流）经赋值、包装传播后流入 Java 反序列化或 JNDI 查找 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。
 
 ```yaml
-id: deser-java-object-input-stream
+id: deser-taint
 languages: [java]
 severity: CRITICAL
 cwe: CWE-502
 owasp: A08:2021
 ```
 
-## 风险说明
+## 检测原理
 
-Java 反序列化漏洞可导致远程代码执行（RCE），攻击者可：
-- 执行任意系统命令
-- 获取服务器控制权
-- 横向移动攻击内网
+- **污点源**：Servlet 请求参数/头/查询串/输入流
+- **污点汇聚**：反序列化入口（`new ObjectInputStream(...)`）与 JNDI 查找
+  （`$CTX.lookup(...)`，RCE 同类风险，旧模式规则未覆盖）
+- **净化器**：无。反序列化的白名单防护（resolveClass 覆写、
+  ObjectInputFilter）发生在流解析阶段而非数据流层面，taint 无法表达；
+  此类场景由告警触发人工评审确认，不作静默豁免。
 
-## 违规示例
-
-```java
-// 直接反序列化用户输入
-ObjectInputStream ois = new ObjectInputStream(userInput);
-Object obj = ois.readObject();  // 攻击者可构造恶意序列化对象
-```
-
-```java
-// RMI/JNDI 反序列化
-InitialContext ctx = new InitialContext();
-Object obj = ctx.lookup(userInput);  // JNDI 注入
-```
-
-## 正确示例
-
-```java
-// 使用白名单校验反序列化类
-ObjectInputStream ois = new ObjectInputStream(userInput) {
-    @Override
-    protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-        String className = desc.getName();
-        // 只允许安全的类
-        if (!className.startsWith("com.myapp.safe.")) {
-            throw new InvalidClassException("Unauthorized deserialization attempt");
-        }
-        return super.resolveClass(desc);
-    }
-};
-```
+`request.getInputStream()` 直接流入 `new ObjectInputStream(...)` 命中；
+请求参数经 `getBytes()`/`ByteArrayInputStream` 包装传播后命中（污点随包装传播）；
+请求参数流入 `ctx.lookup(...)` 命中（JNDI 注入，新增覆盖）；
+`new ObjectInputStream(new FileInputStream("config/data.ser"))` 常量文件无污点源，
+不报；可信流上的 `readObject()` 不再作为独立告警（旧 deser-java-read-object
+对所有 readObject 无差别告警，为已知误报源）。
 
 ## 检测模式
 
-```pattern
-new ObjectInputStream($USER_INPUT)
+```pattern-sources
+$REQ.getParameter(...)
+$REQ.getHeader(...)
+$REQ.getQueryString()
+$REQ.getInputStream()
+$REQ.getReader()
 ```
 
-```pattern
-$STREAM.readObject()
+```pattern-sinks
+new ObjectInputStream(...)
+$CTX.lookup(...)
 ```
 
 ---

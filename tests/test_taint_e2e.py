@@ -1,0 +1,664 @@
+"""taint 规则真实 semgrep 端到端集成测试
+
+依赖本机 semgrep（与 TestRealSemgrepSandbox 同级约定）。
+验证 path-traversal-taint 规则的检出/降噪行为与 PoC 结论一致。
+"""
+
+import shutil
+from pathlib import Path
+
+import pytest
+
+from rule_engine import RuleEngine
+
+pytestmark = pytest.mark.skipif(
+    shutil.which("semgrep") is None, reason="本机未安装 semgrep"
+)
+
+_JAVA = """import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
+
+class Upload {
+    void readUserFile(HttpServletRequest request) throws Exception {
+        String userPath = request.getParameter("path");
+        File f = new File("/data", userPath);
+        Files.readAllBytes(f.toPath());
+    }
+
+    void readConstFile() throws Exception {
+        File f = new File("/data", "a.txt");
+        Files.readAllBytes(f.toPath());
+    }
+
+    void readSanitized(HttpServletRequest request) throws Exception {
+        String userPath = request.getParameter("path");
+        String nameOnly = new File(userPath).getName();
+        File f = new File("/data", nameOnly);
+        Files.readAllBytes(f.toPath());
+    }
+
+    void upload(MultipartFile file) throws Exception {
+        String filename = file.getOriginalFilename();
+        File dest = new File("/upload", filename);
+        file.transferTo(dest);
+    }
+
+    void normalized(HttpServletRequest request) throws Exception {
+        String userPath = request.getParameter("path");
+        java.nio.file.Path p = Paths.get("/data", userPath).normalize();
+        if (!p.startsWith("/data")) { throw new SecurityException("bad"); }
+        Files.readAllBytes(p);
+    }
+}
+"""
+
+_METHODS = ("readUserFile", "readConstFile", "readSanitized", "upload", "normalized")
+
+
+def _method_hits(java_source: str, issues: list) -> dict:
+    method_at = {}
+    current = None
+    for idx, text in enumerate(java_source.split("\n"), start=1):
+        for name in _METHODS:
+            if name in text:
+                current = name
+        method_at[idx] = current
+        if text.strip() == "}":
+            current = None
+    hits = set()
+    for i in issues:
+        if i.get("file") == "Upload.java":
+            m = method_at.get(i.get("line"))
+            if m:
+                hits.add(m)
+    return hits
+
+
+class TestPathTraversalTaintE2E:
+    def test_taint_rule_tp_and_tn_behavior(self, tmp_path):
+        """真阳性检出 + 三类误报场景零误报"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "Upload.java").write_text(_JAVA, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "path-traversal.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "Upload.java"}])
+        taint_issues = [
+            i for i in issues if "path-traversal-taint" in str(i.get("rule_id"))
+        ]
+        assert taint_issues, "taint 规则未产生任何检出"
+
+        hits = _method_hits(_JAVA, taint_issues)
+
+        assert "readUserFile" in hits, "真阳性：请求参数流入 File 构造应报出"
+        assert "upload" in hits, "真阳性：上传文件名流入 transferTo 应报出"
+        assert "readConstFile" not in hits, "常量拼接不应误报（旧模式规则误报场景）"
+        assert "readSanitized" not in hits, "basename 净化不应误报"
+        assert "normalized" not in hits, "normalize 净化不应误报"
+
+    def test_python_rules_unaffected(self, tmp_path):
+        """Java 交给 taint 后，Python 规则仍正常检出"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "app.py").write_text(
+            "from flask import request\n"
+            "def read_config():\n"
+            "    config_path = request.args.get('config')\n"
+            "    with open(config_path, 'r') as f:\n"
+            "        return f.read()\n",
+            encoding="utf-8",
+        )
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "path-traversal.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "app.py"}])
+        py_rules = {
+            str(i.get("rule_id")) for i in issues if i.get("file") == "app.py"
+        }
+        assert any("path-" in r and "taint" not in r for r in py_rules), (
+            f"Python 模式规则应仍检出: {py_rules}"
+        )
+
+
+_SSRF_JAVA = """import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+
+class Fetch {
+    private static final Set<String> ALLOWED_HOSTS = Set.of("api.example.com");
+    private final HttpClient client = HttpClient.newHttpClient();
+
+    void fetchUserUrl(HttpServletRequest request) throws IOException {
+        String userUrl = request.getParameter("url");
+        URL url = new URL(userUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    }
+
+    void fetchViaHttpClient(HttpServletRequest request) throws Exception {
+        String userUrl = request.getParameter("url");
+        HttpRequest req = HttpRequest.newBuilder()
+            .uri(URI.create(userUrl))
+            .build();
+        client.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    void fetchConstUrl() throws IOException {
+        URL url = new URL("https://api.example.com/v1/health");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    }
+
+    void fetchWhitelisted(HttpServletRequest request) throws IOException {
+        String userUrl = request.getParameter("url");
+        URL url = new URL(userUrl);
+        if (!ALLOWED_HOSTS.contains(url.getHost())) {
+            throw new SecurityException("URL not allowed");
+        }
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    }
+
+    void fetchGuarded(HttpServletRequest request) throws IOException {
+        String userUrl = request.getParameter("url");
+        if (!isAllowedUrl(userUrl)) {
+            throw new SecurityException("URL not allowed");
+        }
+        URL url = new URL(userUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    }
+
+    private boolean isAllowedUrl(String u) {
+        return ALLOWED_HOSTS.contains(u);
+    }
+}
+"""
+
+_SSRF_METHODS = (
+    "fetchUserUrl", "fetchViaHttpClient", "fetchConstUrl",
+    "fetchWhitelisted", "fetchGuarded", "isAllowedUrl",
+)
+
+
+def _ssrf_method_hits(java_source: str, issues: list) -> set:
+    method_at = {}
+    current = None
+    for idx, text in enumerate(java_source.split("\n"), start=1):
+        for name in _SSRF_METHODS:
+            if f" {name}(" in text or f"boolean {name}(" in text:
+                current = name
+        method_at[idx] = current
+        if text.strip() == "}":
+            current = None
+    hits = set()
+    for i in issues:
+        if i.get("file") == "Fetch.java":
+            m = method_at.get(i.get("line"))
+            if m:
+                hits.add(m)
+    return hits
+
+
+class TestSsrfTaintE2E:
+    def test_taint_rule_tp_and_tn_behavior(self, tmp_path):
+        """真阳性检出 + 三类误报场景零误报"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "Fetch.java").write_text(_SSRF_JAVA, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "ssrf.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "Fetch.java"}])
+        taint_issues = [
+            i for i in issues if "ssrf-taint" in str(i.get("rule_id"))
+        ]
+        assert taint_issues, "ssrf-taint 规则未产生任何检出"
+
+        hits = _ssrf_method_hits(_SSRF_JAVA, taint_issues)
+
+        assert "fetchUserUrl" in hits, "真阳性：请求参数流入 openConnection 应报出"
+        assert "fetchViaHttpClient" in hits, (
+            "真阳性：请求参数经 URI 构造流入 client.send 应报出"
+        )
+        assert "fetchConstUrl" not in hits, "常量 URL 不应误报（纯解析/常量场景）"
+        assert "fetchWhitelisted" not in hits, "host 白名单校验后不应误报"
+        assert "fetchGuarded" not in hits, "约定式校验函数净化后不应误报"
+
+    def test_python_rules_unaffected(self, tmp_path):
+        """Java 交给 taint 后，Python SSRF 规则仍正常检出"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "app.py").write_text(
+            "import requests\n"
+            "from flask import request\n"
+            "def fetch():\n"
+            "    url = request.args.get('url')\n"
+            "    return requests.get(url).text\n",
+            encoding="utf-8",
+        )
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "ssrf.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "app.py"}])
+        py_rules = {
+            str(i.get("rule_id")) for i in issues if i.get("file") == "app.py"
+        }
+        assert any("ssrf-python" in r for r in py_rules), (
+            f"Python SSRF 规则应仍检出: {py_rules}"
+        )
+
+
+_XSS_JAVA = """import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.web.util.HtmlUtils;
+
+class OutputServlet {
+    void writeUserInput(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String name = request.getParameter("name");
+        response.getWriter().write("Hello, " + name);
+    }
+
+    void printlnUserInput(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String comment = request.getParameter("comment");
+        PrintWriter out = response.getWriter();
+        out.println("<p>" + comment + "</p>");
+    }
+
+    void writeConstString(HttpServletResponse response)
+            throws ServletException, IOException {
+        response.getWriter().write("<html><body>Hello</body></html>");
+    }
+
+    void writeEscaped(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String name = request.getParameter("name");
+        response.getWriter().write("Hello, " + HtmlUtils.htmlEscape(name));
+    }
+
+    void writeCustomEscape(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String name = request.getParameter("name");
+        response.getWriter().write("Hello, " + escapeHtml(name));
+    }
+
+    private String escapeHtml(String s) {
+        return s.replace("<", "&lt;").replace(">", "&gt;");
+    }
+}
+"""
+
+_XSS_METHODS = (
+    "writeUserInput", "printlnUserInput", "writeConstString",
+    "writeEscaped", "writeCustomEscape", "escapeHtml",
+)
+
+
+def _xss_method_hits(java_source: str, issues: list) -> set:
+    method_at = {}
+    current = None
+    for idx, text in enumerate(java_source.split("\n"), start=1):
+        for name in _XSS_METHODS:
+            if f" {name}(" in text or f"void {name}(" in text:
+                current = name
+        method_at[idx] = current
+        if text.strip() == "}":
+            current = None
+    hits = set()
+    for i in issues:
+        if i.get("file") == "OutputServlet.java":
+            m = method_at.get(i.get("line"))
+            if m:
+                hits.add(m)
+    return hits
+
+
+class TestXssTaintE2E:
+    def test_taint_rule_tp_and_tn_behavior(self, tmp_path):
+        """真阳性检出 + 三类误报场景零误报"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "OutputServlet.java").write_text(_XSS_JAVA, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "xss.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "OutputServlet.java"}])
+        taint_issues = [
+            i for i in issues if "xss-taint" in str(i.get("rule_id"))
+        ]
+        assert taint_issues, "xss-taint 规则未产生任何检出"
+
+        hits = _xss_method_hits(_XSS_JAVA, taint_issues)
+
+        assert "writeUserInput" in hits, "真阳性：请求参数流入 response.getWriter().write 应报出"
+        assert "printlnUserInput" in hits, "真阳性：请求参数流入 out.println 应报出"
+        assert "writeConstString" not in hits, "常量字符串输出不应误报"
+        assert "writeEscaped" not in hits, "HtmlUtils.htmlEscape 转义后不应误报"
+        assert "writeCustomEscape" not in hits, "自定义 escapeHtml 转义后不应误报"
+
+    def test_js_rules_unaffected(self, tmp_path):
+        """Java 交给 taint 后，JS XSS 规则仍正常检出"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "app.js").write_text(
+            "function displayUserContent(userInput) {\n"
+            "    const container = document.getElementById('content');\n"
+            "    container.innerHTML = userInput;\n"
+            "}\n",
+            encoding="utf-8",
+        )
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "xss.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "app.js"}])
+        js_rules = {
+            str(i.get("rule_id")) for i in issues if i.get("file") == "app.js"
+        }
+        assert any("xss-js" in r for r in js_rules), (
+            f"JS XSS 规则应仍检出: {js_rules}"
+        )
+
+
+# ==================== SQL Injection Taint E2E ====================
+
+_SQLI_JAVA = """
+import java.sql.*;
+import javax.servlet.http.HttpServletRequest;
+
+class UserDao {
+    private Connection conn;
+
+    // TP1: 请求参数 → 字符串拼接 → executeQuery
+    void findUserById(HttpServletRequest request) throws SQLException {
+        String userId = request.getParameter("id");
+        String sql = "SELECT * FROM users WHERE id = " + userId;
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql);
+    }
+
+    // TP2: 请求参数 → 直接拼接到 execute 参数
+    void findUserByName(HttpServletRequest request) throws SQLException {
+        String name = request.getParameter("name");
+        Statement stmt = conn.createStatement();
+        stmt.execute("SELECT * FROM users WHERE name = '" + name + "'");
+    }
+
+    // TP3: 请求参数 → prepareStatement SQL 构造
+    void findUserViaPrepare(HttpServletRequest request) throws SQLException {
+        String userId = request.getParameter("id");
+        String sql = "SELECT * FROM users WHERE id = " + userId;
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.executeQuery();
+    }
+
+    // TN1: PreparedStatement + setString 参数绑定（安全）
+    void findUserSafe(HttpServletRequest request) throws SQLException {
+        String userId = request.getParameter("id");
+        String sql = "SELECT * FROM users WHERE id = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, userId);
+        ResultSet rs = ps.executeQuery();
+    }
+
+    // TN2: 常量 SQL 执行（无污点源）
+    void listAllUsers() throws SQLException {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM users");
+    }
+
+    // TN3: PreparedStatement + setInt 参数绑定（安全）
+    void findUserByAge(HttpServletRequest request) throws SQLException {
+        String ageStr = request.getParameter("age");
+        int age = Integer.parseInt(ageStr);
+        String sql = "SELECT * FROM users WHERE age = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, age);
+        ResultSet rs = ps.executeQuery();
+    }
+}
+"""
+
+
+def _sqli_method_hits(java_source: str, issues: list) -> set:
+    """Map issue line numbers to method names."""
+    method_at = {}
+    current = None
+    for idx, text in enumerate(java_source.split("\n"), start=1):
+        for name in (
+            "findUserById", "findUserByName", "findUserViaPrepare",
+            "findUserSafe", "listAllUsers", "findUserByAge",
+        ):
+            if f" {name}(" in text:
+                current = name
+        method_at[idx] = current
+        if text.strip() == "}":
+            current = None
+    hits = set()
+    for i in issues:
+        if i.get("file") == "UserDao.java":
+            m = method_at.get(i.get("line"))
+            if m:
+                hits.add(m)
+    return hits
+
+
+class TestSqliTaintE2E:
+    def test_taint_rule_tp_and_tn_behavior(self, tmp_path):
+        """真阳性检出 + 三类误报场景零误报"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "UserDao.java").write_text(_SQLI_JAVA, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "sql-injection.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "UserDao.java"}])
+        taint_issues = [
+            i for i in issues if "sqli-taint" in str(i.get("rule_id"))
+        ]
+        assert taint_issues, "sqli-taint 规则未产生任何检出"
+
+        hits = _sqli_method_hits(_SQLI_JAVA, taint_issues)
+
+        # 真阳性
+        assert "findUserById" in hits, "TP1: 请求参数 → 字符串拼接 → executeQuery 应报出"
+        assert "findUserByName" in hits, "TP2: 请求参数直接拼接到 execute 应报出"
+        assert "findUserViaPrepare" in hits, "TP3: 请求参数流入 prepareStatement SQL 应报出"
+
+        # 真阴性
+        assert "findUserSafe" not in hits, "TN1: PreparedStatement + setString 不应误报"
+        assert "listAllUsers" not in hits, "TN2: 常量 SQL 执行不应误报"
+        assert "findUserByAge" not in hits, "TN3: PreparedStatement + setInt 不应误报"
+
+    def test_python_rules_unaffected(self, tmp_path):
+        """Java 交给 taint 后，Python SQL 注入规则仍正常检出"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "app.py").write_text(
+            "from flask import request\n"
+            "def find_user():\n"
+            "    user_id = request.args.get('id')\n"
+            "    cursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")\n"
+            "    return cursor.fetchone()\n",
+            encoding="utf-8",
+        )
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "sql-injection.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "app.py"}])
+        py_rules = {
+            str(i.get("rule_id")) for i in issues if i.get("file") == "app.py"
+        }
+        assert any("sqli-python" in r for r in py_rules), (
+            f"Python SQL 注入规则应仍检出: {py_rules}"
+        )
+
+
+# ==================== Deserialization Taint E2E ====================
+
+_DESER_JAVA = """import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import javax.naming.InitialContext;
+import javax.servlet.http.HttpServletRequest;
+
+class Serializer {
+    private final InitialContext ctx = new InitialContext();
+
+    // TP1: 请求输入流直接流入反序列化
+    void deserializeRequestStream(HttpServletRequest request) throws Exception {
+        ObjectInputStream ois = new ObjectInputStream(request.getInputStream());
+        Object obj = ois.readObject();
+    }
+
+    // TP2: 请求参数经字节包装传播后流入反序列化
+    void deserializeRequestParam(HttpServletRequest request) throws Exception {
+        String payload = request.getParameter("payload");
+        byte[] data = payload.getBytes();
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
+        Object obj = ois.readObject();
+    }
+
+    // TP3: 请求参数流入 JNDI lookup（旧模式规则未覆盖）
+    void lookupUserInput(HttpServletRequest request) throws Exception {
+        String name = request.getParameter("name");
+        Object obj = ctx.lookup(name);
+    }
+
+    // TN1: 常量本地文件反序列化（无污点源）
+    void deserializeLocalConfig() throws Exception {
+        ObjectInputStream ois = new ObjectInputStream(new FileInputStream("config/data.ser"));
+        Object obj = ois.readObject();
+    }
+}
+"""
+
+_DESER_METHODS = (
+    "deserializeRequestStream", "deserializeRequestParam",
+    "lookupUserInput", "deserializeLocalConfig",
+)
+
+
+def _deser_method_hits(java_source: str, issues: list) -> set:
+    method_at = {}
+    current = None
+    for idx, text in enumerate(java_source.split("\n"), start=1):
+        for name in _DESER_METHODS:
+            if f" {name}(" in text:
+                current = name
+        method_at[idx] = current
+        if text.strip() == "}":
+            current = None
+    hits = set()
+    for i in issues:
+        if i.get("file") == "Serializer.java":
+            m = method_at.get(i.get("line"))
+            if m:
+                hits.add(m)
+    return hits
+
+
+class TestDeserTaintE2E:
+    def test_taint_rule_tp_and_tn_behavior(self, tmp_path):
+        """真阳性检出（含 JNDI 新覆盖）+ 常量文件零误报"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "Serializer.java").write_text(_DESER_JAVA, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "deserialization.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "Serializer.java"}])
+        taint_issues = [
+            i for i in issues if "deser-taint" in str(i.get("rule_id"))
+        ]
+        assert taint_issues, "deser-taint 规则未产生任何检出"
+
+        hits = _deser_method_hits(_DESER_JAVA, taint_issues)
+
+        # 真阳性
+        assert "deserializeRequestStream" in hits, (
+            "TP1: 请求输入流直接流入 new ObjectInputStream 应报出"
+        )
+        assert "deserializeRequestParam" in hits, (
+            "TP2: 请求参数经 ByteArrayInputStream 包装流入反序列化应报出"
+        )
+        assert "lookupUserInput" in hits, "TP3: 请求参数流入 ctx.lookup 应报出（JNDI）"
+
+        # 真阴性
+        assert "deserializeLocalConfig" not in hits, (
+            "TN1: 常量本地文件反序列化不应误报（旧模式规则误报场景）"
+        )
+
+    def test_python_rules_unaffected(self, tmp_path):
+        """Java 交给 taint 后，Python pickle 规则仍正常检出"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "app.py").write_text(
+            "import pickle\n"
+            "from flask import request\n"
+            "def load():\n"
+            "    payload = request.args.get('payload')\n"
+            "    return pickle.loads(payload)\n",
+            encoding="utf-8",
+        )
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "deserialization.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "app.py"}])
+        py_rules = {
+            str(i.get("rule_id")) for i in issues if i.get("file") == "app.py"
+        }
+        assert any("deser-python" in r for r in py_rules), (
+            f"Python pickle 规则应仍检出: {py_rules}"
+        )

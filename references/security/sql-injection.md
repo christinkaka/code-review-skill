@@ -1,94 +1,53 @@
-# SQL 注入 - Java 字符串拼接构建 SQL
+# SQL 注入 - 用户可控数据流入 SQL 执行（数据流分析）
 
-> 字符串拼接构建 SQL 语句，存在 SQL 注入风险。
+> 用户可控数据（HTTP 请求参数/头）经赋值、字符串拼接传播后流入 SQL 执行 API 或 SQL 构造 API。基于 Semgrep taint 模式做过程内数据流追踪，PreparedStatement 参数绑定（setString 等）作为净化器切断污点传播。
 
 ```yaml
-id: sqli-java-string-concat
+id: sqli-taint
 languages: [java]
 severity: ERROR
 cwe: CWE-89
 owasp: A03:2021
 ```
 
-## 违规示例
+## 检测原理
 
-```java
-String sql = "SELECT * FROM users WHERE id = " + userId;
-Statement stmt = conn.createStatement();
-stmt.execute(sql);
-```
+- **污点源**：Servlet 请求参数/头/查询串/输入流
+- **污点汇聚**：SQL 执行 API（execute、executeQuery、executeUpdate、prepareStatement）
+- **净化器**：PreparedStatement 参数绑定（setString、setInt、setLong、setObject 等）
 
-## 正确示例
-
-```java
-PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
-ps.setString(1, userId);
-ps.execute();
-```
+`request.getParameter("id")` 之后 `"SELECT ... WHERE id = " + userId` 流入 `executeQuery` 命中（污点随字符串拼接传播）；
+`conn.prepareStatement("SELECT ... WHERE id = ?")` + `ps.setString(1, userId)` 不报（setString 切断污点）；
+常量 SQL 字符串无污点源，不报。
 
 ## 检测模式
 
-```pattern-regex
-"(SELECT|INSERT|UPDATE|DELETE)[\s\S]*?"\s*\+\s*\w+
+```pattern-sources
+$REQ.getParameter(...)
+$REQ.getHeader(...)
+$REQ.getQueryString()
+$REQ.getInputStream()
+$REQ.getReader()
 ```
 
----
-
-# SQL 注入 - Java Statement 执行拼接 SQL
-
-> Statement 执行拼接 SQL，存在注入风险。
-
-```yaml
-id: sqli-java-statement-execute
-languages: [java]
-severity: ERROR
-cwe: CWE-89
+```pattern-sinks
+$STMT.execute(...)
+$STMT.executeQuery(...)
+$STMT.executeUpdate(...)
+$CONN.prepareStatement(...)
 ```
 
-## 检测模式
-
-```pattern
-Statement $STMT = ...;
-...
-$STMT.execute("..." + $VAR + "...");
-```
-
----
-
-# SQL 注入 - Java Statement 执行拼接 SQL (executeQuery)
-
-> Statement 执行拼接 SQL，存在注入风险。
-
-```yaml
-id: sqli-java-statement-concat
-languages: [java]
-severity: ERROR
-cwe: CWE-89
-owasp: A03:2021
-```
-
-## 违规示例
-
-```java
-Statement stmt = conn.createStatement();
-String sql = "SELECT * FROM users WHERE id = " + userId;
-stmt.executeQuery(sql);  // 危险：SQL 注入
-```
-
-## 正确示例
-
-```java
-PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
-ps.setString(1, userId);
-ps.executeQuery();
-```
-
-## 检测模式
-
-```pattern
-Statement $STMT = ...;
-...
-$STMT.executeQuery($SQL);
+```pattern-sanitizers
+$PS.setString(...)
+$PS.setInt(...)
+$PS.setLong(...)
+$PS.setFloat(...)
+$PS.setDouble(...)
+$PS.setBoolean(...)
+$PS.setDate(...)
+$PS.setTime(...)
+$PS.setTimestamp(...)
+$PS.setObject(...)
 ```
 
 ---

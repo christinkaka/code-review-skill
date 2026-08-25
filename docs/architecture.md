@@ -187,6 +187,174 @@ $ python3 scripts/scan.py --repo test-validation/ --full-scan
 2. **Semgrep 引擎**：基于 pattern 匹配，准确度高
 3. **内置正则**（优先级最低）：基于文本匹配，作为回退方案
 
+### Taint 数据流分析（Semgrep taint mode）
+
+**背景**：目录穿越类规则此前的纯模式匹配（如 `new File($DIR, $USER_INPUT)`）
+无法区分"常量目录 + 常量文件名"与"真实用户输入流"，实测对合规代码大量误报。
+2026-08-25 起引入 Semgrep taint 模式：以"污点源 → 数据流传播 → 污点汇聚"的
+过程内数据流追踪替代模式匹配，误报率显著下降而真实风险不漏报。
+
+**规约写法**（`.md` 规约新增三种代码块，每行一个 pattern，支持语言子标题）：
+
+````markdown
+```yaml
+id: path-traversal-taint
+languages: [java]
+severity: CRITICAL
+```
+
+```pattern-sources
+$REQ.getParameter(...)
+$FILE.getOriginalFilename()
+```
+
+```pattern-sinks
+new File(...)
+Files.write(...)
+```
+
+```pattern-sanitizers
+$F.getName()
+```
+````
+
+**引擎行为**：
+- 解析：`pattern-sources/-sinks/-sanitizers` 块解析为行级条目，不进入普通
+  `patterns`（AST/正则引擎不消费数据流结构）
+- 构建：sources + sinks 同时存在时生成 `mode: taint` 规则；多语言规则按
+  语言标签拆分（如 `xxx__java`），与其他规则一致
+- 降级：taint 规则**仅 Semgrep 引擎可执行**。Semgrep 不可用回退正则引擎时，
+  记录 WARNING 日志明确提示数据流检出将缺失（不静默吞掉能力差异）
+
+**已改造规则**：`path-traversal-taint`（CRITICAL）接管 Java 目录穿越场景
+（原 path-read/write/upload/config/log-traversal 五条规则的 Java pattern 移除，
+Python/JavaScript/TypeScript 模式保留）：
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/流（getParameter、getHeader、getInputStream 等）、上传原始文件名（getOriginalFilename）、反序列化（readObject） |
+| 污点汇聚 | 文件构造与读写（File、FileInputStream/OutputStream、FileWriter、Paths.get、Files.*、getResourceAsStream、transferTo） |
+| 净化器 | basename（getName/getFileName）、路径规范化（getCanonicalPath/getCanonicalFile/normalize/toRealPath） |
+
+**验证结果**（端到端，真实 semgrep，见 `tests/test_taint_e2e.py`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| 请求参数 → `new File` 构造 | 报出 | ✅ 报出 |
+| 上传文件名 → `transferTo` | 报出 | ✅ 报出 |
+| 常量目录 + 常量文件名 | 不报（旧模式规则误报场景） | ✅ 零误报 |
+| basename 净化（getName） | 不报 | ✅ 零误报 |
+| normalize + startsWith 白名单 | 不报 | ✅ 零误报 |
+| Python 规则（open 用户输入） | 不受影响 | ✅ 正常检出 |
+
+**后续扩展**：同一机制可平移至 SQL 注入等"外部输入到达危险操作"类规则
+（PoC 见 `/Users/chris/.trae-cn/work/.../taint-poc/`）；每类规则需按上述
+验证表补充真阳性/真阴性用例后方可替换旧模式规则。
+
+### SSRF taint 平移（2026-08-25 第二批）
+
+`ssrf-taint`（ERROR）接管 Java SSRF 场景（原 ssrf-java-url-connection 与
+ssrf-java-http-client 两条模式规则删除，Python/JS 模式保留）：
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/查询串/输入流（getParameter、getHeader、getQueryString、getInputStream、getReader） |
+| 污点汇聚 | 真实发起出站请求的 API（openConnection、openStream、HttpClient send/sendAsync）。`new URL(...)` / `URI.create(...)` 为纯解析构造，不作为汇聚点（沿用 2026-08-25 盲评修正结论，常量 URL 不报） |
+| 净化器 | 约定式校验函数（isAllowedUrl/isSafeUrl/validateUrl）、host 白名单（`Set.contains(url.getHost())`） |
+
+验证结果（真实 semgrep，见 `tests/test_taint_e2e.py::TestSsrfTaintE2E`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| 请求参数 → `new URL` → `openConnection` | 报出 | ✅ 报出 |
+| 请求参数 → `URI.create` → builder → `client.send` | 报出 | ✅ 报出 |
+| 常量 URL 出站请求 | 不报（旧模式规则误报场景） | ✅ 零误报 |
+| host 白名单校验（`ALLOWED_HOSTS.contains(getHost())`） | 不报 | ✅ 零误报 |
+| 约定式校验函数（isAllowedUrl guard） | 不报 | ✅ 零误报 |
+| Python 规则（requests 用户 URL） | 不受影响 | ✅ 正常检出 |
+
+### XSS taint 平移（2026-08-25 第三批）
+
+`xss-taint`（ERROR）接管 Java Servlet 响应输出场景（原 xss-java-servlet-output 与
+xss-java-string-builder-html 两条模式规则删除，JS/Python 模式保留）：
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/查询串/输入流（getParameter、getHeader、getQueryString、getInputStream、getReader） |
+| 污点汇聚 | HTTP 响应输出 API（PrintWriter.write/println/print、ServletOutputStream.write/print） |
+| 净化器 | HTML 转义函数（HtmlUtils.htmlEscape、escapeHtml、StringEscapeUtils.escapeHtml4、ESAPI.encoder().encodeForHTML） |
+
+验证结果（真实 semgrep，见 `tests/test_taint_e2e.py::TestXssTaintE2E`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| 请求参数 → `response.getWriter().write` | 报出 | ✅ 报出 |
+| 请求参数 → `PrintWriter.println` | 报出 | ✅ 报出 |
+| 常量字符串输出 | 不报 | ✅ 零误报 |
+| HtmlUtils.htmlEscape 转义 | 不报 | ✅ 零误报 |
+| 自定义 escapeHtml 转义 | 不报 | ✅ 零误报 |
+| JS 规则（innerHTML） | 不受影响 | ✅ 正常检出 |
+
+### SQL 注入 taint 平移（2026-08-25 第四批）
+
+`sqli-taint`（ERROR）接管 Java SQL 注入场景（原 sqli-java-string-concat、sqli-java-statement-execute、sqli-java-statement-concat 三条模式规则删除，MyBatis/Python 规则保留）。
+
+**关键洞察**：SQL 注入的核心问题是"用户输入经字符串拼接流入 SQL 执行"。taint 模式可以表达——
+- **sources**：HTTP 请求参数（getParameter 等）
+- **sinks**：SQL 执行 API（execute、executeQuery、executeUpdate、prepareStatement）
+- **sanitizers**：PreparedStatement 参数绑定（setString、setInt、setLong、setObject 等）
+
+`setString` 等参数绑定作为 sanitizer 切断污点传播：用户输入经 `setString` 绑定后不再流入 SQL 字符串拼接，因此不会触发告警。常量 SQL 字符串无 source，不报。
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/查询串/输入流（getParameter、getHeader、getQueryString、getInputStream、getReader） |
+| 污点汇聚 | SQL 执行 API（execute、executeQuery、executeUpdate、prepareStatement） |
+| 净化器 | PreparedStatement 参数绑定（setString、setInt、setLong、setFloat、setDouble、setBoolean、setDate、setTime、setTimestamp、setObject） |
+
+验证结果（真实 semgrep，见 `tests/test_taint_e2e.py::TestSqliTaintE2E`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| 请求参数 → 字符串拼接 → `executeQuery` | 报出 | ✅ 报出 |
+| 请求参数 → 直接拼接到 `execute` 参数 | 报出 | ✅ 报出 |
+| 请求参数 → 流入 `prepareStatement` SQL | 报出 | ✅ 报出 |
+| PreparedStatement + `setString` 参数绑定 | 不报 | ✅ 零误报 |
+| 常量 SQL 执行 | 不报 | ✅ 零误报 |
+| PreparedStatement + `setInt` 参数绑定 | 不报 | ✅ 零误报 |
+| Python 规则（f-string SQL） | 不受影响 | ✅ 正常检出 |
+
+### 反序列化 taint 平移（2026-08-25 第五批）
+
+`deser-taint`（CRITICAL）接管 Java 反序列化场景（原 deser-java-object-input-stream
+与 deser-java-read-object 两条模式规则删除，Python pickle / Node 规则保留）。
+
+**双收益**：
+1. **降噪**：旧 deser-java-read-object 对所有 `readObject()` 无差别告警（含可信
+   本地文件反序列化），为已知误报源；taint 化后仅用户可控数据流入才报
+2. **增强**：sink 新增 `$CTX.lookup(...)`，覆盖 spec 违规示例中旧规则漏掉的
+   JNDI 注入（RCE 同类风险）
+
+**净化器设计**：无。反序列化白名单防护（resolveClass 覆写、ObjectInputFilter）
+发生在流解析阶段而非数据流层面，taint 无法表达；此类场景由告警触发人工评审
+确认，不作静默豁免。
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/查询串/输入流（getParameter、getHeader、getQueryString、getInputStream、getReader） |
+| 污点汇聚 | `new ObjectInputStream(...)`、`$CTX.lookup(...)`（JNDI） |
+| 净化器 | 无（见上） |
+
+验证结果（真实 semgrep，见 `tests/test_taint_e2e.py::TestDeserTaintE2E`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| `request.getInputStream()` → `new ObjectInputStream` | 报出 | ✅ 报出 |
+| 请求参数 → getBytes → ByteArrayInputStream → 反序列化 | 报出 | ✅ 报出（污点随包装传播） |
+| 请求参数 → `ctx.lookup`（JNDI 注入） | 报出 | ✅ 报出（旧规则未覆盖） |
+| 常量本地文件反序列化 + `readObject()` | 不报 | ✅ 零误报 |
+| Python 规则（pickle 用户输入） | 不受影响 | ✅ 正常检出 |
+
 
 
 ---

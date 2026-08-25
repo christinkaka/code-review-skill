@@ -10,7 +10,37 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
 }
 ```
 
-**预期命中**: `xss-java-servlet-output`
+**预期命中**: `xss-taint`
+**文件类型**: `.java`
+
+---
+
+## 违规代码 - Servlet println 直接输出用户输入
+
+```java
+protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    String comment = request.getParameter("comment");
+    PrintWriter out = response.getWriter();
+    out.println("<p>" + comment + "</p>");
+}
+```
+
+**预期命中**: `xss-taint`
+**文件类型**: `.java`
+
+---
+
+## 正确代码 - Servlet 输出常量字符串
+
+```java
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    response.getWriter().write("<html><body>Hello</body></html>");
+}
+```
+
+**预期命中**: 无
 **文件类型**: `.java`
 
 ---

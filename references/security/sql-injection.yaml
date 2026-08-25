@@ -1,48 +1,10 @@
 # 安全规约 - SQL 注入
 # CWE-89: Improper Neutralization of Special Elements used in an SQL Command
 # OWASP: A03:2021 - Injection
+# 说明：Java Statement/PreparedStatement 场景由 sqli-taint（数据流分析）接管，
+# 见 sql-injection.md。MyBatis ${} 规则保留（XML/注解文本层面的模板注入）。
 
 rules:
-  - id: sqli-java-string-concat
-    languages: [java]
-    pattern: |
-      "SELECT ... " + $USER_INPUT + " ..."
-    message: "[SQL注入] 字符串拼接构建 SQL 语句，存在 SQL 注入风险。使用参数化查询（PreparedStatement）。"
-    severity: ERROR
-    category: security
-    fix: "PreparedStatement ps = conn.prepareStatement(\"SELECT ... WHERE id = ?\"); ps.setString(1, userInput);"
-    metadata:
-      cwe: CWE-89
-      owasp: "A03:2021"
-
-  - id: sqli-java-statement-execute
-    languages: [java]
-    patterns:
-      - pattern: |
-          Statement $STMT = ...;
-          ...
-          $STMT.execute("..." + $VAR + "...");
-    message: "[SQL注入] Statement 执行拼接 SQL，存在注入风险。改用 PreparedStatement。"
-    severity: ERROR
-    category: security
-    metadata:
-      cwe: CWE-89
-
-  - id: sqli-java-statement-concat
-    languages: [java]
-    patterns:
-      - pattern: |
-          Statement $STMT = ...;
-          ...
-          $STMT.execute($SQL);
-    message: "[SQL注入] 使用字符串拼接构建 SQL 语句并通过 Statement 执行，存在 SQL 注入风险。使用 PreparedStatement 参数化查询。"
-    severity: ERROR
-    category: security
-    fix: "PreparedStatement ps = conn.prepareStatement(\"SELECT ... WHERE id = ?\"); ps.setString(1, userInput);"
-    metadata:
-      cwe: CWE-89
-      owasp: "A03:2021"
-
   - id: sqli-java-mybatis-dollar
     languages: [java]
     pattern-regex: \$\{[a-zA-Z_.]+\}

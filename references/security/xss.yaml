@@ -1,81 +1,14 @@
 # 安全规约 - 跨站脚本攻击 (XSS)
 # CWE-79: Improper Neutralization of Input During Web Page Generation
 # OWASP: A03:2021 - Injection
+# 说明：Java Servlet 响应输出场景由 xss-taint（数据流分析）接管，见 xss.md。
 
 rules:
   # ===== Java =====
-  - id: xss-java-servlet-output
-    languages: [java]
-    patterns:
-      - pattern-either:
-          - pattern: |
-              String $PARAM = $REQUEST.getParameter(...);
-              ...
-              $OUT.println(... + $PARAM + ...);
-          - pattern: |
-              String $PARAM = $REQUEST.getParameter(...);
-              ...
-              $OUT.println($PARAM);
-          - pattern: |
-              String $PARAM = $REQUEST.getParameter(...);
-              ...
-              $OUT.write(... + $PARAM + ...);
-          - pattern: |
-              String $PARAM = $REQUEST.getParameter(...);
-              ...
-              $OUT.print(... + $PARAM + ...);
-      - pattern-not: |
-          String $PARAM = $REQUEST.getParameter(...);
-          ...
-          $SAFE = encodeHtml($PARAM);
-          ...
-          $OUT.println(... + $SAFE + ...);
-      - pattern-not: |
-          String $PARAM = $REQUEST.getParameter(...);
-          ...
-          $SAFE = HtmlUtils.htmlEscape($PARAM);
-          ...
-          $OUT.println(... + $SAFE + ...);
-      - pattern-not: |
-          String $PARAM = $REQUEST.getParameter(...);
-          ...
-          $PARAM = encodeHtml($PARAM);
-          ...
-          $OUT.println(... + $PARAM + ...);
-      - pattern-not: |
-          String $PARAM = $REQUEST.getParameter(...);
-          ...
-          $PARAM = HtmlUtils.htmlEscape($PARAM);
-          ...
-          $OUT.println(... + $PARAM + ...);
-    message: >
-      [XSS] Servlet 响应直接写入用户输入未做 HTML 转义，存在反射型 XSS 风险。
-    severity: ERROR
-    category: security
-    fix: "使用 HtmlUtils.htmlEscape() 或 OWASP Java Encoder 进行输出编码"
-    metadata:
-      cwe: CWE-79
-      owasp: "A03:2021"
-
   - id: xss-java-jsp-expr
     languages: [java]
     pattern-regex: <%=\s*\w+\.getParameter\([^)]+\)\s*%>
     message: "[XSS] JSP 表达式直接输出请求参数，存在 XSS 风险。使用 <c:out> 或 fn:escapeXml() 替代。"
-    severity: ERROR
-    category: security
-    metadata:
-      cwe: CWE-79
-
-  - id: xss-java-string-builder-html
-    languages: [java]
-    patterns:
-      - pattern: |
-          StringBuilder $SB = new StringBuilder();
-          ...
-          $SB.append($USER_INPUT);
-          ...
-          $RESPONSE.getWriter().write($SB.toString());
-    message: "[XSS] StringBuilder 拼接用户输入后直接写入响应，存在存储型 XSS 风险。"
     severity: ERROR
     category: security
     metadata:

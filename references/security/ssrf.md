@@ -1,69 +1,50 @@
-# SSRF - Java URL 连接使用用户输入
+# SSRF - 用户可控 URL 流入出站请求（数据流分析）
 
-> URL 连接使用用户输入未做白名单校验，存在 SSRF 风险。
+> 用户可控数据（HTTP 请求参数/头）经赋值、拼接、URL/URI 构造传播后流入真实发起出站请求的 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。
 
 ```yaml
-id: ssrf-java-url-connection
+id: ssrf-taint
 languages: [java]
 severity: ERROR
 cwe: CWE-918
 owasp: A10:2021
 ```
 
-## 问题说明
+## 检测原理
 
-攻击者可以通过构造恶意 URL 让服务器访问内网资源（如 `http://169.254.169.254/` 获取云元数据）。
+- **污点源**：Servlet 请求参数/头/查询串/输入流
+- **污点汇聚**：真实发起出站请求的 API（openConnection、openStream、HttpClient send）。
+  沿用 2026-08-25 盲评修正结论：`new URL(...)` / `URI.create(...)` 为纯解析构造，
+  不产生网络流量，不作为汇聚点，常量 URL 场景不报。
+- **净化器**：约定式校验函数（isAllowedUrl/isSafeUrl/validateUrl）与
+  host 白名单校验（`Set.contains(url.getHost())`）。
 
-## 检测模式
-
-```pattern
-new URL($USER_INPUT).openConnection()
-```
-
-```pattern
-URL $URL = new URL($USER_INPUT);
-...
-$URL.openConnection();
-```
-
-```pattern-not
-if (isAllowedUrl($USER_INPUT)) { ... }
-```
-
-```pattern-not
-if (!$SET.contains($URL.getHost())) { ... }
-```
-
-```pattern-not
-URL $URL = new URL($USER_INPUT);
-...
-if (!$SET.contains($URL.getHost())) { ... }
-...
-$URL.openConnection();
-```
-
----
-
-# SSRF - Java HttpClient 请求用户可控 URL
-
-> HttpClient 请求用户可控 URL，存在 SSRF 风险。
-> 2026-08-25 盲评修正：`URI.create($USER_INPUT)` 为纯解析构造，不产生
-> 网络流量（实测 2/2 误报：Testcontainers 本地容器 URL、部署配置项）。
-> 判别信号改为 URI 构造后真实发起请求（client.send）。
-
-```yaml
-id: ssrf-java-http-client
-languages: [java]
-severity: ERROR
-cwe: CWE-918
-```
+`new URL(userInput)` 之后的 `url.openConnection()` 命中（污点随对象传播）；
+`new URL("https://api.example.com")` 常量 URL 无污点源，不报；
+经 `isAllowedUrl(...)` 或 host 白名单校验后的请求不报。
 
 ## 检测模式
 
-```pattern
-URI.create($USER_INPUT)
-...
-$C.send(...)
+```pattern-sources
+$REQ.getParameter(...)
+$REQ.getHeader(...)
+$REQ.getQueryString()
+$REQ.getInputStream()
+$REQ.getReader()
+```
+
+```pattern-sinks
+$URL.openConnection(...)
+$URL.openStream(...)
+$CLIENT.send(...)
+$CLIENT.sendAsync(...)
+```
+
+```pattern-sanitizers
+isAllowedUrl(...)
+isSafeUrl(...)
+validateUrl(...)
+$SET.contains($URL.getHost())
 ```
 
 ---

@@ -1,16 +1,49 @@
 # SSRF 测试案例
 
-## 违规代码 - Java URL 连接
+## 违规代码 - Java 请求参数流入出站请求
 
 ```java
-public String fetchUrl(String userUrl) throws IOException {
+public String fetchUrl(HttpServletRequest request) throws IOException {
+    String userUrl = request.getParameter("url");
     URL url = new URL(userUrl);
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     // read response...
 }
 ```
 
-**预期命中**: `ssrf-java-url-connection`
+**预期命中**: `ssrf-taint`
+**文件类型**: `.java`
+
+---
+
+## 违规代码 - Java HttpClient 请求用户可控 URL
+
+```java
+public String fetch(HttpServletRequest request) throws Exception {
+    String userUrl = request.getParameter("url");
+    HttpRequest req = HttpRequest.newBuilder()
+        .uri(URI.create(userUrl))
+        .build();
+    return client.send(req, HttpResponse.BodyHandlers.ofString()).body();
+}
+```
+
+**预期命中**: `ssrf-taint`
+**文件类型**: `.java`
+
+---
+
+## 正确代码 - Java 常量 URL 出站请求
+
+```java
+public String fetchConst() throws IOException {
+    URL url = new URL("https://api.example.com/v1/health");
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    // read response...
+}
+```
+
+**预期命中**: 无
 **文件类型**: `.java`
 
 ---
@@ -49,7 +82,8 @@ async function fetchData(url) {
 ```java
 private static final Set<String> ALLOWED_HOSTS = Set.of("api.example.com");
 
-public String fetchUrl(String userUrl) throws IOException {
+public String fetchUrl(HttpServletRequest request) throws IOException {
+    String userUrl = request.getParameter("url");
     URL url = new URL(userUrl);
     if (!ALLOWED_HOSTS.contains(url.getHost())) {
         throw new SecurityException("URL not allowed");

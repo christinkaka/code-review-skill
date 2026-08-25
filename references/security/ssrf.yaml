@@ -1,35 +1,9 @@
 # 安全规约 - 服务端请求伪造 (SSRF)
 # CWE-918: Server-Side Request Forgery
 # OWASP: A10:2021 - SSRF
+# 说明：Java 场景由 ssrf-taint（数据流分析）接管，见 ssrf.md。
 
 rules:
-  - id: ssrf-java-url-connection
-    languages: [java]
-    patterns:
-      - pattern: |
-          new URL($USER_INPUT).openConnection()
-      - pattern-not: |
-          if (isAllowedUrl($USER_INPUT)) { ... }
-    message: "[SSRF] URL 连接使用用户输入未做白名单校验，存在 SSRF 风险。"
-    severity: ERROR
-    category: security
-    metadata:
-      cwe: CWE-918
-      owasp: "A10:2021"
-
-  - id: ssrf-java-http-client
-    languages: [java]
-    patterns:
-      - pattern: |
-          URI.create($USER_INPUT)
-      - pattern-not: |
-          if (isAllowedUrl($USER_INPUT)) { ... }
-    message: "[SSRF] HttpClient 请求用户可控 URL，存在 SSRF 风险。添加 URL 白名单和协议限制。"
-    severity: ERROR
-    category: security
-    metadata:
-      cwe: CWE-918
-
   - id: ssrf-python-requests
     languages: [python]
     patterns:
