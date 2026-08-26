@@ -65,8 +65,10 @@ api_key = settings.API_KEY
 ## 检测模式
 
 ```pattern-regex
-(?i)(password|secret|api_?key|token|api_?secret)\s*=\s*["'][^"']+["']
+(?i)(password|secret|api_?key|token|api_?secret)\s*=\s*["'][^"']{8,}["']
 ```
+
+最小长度 8 字符：排除 `BLANK_TOKEN = 'BLANK'` 等短值占位符（2026-08-26 降噪）。
 
 ---
 

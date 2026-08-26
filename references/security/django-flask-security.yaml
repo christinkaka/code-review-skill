@@ -1,0 +1,125 @@
+# 安全规约 - Django/Flask 框架安全
+# 覆盖 Django 和 Flask 框架的常见安全漏洞
+
+rules:
+  - id: django-mark-safe-xss
+    languages: [python]
+    patterns:
+      - pattern: mark_safe($USER_INPUT)
+      - pattern-not: mark_safe(escape($USER_INPUT))
+      - pattern-not: mark_safe(html.escape($USER_INPUT))
+    message: >
+      [XSS] Django mark_safe() 将字符串标记为安全 HTML，绕过自动转义。
+      若参数包含用户输入，将导致 XSS 漏洞。
+      使用 markupsafe.escape() 先转义再标记为安全。
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+      owasp: "A03:2021"
+
+  - id: django-format-html-xss
+    languages: [python]
+    pattern-either:
+      - pattern: format_html($USER_INPUT + ...)
+      - pattern: format_html(... + $USER_INPUT)
+    message: >
+      [XSS] format_html() 格式字符串包含用户输入，转义将失效。
+      将用户输入作为参数传入，而非拼接在格式字符串中。
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+      owasp: "A03:2021"
+
+  - id: django-raw-sql-injection
+    languages: [python]
+    pattern-either:
+      - patterns:
+          - pattern: $MODEL.objects.raw($SQL)
+          - pattern-not: $MODEL.objects.raw($SQL, [...])
+      - pattern: $MODEL.objects.extra(where=[... .format(...)])
+      - pattern: RawSQL($SQL, ...)
+    message: >
+      [SQL注入] Django raw()/extra()/RawSQL() 执行原始 SQL，
+      若包含用户输入将导致 SQL 注入。使用参数化查询或 ORM 方法。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-89
+      owasp: "A03:2021"
+
+  - id: django-debug-enabled
+    languages: [python]
+    pattern: |
+      DEBUG = True
+    message: >
+      [信息泄露] Django DEBUG=True 会暴露敏感信息（堆栈跟踪、数据库查询、环境变量）。
+      生产环境必须关闭 DEBUG。使用环境变量控制。
+    severity: WARNING
+    category: security
+    metadata:
+      cwe: CWE-215
+      owasp: "A05:2021"
+
+  - id: flask-ssti-render-template-string
+    languages: [python]
+    pattern-either:
+      - pattern: render_template_string($TEMPLATE + ...)
+      - pattern: render_template_string(... + $TEMPLATE)
+      - pattern: render_template_string(f"...")
+      - pattern: render_template_string($TEMPLATE.format(...))
+    message: >
+      [SSTI] Flask render_template_string() 使用用户输入构造 Jinja2 模板，
+      将导致服务端模板注入（SSTI）。使用模板文件或将用户输入作为参数传递。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-1336
+      owasp: "A03:2021"
+
+  - id: flask-markup-xss
+    languages: [python]
+    patterns:
+      - pattern: Markup($USER_INPUT)
+      - pattern-not: Markup(escape($USER_INPUT))
+    message: >
+      [XSS] Flask Markup() 将字符串标记为安全 HTML，若参数包含用户输入将导致 XSS。
+      使用 Markup(escape(user_input)) 先转义再标记为安全。
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-79
+      owasp: "A03:2021"
+
+  - id: python-unsafe-yaml-load
+    languages: [python]
+    patterns:
+      - pattern: yaml.load($FILE)
+      - pattern-not: yaml.safe_load($FILE)
+      - pattern-not: yaml.load($FILE, Loader=yaml.SafeLoader)
+      - pattern-not: yaml.load($FILE, Loader=SafeLoader)
+    message: >
+      [反序列化] yaml.load() 默认使用不安全的 Loader，可执行任意 Python 代码。
+      使用 yaml.safe_load() 或显式指定 Loader=yaml.SafeLoader。
+    severity: ERROR
+    category: security
+    metadata:
+      cwe: CWE-502
+      owasp: "A08:2021"
+
+  - id: python-jinja2-ssti
+    languages: [python]
+    pattern-either:
+      - pattern: Template($TEMPLATE + ...)
+      - pattern: Template(... + $TEMPLATE)
+      - pattern: Template(f"...")
+      - pattern: Template($TEMPLATE.format(...))
+    message: >
+      [SSTI] Jinja2 Template() 使用用户输入构造模板，将导致服务端模板注入（SSTI）。
+      使用占位符并将用户输入通过 render() 参数传递。
+    severity: CRITICAL
+    category: security
+    metadata:
+      cwe: CWE-1336
+      owasp: "A03:2021"

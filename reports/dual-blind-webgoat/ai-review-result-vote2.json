@@ -1,0 +1,222 @@
+[
+  {
+    "rule_id": "priv-java-runtime-exec",
+    "file": "src/main/java/org/dummy/insecure/framework/VulnerableTaskHolder.java",
+    "line": 67,
+    "is_false_positive": false,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "readObject() 反序列化后直接执行 Runtime.getRuntime().exec(taskAction)，taskAction 完全来自攻击者构造的序列化数据，无任何净化。仅有 taskAction.startsWith(\"sleep\")||startsWith(\"ping\") 且 length<22 的前置限制（注释自述 prevent you from destroying the goat），但任意反序列化报文仍可在服务器执行 sleep/ping 命令实现 RCE/DoS——这正是反序列化课程的教学漏洞点，数据流真实可达，确认为真实问题。",
+    "enhanced_fix": "真实应用中应彻底移除反序列化数据驱动的命令执行，改为白名单映射：\n```java\nprivate void executeSafeAction(String taskAction) {\n  switch (taskAction) {\n    case \"sleep\" -> { try { TimeUnit.SECONDS.sleep(5); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); } }\n    case \"ping\" -> log.info(\"ping simulated\");\n    default -> log.warn(\"rejected action: {}\", taskAction);\n  }\n}\n```\n同时避免在 readObject 中执行任何副作用逻辑。"
+  },
+  {
+    "rule_id": "path-traversal-taint",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/FileServer.java",
+    "line": 79,
+    "is_false_positive": false,
+    "needs_review": false,
+    "ai_confidence": 0.9,
+    "analysis": "importFile 中 multipartFile.getOriginalFilename() 未净化即流入 destinationDir.toPath().resolve(filename)（75行）并执行 Files.deleteIfExists/copy（76-77行）。已核实 Tomcat ApplicationPart.getSubmittedFileName() 仅去引号与 trim，不剥离路径分隔符，Spring 亦不净化；resolve() 遇绝对路径会整体替换基目录。攻击者可用 ../../ 逃逸用户目录或绝对路径覆盖/删除任意文件（deleteIfExists 提供任意删除原语），路径穿越真实可利用。",
+    "enhanced_fix": "```java\nvar safeName = org.apache.commons.io.FilenameUtils.getName(multipartFile.getOriginalFilename());\nif (safeName.isBlank()) { throw new IllegalArgumentException(\"Invalid filename\"); }\nvar destinationFile = destinationDir.toPath().resolve(safeName).normalize();\nif (!destinationFile.startsWith(destinationDir.toPath().normalize())) {\n  throw new SecurityException(\"Path traversal detected\");\n}\nFiles.deleteIfExists(destinationFile);\nFiles.copy(is, destinationFile);\n```\n并同步替换 79 行 log 中对原始 filename 的直接拼接。"
+  },
+  {
+    "rule_id": "err-java-empty-catch",
+    "file": ".mvn/wrapper/MavenWrapperDownloader.java",
+    "line": 67,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.9,
+    "analysis": "该空 catch（71-73行）包裹的是 finally 块中 mavenWrapperPropertyFileInputStream.close() 的失败场景，属 Maven Wrapper 官方样板代码（构建工具，非业务代码），且带 // Ignore ... 注释表明有意为之；close 失败对下载流程无实质影响，外层 main 方法已有 catch (Throwable e) 打印堆栈并 System.exit(1) 兜底。无实际风险。",
+    "enhanced_fix": "无需修改。若团队规范强制要求，可改为 catch (IOException e) { /* best-effort close */ } 或补充一条 System.out.println(\"- WARN close failed\"); 即可。"
+  },
+  {
+    "rule_id": "null-java-collection-get",
+    "file": "src/it/java/org/owasp/webgoat/playwright/webgoat/pages/lessons/LessonPage.java",
+    "line": 43,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.9,
+    "analysis": "43 行 page.request().get(...) 中的 get() 是 Playwright APIRequestContext 的 HTTP GET 请求方法（发起 service/restartlesson.mvc 调用并返回 APIResponse），并非 Map.get() 集合取值；page 为构造器注入的 final 字段，Playwright 的 request() 与 get() 均不返回 null（失败时抛异常而非返回 null），.ok() 调用安全。且该文件位于 src/it 集成测试代码，非生产路径。",
+    "enhanced_fix": "无需修改。该规则将 HTTP 请求方法误判为集合 get()，建议规则排除 Playwright APIRequestContext 类型。"
+  },
+  {
+    "rule_id": "naming-java-constant-case",
+    "file": "src/main/java/org/dummy/insecure/framework/VulnerableTaskHolder.java",
+    "line": 19,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "19 行 private static final long serialVersionUID = 2; 是 Java 序列化规范（Object Serialization Stream Protocol）强制要求的固定字段名，由 JVM 序列化机制按名字识别，用于版本兼容校验；改为 UPPER_SNAKE_CASE 会导致字段失去版本控制语义、反序列化兼容性被破坏。该常量无法重命名，规则对 serialVersionUID 属典型误报。",
+    "enhanced_fix": "无需修改。建议在规则中将 serialVersionUID 加入内置白名单。"
+  },
+  {
+    "rule_id": "log-injection-taint",
+    "file": "src/main/java/org/dummy/insecure/framework/VulnerableTaskHolder.java",
+    "line": 71,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.9,
+    "analysis": "71 行 log.info(line) 的 line 来自 70 行 while ((line = in.readLine()) != null) 读取进程输出，BufferedReader.readLine() 按规范剔除 \\n、\\r、\\r\\n 行终止符，攻击者无法通过该 sink 向日志注入换行伪造条目，log-injection 的换行可控前提不成立。同方法 65 行 log.info(\"about to execute: {}\", taskAction) 直接记录反序列化的 taskAction 才是理论上可含换行的位置，但非本条所指。",
+    "enhanced_fix": "本条无需修改。若做整体加固，可对 65 行先净化：log.info(\"about to execute: {}\", taskAction.replace(\"\\r\", \" \").replace(\"\\n\", \" \"));"
+  },
+  {
+    "rule_id": "log-injection-taint",
+    "file": "src/main/java/org/owasp/webgoat/container/AsciiDoctorTemplateResolver.java",
+    "line": 139,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "139 行 log.debug(\"browser locale {}\", langHeader) 的 langHeader 来自 137 行 request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)。HTTP 头值语法禁止出现 CR/LF（消息头以 CRLF 分隔，容器会拒绝含裸控制字符的头），换行注入伪造日志条目的前提被上游协议阻断；且该调用为 debug 级别日志。语言头仅影响模板本地化选择，无实际风险。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "null-java-method-chain",
+    "file": "src/main/java/org/owasp/webgoat/container/assignments/LessonTrackerInterceptor.java",
+    "line": 54,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.75,
+    "analysis": "54 行 SecurityContextHolder.getContext().getAuthentication().getPrincipal()：getContext() 按实现永不返回 null（惰性创建）；getAuthentication() 在经安全过滤链的请求中必有值（WebSecurityConfig 未禁用匿名过滤器，permitAll 端点亦有 AnonymousAuthenticationToken）。trackProgress 仅在响应体 instanceof AttackResult 时触发，此类作业端点受 anyRequest().authenticated() 保护，均为已认证请求；55 行紧随 Assert.notNull(user, ...) 亦表明已考虑空值。实际运行中不会 NPE。",
+    "enhanced_fix": "无需修改。如需更强健壮性可改为：\n```java\nvar authentication = SecurityContextHolder.getContext().getAuthentication();\nif (authentication == null || !(authentication.getPrincipal() instanceof WebGoatUser user)) {\n  return;\n}\n```"
+  },
+  {
+    "rule_id": "api-java-missing-response-wrapper",
+    "file": "src/main/java/org/owasp/webgoat/container/mailbox/MailboxController.java",
+    "line": 28,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.8,
+    "analysis": "全工程检索不存在 Result<T>/ApiResult/CommonResult 等统一响应包装类约定。/mail 返回 ModelAndView 渲染 Thymeleaf mailbox 视图，/mail/count 返回 Map.of(\"count\", ...)，sendEmail/deleteAllMail 为 void + @ResponseStatus，均为内置前端直接消费的既定契约。强加包装类会破坏现有前端解析且不带来任何安全或正确性收益，属纯风格建议，无实际风险。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "api-java-missing-validation",
+    "file": "src/main/java/org/owasp/webgoat/container/mailbox/MailboxController.java",
+    "line": 58,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.75,
+    "analysis": "sendEmail(@RequestBody Email email) 虽无 @Valid，但 Email 实体（container/mailbox/Email.java）全字段无任何 Bean Validation 约束注解（仅 @Id/@Column 等 JPA 注解），即使补加 @Valid 也不会启用任何校验，建议为无效操作。且 WebSecurityConfig 明确将 POST /mail 设为 permitAll 供课程经 HTTP 投递邮件（有注释说明），属设计意图，无既定校验契约被绕过。",
+    "enhanced_fix": "无需修改。若未来需要约束（如 contents 匹配列长 1024），应先在 Email 字段上加 @Size(max = 1024) 再在参数上加 @Valid，二者缺一不可。"
+  },
+  {
+    "rule_id": "api-java-missing-response-wrapper",
+    "file": "src/main/java/org/owasp/webgoat/container/users/AdminController.java",
+    "line": 33,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.8,
+    "analysis": "该控制器返回 List<UserSummary>、ResponseEntity<UserDetail>（含 ResponseEntity.notFound().build() 的 404 语义）与 ResponseEntity<PasswordResetResponse>，是标准 REST 强类型 DTO 响应，且端点均 @PreAuthorize(\"hasAuthority('WEBGOAT_ADMIN')\")。工程内不存在统一 Result<T> 包装约定，引入包装层无实际收益，属风格性建议非真实风险。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "db-java-missing-transaction",
+    "file": "src/main/java/org/owasp/webgoat/container/users/DefaultUserInitializer.java",
+    "line": 32,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.75,
+    "analysis": "run() 为 ApplicationRunner，仅在启动期单线程执行一次；类注释明确 \"making this bean idempotent across restarts\"——admin 分支每次重启无条件重新 save 确保存在，默认用户通过 existsByUsername 判断不存在则重建，中间失败在下次重启可自愈。且其委托的 userService.addUser 内部执行 CREATE SCHEMA DDL 与 Flyway 迁移，DDL 无法纳入 Spring 事务回滚，加 @Transactional 既不可行也无收益。启动种子数据场景无真实一致性风险。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "db-java-missing-transaction",
+    "file": "src/main/java/org/owasp/webgoat/container/users/UserService.java",
+    "line": 44,
+    "is_false_positive": false,
+    "needs_review": false,
+    "ai_confidence": 0.6,
+    "analysis": "addUser 顺序执行 userRepository.save(new WebGoatUser(...))、userTrackerRepository.save(new UserProgress(username))、createLessonsForUser（CREATE SCHEMA + flywayLessons.apply(...).migrate()）与 sendWelcomeEmail 共四组写操作，无任何事务或失败补偿。若首次 save 成功后任一步失败，账号已存在但无进度/课程：UserValidator 以 findByUsername!=null 拒绝重名再注册、addUser 的 userAlreadyExists 守卫跳过再次供给、loadUserByUsername 的 lessonInitializables 为 default 空实现无法自愈，形成永久性半初始化账号。确需修复。",
+    "enhanced_fix": "因含 DDL/Flyway 无法用纯 @Transactional 回滚，采用补偿逻辑：\n```java\nvar webGoatUser = userRepository.save(new WebGoatUser(username, password));\nif (!userAlreadyExists) {\n  try {\n    userTrackerRepository.save(new UserProgress(username));\n    createLessonsForUser(webGoatUser);\n    sendWelcomeEmail(username);\n  } catch (RuntimeException e) {\n    userRepository.delete(webGoatUser); // 回滚用户行，允许重新注册\n    throw e;\n  }\n}\n```\n"
+  },
+  {
+    "rule_id": "log-injection-taint",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/FileServer.java",
+    "line": 79,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "79 行 log.debug(\"File saved to {}\", new File(destinationDir, multipartFile.getOriginalFilename())) 的文件名取自 multipart 的 Content-Disposition 头值，HTTP 头语法禁止 CR/LF（容器拒绝含裸控制字符的头值，Tomcat ParameterParser 亦按分号切分参数），攻击者无法向该日志注入换行伪造条目，前提不成立；且为 debug 级别。该行真实风险是路径穿越（另条裁决），非日志注入。",
+    "enhanced_fix": "本条无需修改；同方法 75 行的路径穿越问题需另行修复（对 getOriginalFilename 做 FilenameUtils.getName 净化）。"
+  },
+  {
+    "rule_id": "api-java-missing-response-wrapper",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTController.java",
+    "line": 17,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.8,
+    "analysis": "该控制器 /jwt 返回 ModelAndView 渲染视图，/jwt/decode 与 /jwt/encode 返回 JWTToken 领域对象（含 encoded/header/payload/validToken/signatureValid 等字段），WebWolf JWT 工具页面前端直接消费该 JSON 结构。工程无统一 Result<T> 包装约定，强加包装破坏现有前端契约且无安全收益，属风格建议。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "api-java-missing-validation",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTController.java",
+    "line": 25,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "decode(@RequestBody MultiValueMap<String, String> formData) 参数是 Spring 框架的 MultiValueMap 类型（消费 APPLICATION_FORM_URLENCODED 表单），Bean Validation 仅作用于带约束注解的 Bean 属性，对 MultiValueMap 加 @Valid 完全无效；且该端点用途就是解码用户提交的任意 token（getFirst(\"token\")/getFirst(\"secretKey\")/getFirst(\"jwks\")），无任何既定校验契约。",
+    "enhanced_fix": "无需修改。如需健壮性应手动判空：var jwt = formData.getFirst(\"token\"); if (jwt == null) 返回错误响应，避免 JWTToken.decode 内 jwt.trim() 潜在 NPE。"
+  },
+  {
+    "rule_id": "api-java-missing-validation",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTController.java",
+    "line": 36,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "encode(@RequestBody MultiValueMap<String, String> formData) 与 25 行同型：参数为框架类型 MultiValueMap，加 @Valid 不会触发任何校验；该工具端点按设计接受任意 header/payload/secretKey 字符串做 JWT 编码演示，无 Bean 校验需求。缺失 @Valid 不构成真实风险。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "err-java-empty-catch",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTToken.java",
+    "line": 109,
+    "is_false_positive": false,
+    "needs_review": false,
+    "ai_confidence": 0.6,
+    "analysis": "109-114 行 try { builder.encoded(jws.getCompactSerialization()); builder.signatureValid(true); } catch (JoseException e) { // Do nothing } 完全吞掉签名异常。该异常可由用户输入触发（如提交的 header JSON 缺 alg、或非法 secretKey），吞掉后服务端无任何日志、响应中也无错误信息，仅能观察到 signatureValid=false 与未签名的 encoded 值，\"为什么签不出来\"完全无法排查，正是该规则针对的可诊断性损失。建议至少记录日志并显式置失败态。",
+    "enhanced_fix": "为 JWTToken 类添加 @Slf4j（lombok.extern.slf4j.Slf4j），并将 catch 改为：\n```java\n} catch (JoseException e) {\n  log.warn(\"Unable to sign JWT with provided key/header: {}\", e.getMessage());\n  builder.signatureValid(false);\n}\n```"
+  },
+  {
+    "rule_id": "null-java-collection-get",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTToken.java",
+    "line": 178,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.9,
+    "analysis": "178 行 return jsonWebKeySet.getJsonWebKeys().get(0).getKey(); 前一行 177 已有守卫 if (!jsonWebKeySet.getJsonWebKeys().isEmpty())，get(0) 不会触发 IndexOutOfBounds/NPE；jsonWebKeySet 在 166 行由 new JsonWebKeySet(jwksJson) 构造成功（失败会抛 JoseException 被 191 行 catch 捕获返回 false），其 key 列表非 null。已有判空保护，误报。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "log-injection-taint",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/requests/LandingPage.java",
+    "line": 30,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "30 行 log.trace(\"Incoming request for: {}\", request.getRequestURL()) 的 URL 由 HTTP 请求行重建（scheme+host+port+path），请求行语法中 CR/LF 本身就是行终止符，容器解析时即被剔除或拒绝畸形请求，攻击者无法借 getRequestURL() 注入换行伪造日志条目，前提不成立；且为 trace 级别默认不输出。/landing/** 本身是 WebGoat 用来捕获取证请求的端点，记录 URL 属设计功能。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "null-java-method-chain",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/requests/Requests.java",
+    "line": 73,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "73 行 return t.getRequest().getUri().getPath(); 的 traces 全部来自 traceRepository.findAll()，即 WebWolfTraceRepository.add() 入队的对象；而 add() 第 69 行已对同一链 httpTrace.getRequest().getUri().getPath() 先行解引用，若 request/uri 为 null 早在入队时即抛 NPE、该 trace 根本不会入库。且这些 HttpExchange 由 Spring Boot Actuator 从当前 HttpServletRequest 构造，request 与 uri 必然填充非空。上游已阻断空值，链式调用安全。",
+    "enhanced_fix": "无需修改。"
+  },
+  {
+    "rule_id": "null-java-method-chain",
+    "file": "src/main/java/org/owasp/webgoat/webwolf/requests/WebWolfTraceRepository.java",
+    "line": 69,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.8,
+    "analysis": "69 行 httpTrace.getRequest().getUri().getPath()：本类经 WebWolf.java:28 注册为 HttpExchangeRepository Bean（new WebWolfTraceRepository()），add() 的参数由 Spring Boot Actuator 的 HttpExchange 过滤器从当前正在处理的 HttpServletRequest 构造 HttpExchange，request 与 uri 字段在构造路径上由框架强制填充、不会为 null（坏请求在进入过滤器前已被容器拒绝）。消费端 Requests.get() 亦对同一结构安全解引用。无实际 NPE 风险。",
+    "enhanced_fix": "无需修改。"
+  }
+]

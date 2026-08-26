@@ -1,0 +1,47 @@
+# 安全规约 - 命令注入
+# CWE-78: Improper Neutralization of Special Elements used in an OS Command
+# OWASP: A03:2021 - Injection
+# 说明：本文件是 command-injection.md 的静态孪生产物（引擎实时编译
+# taint 规则的导出），供外部直接 semgrep -f 使用。
+
+rules:
+- id: cmdi-taint
+  mode: taint
+  message: 用户可控数据（HTTP 请求参数/头）流入 `Runtime.exec` 或 `ProcessBuilder`。直接拼接命令或参数即任意命令执行（RCE）；`sh -c` 形态下单引号内拼接即可注入任意
+    shell 命令。基于 Semgrep taint 模式做过程内数据流追踪。
+  severity: CRITICAL
+  languages:
+  - java
+  pattern-sources:
+  - pattern: $REQ.getParameter(...)
+  - pattern: $REQ.getHeader(...)
+  - pattern: $REQ.getQueryString()
+  - pattern: $REQ.getInputStream()
+  - pattern: $REQ.getReader()
+  - patterns:
+    - pattern-inside: "@GetMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PostMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@RequestMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PutMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@DeleteMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PatchMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  pattern-sinks:
+  - pattern: (Runtime $R).exec(...)
+  - pattern: Runtime.getRuntime().exec(...)
+  - pattern: new ProcessBuilder(...)
+  pattern-sanitizers:
+  - pattern: $X.cmdFilter(...)
+  metadata:
+    cwe: CWE-78
+    owasp: A03:2021

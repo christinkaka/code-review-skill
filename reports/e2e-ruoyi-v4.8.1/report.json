@@ -1,0 +1,130 @@
+{
+  "scan_info": {
+    "repo": "/tmp/ruoyi-e2e",
+    "base_branch": "v4.8.0",
+    "target_branch": "v4.8.1",
+    "profile": "default",
+    "timestamp": "2026-08-26T19:13:40",
+    "duration_seconds": 4.5
+  },
+  "summary": {
+    "total": 4,
+    "critical": 0,
+    "high": 0,
+    "medium": 2,
+    "low": 2,
+    "by_category": {
+      "implementation": 4
+    },
+    "by_file": {
+      "ruoyi-common/src/main/java/com/ruoyi/common/utils/poi/ExcelUtil.java": 2,
+      "ruoyi-common/src/main/java/com/ruoyi/common/utils/ServletUtils.java": 1,
+      "ruoyi-framework/src/main/java/com/ruoyi/framework/aspectj/LogAspect.java": 1
+    },
+    "by_rule": {
+      "err-java-empty-catch": 2,
+      "naming-java-boolean-vague": 1,
+      "naming-java-constant-case": 1
+    }
+  },
+  "diff_summary": {
+    "files_changed": 0,
+    "insertions": 0,
+    "deletions": 0
+  },
+  "call_graph_summary": {
+    "node_count": 1405,
+    "edge_count": 120181,
+    "affected_methods": 1074
+  },
+  "issues": [
+    {
+      "rule_id": "naming-java-boolean-vague",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "ruoyi-common/src/main/java/com/ruoyi/common/utils/ServletUtils.java",
+      "line": 166,
+      "end_line": 166,
+      "message": "布尔变量名应表达判断语义（如 isActive、found、enabled、hasNext），",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "call_chain": [],
+      "ai_confidence": 0.8,
+      "analysis": "checkAgentIsMobile 方法内声明 boolean flag = false;，随后在遍历 agent 数组匹配 UA 关键词时置 true 并 return flag。flag 是典型无语义布尔名，无法表达\"是否移动端\"的判断结果，方法内 3 处引用均需回读上下文才能理解。该变量为方法局部变量，重命名为 isMobile 无任何外部影响，是零成本的明确可改进点。",
+      "enhanced_fix": "将 ServletUtils.checkAgentIsMobile 中的局部变量重命名：boolean flag = false; 改为 boolean isMobile = false;，第 176 行 flag = true; 改为 isMobile = true;，第 182 行 return flag; 改为 return isMobile;",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 3/3"
+    },
+    {
+      "rule_id": "naming-java-constant-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "ruoyi-common/src/main/java/com/ruoyi/common/utils/poi/ExcelUtil.java",
+      "line": 112,
+      "end_line": 112,
+      "message": "Java 常量（static final 字段）应使用 UPPER_SNAKE_CASE 命名。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "call_chain": [],
+      "ai_confidence": 0.85,
+      "analysis": "第 112 行为 public static final int sheetSize = 66536;（Excel sheet 最大行数常量）。这是真正的 static final 常量却采用 lowerCamelCase 命名，违反常量应使用 UPPER_SNAKE_CASE 的规约。全仓检索该字段仅在 ExcelUtil.java 内部 3 处使用（第 690、733、734 行），无外部类引用，重命名为 SHEET_SIZE 是安全且机械的修复。",
+      "enhanced_fix": "将 ExcelUtil.java:112 改为 public static final int SHEET_SIZE = 65536;，并同步更新第 690 行 int sheetNo = Math.max(1, (int) Math.ceil(list.size() * 1.0 / SHEET_SIZE)); 第 733 行 int startNo = index * SHEET_SIZE; 第 734 行 int endNo = Math.min(startNo + SHEET_SIZE, list.size());",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 3/3"
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "ruoyi-common/src/main/java/com/ruoyi/common/utils/poi/ExcelUtil.java",
+      "line": 1417,
+      "end_line": 1423,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "call_chain": [],
+      "ai_confidence": 0.8,
+      "analysis": "addStatisticsData 方法中 try { temp = Double.valueOf(text); } catch (NumberFormatException e) { } 为完全空白的 catch 块，无注释也无日志。意图是忽略非数字单元格（temp 保持 0D 继续累加），但当导出统计列混入异常文本时，统计结果会静默偏差且无任何排查线索，违反\"捕获异常必须处理或注释说明\"的编码规约。",
+      "enhanced_fix": "在 catch 块补充注释与调试日志：catch (NumberFormatException e) { // 单元格非数字内容，跳过统计（保持 temp=0） log.debug(\"statistics skip non-numeric cell text: {}\", text); }（该类已有 log 成员可直接使用）",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 2/3"
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "ruoyi-framework/src/main/java/com/ruoyi/framework/aspectj/LogAspect.java",
+      "line": 209,
+      "end_line": 216,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "call_chain": [],
+      "ai_confidence": 0.8,
+      "analysis": "argsArrayToString 方法内 try { Object jsonObj = JSONObject.toJSONString(o, excludePropertyPreFilter(excludeParamNames)); params += jsonObj.toString() + \" \"; } catch (Exception e) { } 是空白 catch。操作日志参数序列化失败时（如对象含不可序列化字段、fastjson 循环引用等）会被完全吞掉，运维排查\"为什么操作日志缺参数\"时无任何线索。该处与 ExcelUtil:1417 不同，连意图注释都没有，属真实可改进问题。",
+      "enhanced_fix": "补充异常记录：catch (Exception e) { // 该参数对象序列化失败，跳过不影响其余参数记录 log.warn(\"操作日志参数序列化失败，参数类型: {}\", o.getClass().getName(), e); }（LogAspect 已有 log 成员）",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 3/3"
+    }
+  ]
+}

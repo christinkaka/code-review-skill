@@ -26,6 +26,19 @@ from rule_sandbox import RuleSandbox
 
 logger = logging.getLogger("code-review.rules")
 
+# taint DSL 块名 → 内部结构键。
+# sinks_not / sinks_not_inside 是 sink 排除模式（2026-08-26 表达式注入
+# 规则引入）：构建时以 pattern-not / pattern-not-inside 复合进每个 sink
+# 条目，语义与 pattern 规则的同名块一致——not 为同范围否定，
+# not-inside 要求 sink 命中点位于排除块内。
+_TAINT_BLOCK_KEYS = {
+    "pattern-sources": "sources",
+    "pattern-sinks": "sinks",
+    "pattern-sanitizers": "sanitizers",
+    "pattern-sinks-not": "sinks_not",
+    "pattern-sinks-not-inside": "sinks_not_inside",
+}
+
 
 class MarkdownRuleParser:
     """从 Markdown 文件中解析规则"""
@@ -166,14 +179,56 @@ class MarkdownRuleParser:
                         entry["lang"] = current_lang
                     rule["patterns"].append(entry)
 
+                # 元变量正则约束（2026-08-26 DSL 扩展）：每行 "$VAR: regex"。
+                # 语义与 semgrep metavariable-regex 一致——regex 为全匹配
+                # （anchored）语义，"以 Impl 结尾"须写 ".*Impl" 而非 "Impl$"。
+                # 用途：表达元变量的词法约束（如实现类命名约定），
+                # 替代 "$CLASSImpl" 这类非法元变量（含小写字母，rc=2 静默失效）。
+                elif block_type == "pattern-metavariable-regex":
+                    for raw_line in block_lines:
+                        line_s = raw_line.strip()
+                        if not line_s:
+                            continue
+                        var, sep, regex = line_s.partition(":")
+                        if not sep:
+                            logger.warning(
+                                f"pattern-metavariable-regex 行格式应为 '$VAR: regex': {line_s!r}"
+                            )
+                            continue
+                        var = var.strip()
+                        if not re.fullmatch(r"\$[A-Z_][A-Z_0-9]*", var):
+                            logger.warning(
+                                f"pattern-metavariable-regex 元变量 {var!r} 不合法"
+                                f"（要求 $[A-Z_][A-Z_0-9]*），已跳过"
+                            )
+                            continue
+                        entry = {
+                            "type": "metavariable-regex",
+                            "metavariable": var,
+                            "regex": regex.strip(),
+                        }
+                        if current_lang:
+                            entry["lang"] = current_lang
+                        rule["patterns"].append(entry)
+
                 # taint 数据流块：每行一个独立 pattern
                 # （sources/sinks/sanitizers 是行级条目，不是整体代码片段）
                 elif block_type in (
                     "pattern-sources", "pattern-sinks", "pattern-sanitizers",
+                    "pattern-sinks-not", "pattern-sinks-not-inside",
                 ):
-                    key = block_type[len("pattern-"):]
+                    key = _TAINT_BLOCK_KEYS[block_type]
                     taint = rule.setdefault("taint", {})
                     bucket = taint.setdefault(key, [])
+                    if block_type == "pattern-sinks-not-inside":
+                        # 多行语句序列（含 ... 跨行），整体一个条目，
+                        # 与 pattern-not-inside 块的解析形态一致
+                        if block_content:
+                            entry = {"content": block_content}
+                            if current_lang:
+                                entry["lang"] = current_lang
+                            bucket.append(entry)
+                        continue
                     for raw_line in block_lines:
                         content = raw_line.strip()
                         if not content:
@@ -660,6 +715,7 @@ class RuleEngine:
         pattern_not_list = []
         pattern_not_inside_list = []
         pattern_regex = None
+        mv_regex_list = []
 
         for p in filtered_patterns:
             if p["type"] == "pattern":
@@ -670,9 +726,24 @@ class RuleEngine:
                 pattern_not_inside_list.append(p["content"])
             elif p["type"] == "pattern-regex":
                 pattern_regex = p["content"]
+            elif p["type"] == "metavariable-regex":
+                mv_regex_list.append(
+                    {"metavariable": p["metavariable"], "regex": p["regex"]}
+                )
 
-        # pattern-not-inside 与 pattern-not 一样决定必须使用 patterns 组合形态
-        has_negative = bool(pattern_not_list or pattern_not_inside_list)
+        # pattern-not / pattern-not-inside / metavariable-regex 都要求
+        # patterns 组合形态（不能退化为单 pattern 简写）
+        has_negative = bool(
+            pattern_not_list or pattern_not_inside_list or mv_regex_list
+        )
+
+        def _append_constraints(target: list) -> None:
+            for mvr in mv_regex_list:
+                target.append({"metavariable-regex": mvr})
+            for pn in pattern_not_list:
+                target.append({"pattern-not": pn})
+            for pni in pattern_not_inside_list:
+                target.append({"pattern-not-inside": pni})
 
         # 如果有 pattern-regex，直接使用
         if pattern_regex:
@@ -681,19 +752,13 @@ class RuleEngine:
             semgrep_rule["pattern"] = pattern_list[0]
         elif len(pattern_list) == 1:
             semgrep_rule["patterns"] = [{"pattern": pattern_list[0]}]
-            for pn in pattern_not_list:
-                semgrep_rule["patterns"].append({"pattern-not": pn})
-            for pni in pattern_not_inside_list:
-                semgrep_rule["patterns"].append({"pattern-not-inside": pni})
+            _append_constraints(semgrep_rule["patterns"])
         elif len(pattern_list) > 1:
             # 多个 pattern 用 pattern-either
             semgrep_rule["patterns"] = [
                 {"pattern-either": [{"pattern": p} for p in pattern_list]}
             ]
-            for pn in pattern_not_list:
-                semgrep_rule["patterns"].append({"pattern-not": pn})
-            for pni in pattern_not_inside_list:
-                semgrep_rule["patterns"].append({"pattern-not-inside": pni})
+            _append_constraints(semgrep_rule["patterns"])
 
         if "fix" in rule:
             semgrep_rule["fix"] = rule["fix"]
@@ -780,6 +845,42 @@ class RuleEngine:
                     expanded.append({"pattern": e["content"]})
         return expanded
 
+    def _apply_sink_exclusions(
+        self, sinks: List[Dict], taint: Dict, target_lang
+    ) -> List[Dict]:
+        """把 sinks_not / sinks_not_inside 排除模式复合进每个 sink 条目。
+
+        排除以 sink 复合 patterns 表达：pattern-not 与 sink 同范围否定
+        （如 SpEL 的 SimpleEvaluationContext 参数排除）；pattern-not-inside
+        要求 sink 命中点位于排除块内（如 QLExpress 全局安全策略语句之后
+        的 execute 豁免）。已复合条目（focus 后缀展开）在既有 patterns
+        内追加，语义不变。
+        """
+        nots = taint.get("sinks_not", [])
+        not_insides = taint.get("sinks_not_inside", [])
+        if target_lang:
+            nots = [
+                e for e in nots
+                if not e.get("lang") or e["lang"] == target_lang
+            ]
+            not_insides = [
+                e for e in not_insides
+                if not e.get("lang") or e["lang"] == target_lang
+            ]
+        if not nots and not not_insides:
+            return sinks
+
+        compounded: List[Dict] = []
+        for s in sinks:
+            if "patterns" in s:
+                inner = list(s["patterns"])
+            else:
+                inner = [{"pattern": s["pattern"]}]
+            inner += [{"pattern-not": e["content"]} for e in nots]
+            inner += [{"pattern-not-inside": e["content"]} for e in not_insides]
+            compounded.append({"patterns": inner})
+        return compounded
+
     def _build_taint_rule(
         self, rule: Dict, languages: List[str], rule_id: Optional[str], target_lang
     ) -> Dict:
@@ -804,7 +905,12 @@ class RuleEngine:
                     if not e.get("lang") or e["lang"] == target_lang
                 ]
             if entries:
-                semgrep_rule[f"pattern-{key}"] = self._expand_taint_entries(entries)
+                expanded = self._expand_taint_entries(entries)
+                if key == "sinks":
+                    expanded = self._apply_sink_exclusions(
+                        expanded, rule["taint"], target_lang
+                    )
+                semgrep_rule[f"pattern-{key}"] = expanded
 
         if "fix" in rule:
             semgrep_rule["fix"] = rule["fix"]

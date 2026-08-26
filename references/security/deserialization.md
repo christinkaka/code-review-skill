@@ -44,6 +44,60 @@ $CTX.lookup(...)
 
 ---
 
+# 反序列化漏洞 - SnakeYAML 不安全构造器 load（数据流分析）
+
+> 用户可控数据流入 SnakeYAML `Yaml.load(...)`。默认构造器的 Yaml 允许任意类型实例化（`!!javax.script.ScriptEngineManager` 即远程加载恶意 jar，java-sec-code Rce.java vuln/yarm 同型 PoC），污点直达 load 即反序列化 RCE。基于 Semgrep taint 模式做过程内数据流追踪。
+
+```yaml
+id: deser-yaml-taint
+languages: [java]
+severity: CRITICAL
+cwe: CWE-502
+owasp: A08:2021
+```
+
+## 检测原理
+
+- **污点源**：Servlet 请求参数/头/查询串/输入流 + Spring 入口方法参数
+- **污点汇聚**：`(org.yaml.snakeyaml.Yaml $Y).load(...)`——类型化元变量
+  （Yaml 需显式 import，全限定名有效，同 sqli-taint 的 java.sql.Statement
+  先例；避免 `$Y.load(...)` 撞上其他 load API）
+- **加固豁免**：`new Yaml(new SafeConstructor())` 后的 load 不报——
+  SafeConstructor 限制只实例化基础类型，任意类型构造被禁止。以
+  pattern-sinks-not-inside 表达（QLExpress 全局安全策略同型）：
+  豁免块从安全构造语句跨到 load 调用，包住 sink 命中点
+
+**为何独立规则而非并入 deser-taint**：sink 排除块复合进规则内全部
+sink——SafeConstructor 豁免不应作用于 ObjectInputStream/JNDI sink，
+独立规则语义边界干净。
+
+`new Yaml(); y.load(content)` 命中（默认构造器，任意类型可实例化）；
+`new Yaml(new SafeConstructor()); y.load(content)` 不报（基础类型白名单）；
+`y.load("a: 1")` 常量不报（无污点源）。
+
+## 检测模式
+
+```pattern-sources
+$REQ.getParameter(...)
+$REQ.getHeader(...)
+$REQ.getQueryString()
+$REQ.getInputStream()
+$REQ.getReader()
+spring-entrypoint-param
+```
+
+```pattern-sinks
+(org.yaml.snakeyaml.Yaml $Y).load(...)
+```
+
+```pattern-sinks-not-inside
+new Yaml(new SafeConstructor(...));
+...
+$Y.load(...);
+```
+
+---
+
 # 反序列化漏洞 - Python pickle 不安全反序列化
 
 > 使用 pickle 反序列化不可信数据，攻击者可构造恶意 pickle 数据执行任意代码。

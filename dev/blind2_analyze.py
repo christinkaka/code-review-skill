@@ -11,7 +11,8 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent / "repos" / "java-sec-code"
 FOCUS_RULES = ("path-traversal-taint", "ssrf-taint", "xss-taint", "sqli-taint",
-               "deser-taint", "ssrf-deep-detection", "xxe-deep-detection")
+               "deser-taint", "ssrf-deep-detection", "xxe-deep-detection",
+               "spel-taint", "qlexpress-taint", "script-engine-taint")
 
 MAPPING_RE = re.compile(
     r'@(Get|Post|Put|Delete|Patch|Request)Mapping\s*\(([^)]*)\)')

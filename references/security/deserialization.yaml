@@ -1,48 +1,120 @@
 # 安全规约 - 不安全反序列化
 # CWE-502: Deserialization of Untrusted Data
 # OWASP: A08:2021 - Software and Data Integrity Failures
-# 说明：Java 场景由 deser-taint（数据流分析，含 JNDI lookup 覆盖）接管，
-# 见 deserialization.md。
+# 说明：本文件是 deserialization.md 中反序列化规则的静态孪生产物
+# （引擎实时编译的导出，供外部直接 semgrep -f 使用）：
+# - deser-taint：Java 数据流分析（ObjectInputStream + JNDI lookup）
+# - deser-yaml-taint：SnakeYAML 不安全构造器 load（SafeConstructor 加固豁免）
+# - deser-python-pickle / deser-node-serialize：Python/Node 模式规则
+# 注：deserialization.md 内的 ssrf-deep-detection / xxe-deep-detection
+# 为历史遗留 section（属 SSRF/XXE 语义），不收录本文件。
 
 rules:
-  - id: deser-python-pickle-loads
-    languages: [python]
-    patterns:
-      - pattern: pickle.loads($USER_INPUT)
-    message: >
-      [不安全反序列化] 使用 pickle.loads() 反序列化不可信数据，攻击者可构造恶意
-      pickle 数据执行任意代码。使用 json.loads() 替代，或使用签名验证。
-    severity: CRITICAL
-    category: security
-    metadata:
-      cwe: CWE-502
-      owasp: "A08:2021"
-      confidence: HIGH
+- id: deser-taint
+  mode: taint
+  message: 用户可控数据（HTTP 请求参数/头/流）经赋值、包装传播后流入 Java 反序列化或 JNDI 查找 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。
+  severity: CRITICAL
+  languages:
+  - java
+  pattern-sources:
+  - pattern: $REQ.getParameter(...)
+  - pattern: $REQ.getHeader(...)
+  - pattern: $REQ.getQueryString()
+  - pattern: $REQ.getInputStream()
+  - pattern: $REQ.getReader()
+  - patterns:
+    - pattern-inside: "@GetMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PostMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@RequestMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PutMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@DeleteMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PatchMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  pattern-sinks:
+  - pattern: new ObjectInputStream(...)
+  - pattern: $CTX.lookup(...)
+  metadata:
+    cwe: CWE-502
+    owasp: A08:2021
+- id: deser-yaml-taint
+  mode: taint
+  message: 用户可控数据流入 SnakeYAML `Yaml.load(...)`。默认构造器的 Yaml 允许任意类型实例化（`!!javax.script.ScriptEngineManager`
+    即远程加载恶意 jar，java-sec-code Rce.java vuln/yarm 同型 PoC），污点直达 load 即反序列化 RCE。基于 Semgrep taint 模式做过程内数据流追踪。
+  severity: CRITICAL
+  languages:
+  - java
+  pattern-sources:
+  - pattern: $REQ.getParameter(...)
+  - pattern: $REQ.getHeader(...)
+  - pattern: $REQ.getQueryString()
+  - pattern: $REQ.getInputStream()
+  - pattern: $REQ.getReader()
+  - patterns:
+    - pattern-inside: "@GetMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PostMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@RequestMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PutMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@DeleteMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PatchMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  pattern-sinks:
+  - patterns:
+    - pattern: (org.yaml.snakeyaml.Yaml $Y).load(...)
+    - pattern-not-inside: 'new Yaml(new SafeConstructor(...));
 
-  - id: deser-python-pickle-load
-    languages: [python]
-    patterns:
-      - pattern: pickle.load($FILE)
-    message: >
-      [不安全反序列化] 使用 pickle.load() 从文件反序列化数据。如果文件来源不可信，
-      攻击者可构造恶意 pickle 数据执行任意代码。使用 json.load() 替代。
-    severity: CRITICAL
-    category: security
-    metadata:
-      cwe: CWE-502
-      owasp: "A08:2021"
-      confidence: MEDIUM
+        ...
 
-  - id: deser-node-unserialize
-    languages: [javascript, typescript]
-    patterns:
-      - pattern: serialize.unserialize($USER_INPUT)
-    message: >
-      [不安全反序列化] 使用 node-serialize 的 unserialize() 反序列化不可信数据，
-      可导致远程代码执行。使用 JSON.parse() 替代。
-    severity: CRITICAL
-    category: security
-    metadata:
-      cwe: CWE-502
-      owasp: "A08:2021"
-      confidence: HIGH
+        $Y.load(...);'
+  metadata:
+    cwe: CWE-502
+    owasp: A08:2021
+- id: deser-python-pickle
+  message: 使用 pickle 反序列化不可信数据，攻击者可构造恶意 pickle 数据执行任意代码。
+  severity: CRITICAL
+  languages:
+  - python
+  patterns:
+  - pattern-either:
+    - pattern: pickle.loads($USER_INPUT)
+    - pattern: pickle.load($FILE)
+  metadata:
+    cwe: CWE-502
+    owasp: A08:2021
+- id: deser-node-serialize__javascript
+  message: 使用 node-serialize 或 serialize-to-js 反序列化不可信数据，可导致远程代码执行。
+  severity: CRITICAL
+  languages:
+  - javascript
+  pattern: serialize.unserialize($USER_INPUT)
+  metadata:
+    cwe: CWE-502
+    owasp: A08:2021
+- id: deser-node-serialize__typescript
+  message: 使用 node-serialize 或 serialize-to-js 反序列化不可信数据，可导致远程代码执行。
+  severity: CRITICAL
+  languages:
+  - typescript
+  pattern: serialize.unserialize($USER_INPUT)
+  metadata:
+    cwe: CWE-502
+    owasp: A08:2021

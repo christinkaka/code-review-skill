@@ -1,0 +1,20 @@
+{
+  "total": 4,
+  "critical": 0,
+  "high": 0,
+  "medium": 2,
+  "low": 2,
+  "by_category": {
+    "implementation": 4
+  },
+  "by_file": {
+    "ruoyi-common/src/main/java/com/ruoyi/common/utils/poi/ExcelUtil.java": 2,
+    "ruoyi-common/src/main/java/com/ruoyi/common/utils/ServletUtils.java": 1,
+    "ruoyi-framework/src/main/java/com/ruoyi/framework/aspectj/LogAspect.java": 1
+  },
+  "by_rule": {
+    "err-java-empty-catch": 2,
+    "naming-java-boolean-vague": 1,
+    "naming-java-constant-case": 1
+  }
+}

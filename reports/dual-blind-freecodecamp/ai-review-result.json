@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "xss-js-innerhtml",
+    "file": "packages/challenge-builder/src/transformers.js",
+    "line": 214,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "该赋值位于构建工具链 transformSASS 中：style.innerHTML = await sassWorkerExecutor.execute(style.innerHTML, 5000).done。输入是课程 challenge 的 index.html 中 <style type=\"text/scss\"> 标签内容（仓库内课程文件），经 sass worker 编译为 CSS 后写回由 DOMParser（jsdom）解析出的 DOM 节点，最终经 getHtmlTranspiler 序列化为构建产物字符串。全程 Node.js 构建期执行，无运行时用户输入流入 innerHTML，不构成 DOM 型 XSS。误报。",
+    "enhanced_fix": "无需修复。如需消除扫描噪音，可改用 textContent 写入编译结果：const compiled = await sassWorkerExecutor.execute(style.textContent, 5000).done; style.textContent = compiled;（对 style 标签语义等价），但当前构建场景无实际风险，不建议为此改动构建链路。"
+  },
+  {
+    "rule_id": "xss-js-innerhtml",
+    "file": "packages/challenge-builder/src/transformers.js",
+    "line": 251,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "script.innerHTML = script.innerHTML ? babelTransformCode(options)(script.innerHTML) : '' 是构建期对课程文件内联脚本执行 Babel 转译后写回 jsdom DOM 节点，随后由 getHtmlTranspiler 返回 documentElement.innerHTML 作为构建产物。输入来自版本控制的课程文件而非终端用户请求，执行环境是 Node.js 构建脚本而非浏览器运行时，且挑战代码本就设计为在客户端沙箱 iframe 中执行。无 DOM XSS 向量，误报。",
+    "enhanced_fix": "无需修复。该转译属于构建期设计意图（loop-protect 与 Babel 预编译）。不建议改用 textContent：script 元素的 innerHTML 在此处承载转译后代码并参与后续序列化，改动无收益且有回归风险。"
+  },
+  {
+    "rule_id": "xss-js-innerhtml",
+    "file": "packages/challenge-builder/src/transformers.js",
+    "line": 276,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "embedScript 的 script.innerHTML = script.hasAttribute('defer') ? deferScript(code) : code 中，code 来自调用方 embedFilesInHtml 传入的 scriptJs/indexTs/indexJsx/indexTsx 的 contents，即 challengeFilesToObject 从课程目录解析出的本地文件（仓库内容）。这是 embedFilesInHtml 构建流程的文件嵌入逻辑，数据源全部为受版本控制的课程文件，无网络或用户输入参与，非运行时 DOM XSS。误报。",
+    "enhanced_fix": "无需修复。内容源为受版本控制的课程本地文件，属于构建期嵌入逻辑；若未来课程文件引入外部不可信来源，再评估在客户端 iframe sandbox 层做隔离即可，本处无需改动。"
+  },
+  {
+    "rule_id": "xss-js-innerhtml",
+    "file": "packages/challenge-builder/src/transformers.js",
+    "line": 427,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "style.innerHTML = stylesCss?.contents 位于 embedFilesInHtml 的 embedStylesAndScript：将课程 styles.css（构建产物）注入新建的 <style class=\"fcc-injected-styles\"> 元素，随后返回 documentElement.innerHTML 字符串作为最终构建产物。该 DOM 由 Node.js 端 DOMParser 解析课程 index.html 得到，数据全部来自仓库课程文件，构建期一次性转换，无不可信用户输入流入。误报。",
+    "enhanced_fix": "无需修复。可选防御性改进：style.textContent = stylesCss?.contents ?? ''，用 textContent 替代 innerHTML 并以空串兜底，既消除规则告警，也顺带修复 stylesCss 为 undefined 时 innerHTML 被赋为字符串 'undefined' 的边界瑕疵。"
+  },
+  {
+    "rule_id": "crypto-hardcoded-key",
+    "file": "tools/challenge-parser/parser/plugins/utils/i18n-stringify.js",
+    "line": 7,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.98,
+    "analysis": "第 7 行 const BLANK_TOKEN = 'BLANK' 是填空题文本中的占位标记字面量，仅用于第 15-18 行拼装 HANZI_PINYIN_REGEX 正则，配合 BLANK_TOKEN|PUNCTUATION|OTHER_TEXT 分支切分汉字注音、BLANK、标点与拉丁文本片段。值 'BLANK' 是公开的语法占位符，并非密码、API Key、签名密钥或任何凭证，无机密性可言。变量名中的 TOKEN 触发了规则的模式匹配，属命名巧合导致的误报。",
+    "enhanced_fix": "无需修复。若要降低后续扫描噪音，可将其重命名为 BLANK_PLACEHOLDER：const BLANK_PLACEHOLDER = 'BLANK'; 并同步第 16 行模板字符串 `${BLANK_TOKEN}` 为 `${BLANK_PLACEHOLDER}`，语义不变且不再命中 token 类规则。"
+  },
+  {
+    "rule_id": "path-write-traversal",
+    "file": "tools/scripts/seed-exams/add-nano-ids.js",
+    "line": 54,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.98,
+    "analysis": "第 54 行 writeFileSync(examPath, yamlStr, 'utf8') 的 examPath 是第 12 行硬编码的相对路径常量 './exams/example-certification-exam.yml'，上方注释明确说明这是开发者需手动改路径的一次性维护脚本。脚本先用 readFileSync 从同一 examPath 读入 YAML，补齐 questions/wrongAnswers/correctAnswers 的 nano id 后原路写回。路径不含任何用户、网络或命令行输入拼接，不存在 ../ 穿越，且无对外暴露面。误报。",
+    "enhanced_fix": "无需修复。若未来将 examPath 参数化（如 process.argv），可加白名单校验防止越界写入：const resolved = path.resolve(examPath); if (!resolved.startsWith(path.resolve('./exams') + path.sep)) throw new Error('exam path outside exams dir'); writeFileSync(resolved, yamlStr, 'utf8')。当前硬编码常量场景无需改动。"
+  }
+]

@@ -221,15 +221,14 @@ id: arch-java-missing-api-layer
 languages: [java]
 severity: WARNING
 category: design
-enabled: false
 ```
 
-> 2026-08-26 禁用（java-sec-code 盲测期间发现）：原 pattern
-> `import com.$ORG.$MODULE.$CLASSImpl;` 中 `$CLASSImpl` 含小写字母，
-> 不是合法 semgrep 元变量（要求 `$[A-Z_][A-Z_0-9]*`），整条规则自
-> 创建起 rc=2 解析失败从未生效，且每次全量扫描产生"Semgrep 异常退出"
-> 噪声。正确表达"类名以 Impl 结尾"需要 metavariable-regex
-> （DSL 暂不支持），待 DSL 扩展后重新启用。
+> 2026-08-26 复活：原 pattern `import com.$ORG.$MODULE.$CLASSImpl;` 中
+> `$CLASSImpl` 含小写字母，不是合法 semgrep 元变量（要求
+> `$[A-Z_][A-Z_0-9]*`），整条规则自创建起 rc=2 解析失败从未生效。
+> 现改用合法元变量 `$CLASS` + `pattern-metavariable-regex` 约束
+> （"以 Impl 结尾"须写 `.*Impl`——semgrep metavariable-regex 是
+> 全匹配 anchored 语义，`Impl$` 会被锚定为字面量 "Impl" 导致零命中）。
 
 ## 问题说明
 
@@ -270,7 +269,11 @@ public class OrderService {
 ## 检测模式
 
 ```pattern
-import com.$ORG.$MODULE.$CLASSImpl;
+import com.$ORG.$MODULE.$CLASS;
+```
+
+```pattern-metavariable-regex
+$CLASS: .*Impl
 ```
 
 ---

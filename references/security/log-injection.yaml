@@ -1,30 +1,11 @@
 # 安全规约 - 日志注入
 # CWE-117: Improper Output Neutralization for Logs
 # OWASP: A09:2021 - Security Logging and Monitoring Failures
+# 说明：Java 场景由 log-injection-taint（数据流分析，含 request 对象
+# 经不透明辅助调用传播、SLF4J 参数化占位不净化等实证行为）接管，
+# 见 log-injection.md。Python pattern 规则保留。
 
 rules:
-  - id: log-injection-java
-    languages: [java]
-    pattern-either:
-      - pattern: |
-          log.info($USER_INPUT)
-      - pattern: |
-          log.debug($USER_INPUT)
-      - pattern: |
-          log.warn($USER_INPUT)
-      - pattern: |
-          log.error($USER_INPUT)
-    message: >
-      [日志注入] 用户输入直接写入日志，攻击者可注入伪造日志条目
-      （如换行符 + 虚假日志内容），干扰日志分析和审计。
-      对用户输入进行日志转义或过滤。
-    severity: WARNING
-    category: security
-    metadata:
-      cwe: CWE-117
-      owasp: "A09:2021"
-      confidence: LOW
-
   - id: log-injection-python
     languages: [python]
     pattern-either:

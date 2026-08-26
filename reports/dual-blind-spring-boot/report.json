@@ -3,19 +3,25 @@
     "repo": "Spring Boot",
     "repo_path": "repos/spring-boot",
     "profile": "default",
-    "timestamp": "2026-08-26 08:45:42",
-    "duration_seconds": 5.09,
+    "timestamp": "2026-08-26 15:39:23",
+    "duration_seconds": 11.86,
     "test_type": "dual-blind"
   },
   "summary": {
-    "total": 0,
+    "total": 1,
     "critical": 0,
     "high": 0,
-    "medium": 0,
+    "medium": 1,
     "low": 0,
-    "by_category": {},
-    "by_file": {},
-    "by_rule": {}
+    "by_category": {
+      "implementation": 1
+    },
+    "by_file": {
+      "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/Image.java": 1
+    },
+    "by_rule": {
+      "err-java-empty-catch": 1
+    }
   },
   "diff_summary": {
     "files_changed": 0,
@@ -27,5 +33,25 @@
     "edge_count": 0,
     "affected_methods": []
   },
-  "issues": []
+  "issues": [
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/Image.java",
+      "line": 155,
+      "end_line": 160,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "ai_confidence": 0.7,
+      "analysis": "第159-160行 `catch (RuntimeException ex) { }` 为完全空块，无注释无日志，与同模块 PemPrivateKeyParser 中带 `// Ignore` 注释的刻意忽略形成鲜明对比。捕获范围过宽（RuntimeException 会连带吞掉 NPE 等真实 bug）；当首个 RepoDigest 畸形导致 ImageReference.of 抛 IllegalArgumentException 时被静默吞掉，getPrimaryDigest() 返回 null，Builder 第119-120行随即静默回退为 tag 方式引用 run image（可变引用而非 digest 锁定），全程零诊断信息，排查困难，需修复。",
+      "enhanced_fix": "if (!CollectionUtils.isEmpty(this.digests)) {\n    try {\n        String digest = this.digests.get(0);\n        return (digest != null) ? ImageReference.of(digest).getDigest() : null;\n    }\n    catch (IllegalArgumentException ex) {\n        // RepoDigest is not a valid image reference; fall back to a null digest\n        // so that the caller keeps the tag-based run image reference\n    }\n}\nreturn null;\n// 收窄异常类型至 Assert 实际抛出的 IllegalArgumentException，避免吞掉 NPE 等真实缺陷，并补充注释说明回退语义",
+      "is_false_positive": false
+    }
+  ]
 }

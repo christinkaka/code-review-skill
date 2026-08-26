@@ -1,0 +1,21 @@
+rules:
+- id: redirect-pattern-2
+  languages:
+  - java
+  message: 用户可控 URL 参数未经白名单校验直接流入 `sendRedirect`，导致钓鱼攻击或凭证泄露。
+  metadata:
+    cwe: CWE-601
+    owasp: A01:2021
+  patterns:
+  - pattern: 'String $URL = $REQ.getParameter(...);
+
+      ...
+
+      $RESP.sendRedirect($URL);'
+  - pattern-not: "String $URL = $REQ.getParameter(...);\n...\nif (isAllowedDomain($URL))\
+      \ {\n  ...\n  $RESP.sendRedirect($URL);\n}"
+  - pattern-not: "String $URL = $REQ.getParameter(...);\n...\nif ($URL.startsWith(...))\
+      \ {\n  ...\n  $RESP.sendRedirect($URL);\n}"
+  - pattern-not: "String $URL = $REQ.getParameter(...);\n...\nif ($CHECK($URL) ==\
+      \ null) {\n  ...\n  return;\n}\n...\n$RESP.sendRedirect($URL);"
+  severity: HIGH

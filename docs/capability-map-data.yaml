@@ -1,0 +1,150 @@
+# 能力地图薄数据层（人工维护的唯一部分）
+# 规则明细（id/severity/语言/taint形态/e2e覆盖/孪生yaml）由
+# scripts/gen_capability_map.py 从规则库自动推导，本文件只登记
+# 自动推导无法获知的两层信息：
+#   quality_level —— 该类别的质量阶梯等级（L0-L3，判定标准见 blueprint.md）
+#   blind_test   —— 靶场验证凭证（target: TP/FP 记录或 null）
+# 更新时机：每完成一批规则（批次 SOP 第 8 步），只改本文件 + 重跑生成器。
+
+categories:
+  - cwe: CWE-89
+    name: SQL 注入
+    owasp: A03
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "taint 4 TP + 0 FP（JDBC/JPA 全中，PreparedStatement 加固豁免）"
+      target2: WebGoat
+      result2: "sqli-taint 2 TP + 0 FP（Assignment5/SqlInjectionChallenge 经典拼接全中）"
+  - cwe: CWE-22
+    name: 路径穿越
+    owasp: A01
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "taint 全 vuln 中，normalize 加固豁免"
+      target2: WebGoat
+      result2: "path-traversal-taint 3 TP + 0 FP + pattern 1 TP（weak-filter）"
+      target3: freeCodeCamp
+      result3: "0 FP（2026-08-26 禁用 path-traversal-pattern 字面量规则，消除 120 条 require('../') 误报）"
+  - cwe: CWE-918
+    name: SSRF
+    owasp: A10
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "openStream 型检出；SSRFChecker 安全控件零误报"
+  - cwe: CWE-611
+    name: XXE
+    owasp: A05
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "工厂级+reader级加固豁免（pattern-not-inside 实证）"
+  - cwe: CWE-79
+    name: XSS
+    owasp: A03
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "xss-taint 检出，encode 净化豁免"
+      target2: WebGoat
+      result2: "xss-taint 1 TP（Ping.java stored XSS via log file）"
+      target3: freeCodeCamp
+      result3: "xss-js-innerhtml 4 TP + 0 FP（transformers.js innerHTML 赋值全中）"
+  - cwe: CWE-502
+    name: 不安全反序列化
+    owasp: A08
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "Shiro-550 五层调用链命中；SnakeYAML SafeConstructor 豁免"
+      target2: WebGoat
+      result2: "deser-taint 1 TP（InsecureDeserializationTask Base64→readObject 全链路）"
+  - cwe: CWE-78
+    name: 命令注入
+    owasp: A03
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "5 TP + 0 FP（含 TomcatFilterMemShell 内存马 RCE 点）"
+      target2: WebGoat
+      result2: "priv-java-runtime-exec 1 TP（VulnerableTaskHolder 反序列化→exec）"
+  - cwe: CWE-94/95/917
+    name: 表达式/代码注入
+    owasp: A03
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "SpEL/QLExpress/ScriptEngine 5 TP + 0 FP，加固形态豁免"
+  - cwe: CWE-117
+    name: 日志注入
+    owasp: A09
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "36 检出全为真实用户数据流（pattern 版仅 2 且含常量误报）"
+      target2: WebGoat
+      result2: "log-injection-taint 6 TP + 0 FP（跨课程覆盖：XXE/Crypto/Deser/WebWolf）"
+  - cwe: CWE-798
+    name: 硬编码凭证
+    owasp: A07
+    quality_level: L3
+    blind_test:
+      target: WebGoat
+      result: "crypto-hardcoded-key 22 TP + 0 FP（密码/JWT密钥/API Key/盐值/令牌全覆盖）"
+      target2: freeCodeCamp
+      result2: "0 FP（2026-08-26 最小长度 8 字符降噪，消除 BLANK_TOKEN='BLANK' 误报）"
+  - cwe: CWE-327/328
+    name: 弱加密/弱哈希
+    owasp: A02
+    quality_level: L2
+    blind_test: null
+  - cwe: CWE-330
+    name: 弱随机数
+    owasp: A02
+    quality_level: L3
+    blind_test:
+      target: WebGoat
+      result: "crypto-weak-random-java 11 TP + 0 FP（PIN/会话ID/JWT密钥/CSRF flag/密码重置全覆盖）"
+  - cwe: CWE-601
+    name: 开放重定向
+    owasp: A01
+    quality_level: L3
+    blind_test:
+      target: java-sec-code
+      result: "redirect-pattern-2 1 TP + 0 FP（URLRedirect.java:55 sendRedirect 命中，:85 SecurityUtil.checkURL 白名单豁免）"
+  - cwe: CWE-1336
+    name: SSTI 模板注入
+    owasp: A03
+    quality_level: L2
+    blind_test:
+      target: null
+      result: "2026-08-26 新增 flask-ssti-render-template-string + python-jinja2-ssti 规则，待盲测验证"
+
+# ---- 以下为待扩展格（L0）：有明确 CVE/CWE 归属但无规则 ----
+planned:
+  - cwe: CWE-502
+    name: Fastjson/XStream 反序列化（补全）
+    owasp: A08
+    batch: 阶段一 A3
+  - cwe: CWE-93
+    name: CRLF 注入
+    owasp: A03
+    batch: 阶段一 A4（覆盖确认）
+  - cwe: CWE-352
+    name: CSRF
+    owasp: A01
+    batch: 阶段一 B1（Top25 第 3，误报风险高先 PoC）
+  - cwe: CWE-942
+    name: CORS 过宽
+    owasp: A05
+    batch: 阶段一 B2
+  - cwe: CWE-614
+    name: Cookie 安全属性缺失
+    owasp: A05
+    batch: 阶段一 B3
+  - cwe: CWE-470
+    name: 不安全反射/类加载
+    owasp: A03
+    batch: 待评估（泛化性差风险）

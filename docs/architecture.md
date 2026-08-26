@@ -1,5 +1,27 @@
 # 架构设计
 
+> [首页](../README.md) / [文档索引](README.md) / **架构设计**
+>
+> 本文档是 Code Review Skill 的深度技术参考，涵盖工作流、技术选型、多引擎融合、AI 评审层、双盲验证方法论。
+> 如需快速了解项目特色和使用方式，请先阅读 [README](../README.md)。
+>
+> 四大核心机制（规则 / 扫描 / AI 审核 / 测试）的设计原理与理论依据已拆分为独立文档：
+> [规则机制](mechanisms/rule-mechanism.md) · [扫描机制](mechanisms/scan-mechanism.md) · [AI 审核](mechanisms/ai-review.md) · [测试体系](mechanisms/testing.md)
+
+---
+
+## 目录
+
+- [工作流概览](#工作流概览)
+- [技术栈](#技术栈)
+- [多引擎融合架构](#多引擎融合架构)
+- [工作空间机制](#工作空间机制)
+- [架构总览](#架构总览)
+- [各层实现原理详解](#各层实现原理详解)
+- [项目结构](#项目结构)
+- [能力域地图](#能力域地图)
+- [双盲验证方法论](#双盲验证方法论)
+
 ---
 
 ## 工作流概览
@@ -481,6 +503,107 @@ java-sec-code 最终：taint 规则 11 检出全真阳性零误报（Shiro-550�
 漏检（SSRF 7 个 vuln 方法、PathTraversal 1 个）与 hello-world 结论
 一致，泛化验证成立。详见 `docs/blind-test-java-sec-code.md`。
 
+### log-injection taint 平移（2026-08-26 第五批）
+
+`log-injection-taint`（WARNING）接管 Java 日志注入场景（原
+log-injection-java 模式规则删除，Python 模式规则提升为独立规则
+log-injection-python 保留）：
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/查询串/输入流 + Spring 入口方法参数（request 对象本身为源） |
+| 污点汇聚 | SLF4J 五级日志调用（`$LOG.info/debug/warn/error/trace`） |
+| 净化器 | 换行剥离（`replaceAll("[\n\r]", ...)` 两种源码拼写）、OWASP Encoder（Encode.forHtml） |
+
+**关键设计点**：
+- sink 用方法名元变量 `$LOG.xxx(...)` 而非字面 `log.`——靶场实测两类
+  接收者命名（`log`/`logger`）并存，字面 `log.` 漏掉全部 `logger.` 调用
+- SLF4J 参数化占位（`log.info("{}", x)`）仍报：占位符机制不做 CRLF 转义，
+  未净化实参原样落入日志输出
+- 净化器精确字面匹配：`replaceAll("a","b")` 类无关替换不视为净化（实测仍报）
+
+验证结果（真实 semgrep，见 `tests/test_log_injection_e2e.py`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| 拼接 / 参数化 / logger 接收者 / 入口参数直入 | 报出 | ✅ 5 TP |
+| request 经不透明辅助调用（WebUtils.getRequestBody 同型） | 报出 | ✅ 报出 |
+| 两种 replaceAll 拼写 / Encode.forHtml | 不报 | ✅ 零误报 |
+| 常量日志 / 异常消息 / 环境属性 | 不报 | ✅ 零误报 |
+| java-sec-code 全量（pattern 版 2 命中且无法区分常量） | — | ✅ 36 检出全为真实用户数据流（含 Log4j.java Log4Shell PoC 端点） |
+
+### 命令注入与 SnakeYAML 规则扩展（2026-08-26 第六批）
+
+盲测缺口驱动的两条新 taint 规则（java-sec-code Rce.java / CommandInject.java
+此前零规则检出）：
+
+**cmdi-taint**（CRITICAL，CWE-78）——命令执行三形态 sink：
+
+| 要素 | 覆盖 |
+|------|------|
+| 污点源 | 请求参数/头/查询串/输入流 + Spring 入口方法参数 |
+| 污点汇聚 | `(Runtime $R).exec(...)`（声明 receiver）、`Runtime.getRuntime().exec(...)`（链式）、`new ProcessBuilder(...)`（构造器，含数组初始化器内拼接） |
+| 净化器 | 约定式命令过滤 `$X.cmdFilter(...)` |
+
+**deser-yaml-taint**（CRITICAL，CWE-502）——SnakeYAML 不安全构造器 load，
+`new Yaml(new SafeConstructor())` 加固以 pattern-sinks-not-inside 豁免。
+独立规则而非并入 deser-taint：sink 排除块复合进规则内全部 sink，
+SafeConstructor 豁免不应作用于 ObjectInputStream/JNDI sink。
+
+两个新的普适技术点（PoC 实证）：
+
+1. **类型化元变量的隐式导入陷阱**：`(java.lang.Runtime $R)` 全限定名
+   零命中——java.lang 是隐式导入，代码声明写 `Runtime`，semgrep 不做
+   隐式导入解析；简单名 `(Runtime $R)` 命中。与 sqli-taint 的
+   `java.sql.Statement` 相反（显式 import 场景全限定名有效）。判据：
+   该类型在目标代码中是否需要 import。
+2. **sanitizer 方法调用须带 receiver 元变量**：`cmdFilter(...)` 不匹配
+   静态调用 `SecurityUtil.cmdFilter(...)`——semgrep 方法调用 pattern
+   默认全匹配含 receiver，须写 `$X.cmdFilter(...)`。
+
+验证结果（真实 semgrep，见 `tests/test_command_injection_e2e.py`、
+`tests/test_taint_e2e.py::TestDeserTaintE2E::test_snakeyaml_taint_tp_and_tn`）：
+
+| 场景 | 期望 | 实测 |
+|------|------|------|
+| 声明 receiver / 链式 exec / 数组内联拼接 / 污点数组 / header 拼接 | 报出 | ✅ 5 TP |
+| cmdFilter 净化 / 常量命令（含 main 方法） | 不报 | ✅ 零误报 |
+| SnakeYAML 默认构造器 load | 报出 | ✅ 报出 |
+| SafeConstructor 加固 / 常量内容 | 不报 | ✅ 零误报 |
+| java-sec-code 全量 | — | ✅ cmdi-taint 5 TP + 0 FP（4 个 vuln + TomcatFilterMemShell 内存马 doFilter 中 getParameter("cmd_")→exec 真实 RCE 点）；deser-yaml-taint 1 TP + 0 FP |
+
+已知边界：WebSocket 端点（@ServerEndpoint）入口不在 spring-entrypoint-param
+锚定清单，WebSocketsCmdEndpoint 的命令执行漏报——入口点类型扩展需单独评估
+（不同于 Spring MVC 语义）。
+
+### 过程间污点边界实证测绘（2026-08-26）
+
+**Semgrep OSS 严格过程内**（同文件同类亦不跨方法），PoC 四象限实证：
+
+| 场景 | 结果 | 说明 |
+|------|------|------|
+| 源在被调方法内，汇在调用方 | ❌ 漏报 | 污点不随被调方法返回值流出 |
+| 汇在被调方法内（污点实参传入） | ❌ 漏报 | 污点不进入被调方法体 |
+| 字段间接传递（写读分离两方法） | ❌ 漏报 | 跨方法字段读写不追踪 |
+| 不透明调用含污点实参（`String.valueOf(tainted)`、`helper(request)`） | ✅ 检出 | 保守传播，覆盖入口点对象传入 helper 后取返回值的常见形态 |
+
+**入口点对象源的关键细分**：入口点方法的 `HttpServletRequest` 参数本身
+是污点源，传入任意 helper 后其返回值被污染（java-sec-code XXE.java 的
+`WebUtils.getRequestBody(request)` 检出实证）——因此真实缺口比"所有跨
+方法流"窄：仅限 (a) 汇在被调方法内、(b) 源在被调方法内且调用方非入口点。
+
+**激进源标记阴性实验**（"Service 层保守源标记"方案证伪）：把所有方法
+参数追加为污点源跑 java-sec-code——找回 2 个委托 sink（HttpUtils.java
+URLConnection/HttpURLConnection），**但 SSRFChecker.java:74 安全控件
+误报复活**（SSRF 白名单校验器自身发起出站验证请求，静态形态与 HttpUtils
+委托无差别）。vuln 与 sec 端点**共享同一 helper**，防护差异仅在调用方的
+运行时 hook（startSSRFHook）上下文——静态调用图同样不可区分。该方案
+破坏 taint 零误报核心优势，否决。
+
+**结论**：过程间能力需 Semgrep Pro（interprocedural/interfile）；OSS
+边界内的最优解即当前"入口点锚定 + 过程内数据流"架构，跨方法委托场景
+依赖 AI 复审层（CRITICAL/HIGH 精审）补位。
+
 
 
 ---
@@ -912,5 +1035,175 @@ code-review-skill/
 | 定期扫描调度 | ✅ 内置 Cron | ⚠️ 需外部 | ✅ GitHub | ✅ 内置 | ❌ 需外部 |
 
 ---
+
+## 双盲验证方法论
+
+### 为什么需要双盲验证
+
+安全规则的核心风险是**「自证清白」**——规则编写者同时担任验证者，容易陷入确认偏误：
+- 测试用例由规则作者编写，天然覆盖规则设计意图，但不覆盖规则盲区
+- E2E 测试通过只证明「规则在预期场景下工作」，不证明「规则在未知场景下不误报」
+- 单一靶场的漏洞模式可能恰好匹配规则 pattern，无法检验泛化能力
+
+因此引入**「靶场 + 投票」双盲验证**作为质量阶梯 L3 的必要条件。
+
+### 方法论框架
+
+```
+                    ┌─────────────────────────────────────┐
+                    │         双盲验证框架                   │
+                    └──────────────┬──────────────────────┘
+                                   │
+              ┌────────────────────┼────────────────────┐
+              ▼                    ▼                     ▼
+     ┌────────────────┐  ┌────────────────┐   ┌────────────────┐
+     │  第一盲：靶场泛化  │  │  第二盲：多评审员 │   │  收敛：质量判定  │
+     │  (Generalization) │  │  (Consistency)  │   │  (Adjudication) │
+     └────────┬───────┘  └────────┬───────┘   └────────┬───────┘
+              │                    │                     │
+              ▼                    ▼                     ▼
+     规则作者未知的代码库    独立评审员背靠背判定      TP/FP 精确率 ≥ 95%
+     零先验知识扫描         计算 Cohen's Kappa        方可晋升 L3
+```
+
+### 第一盲：靶场泛化验证
+
+**核心思想**：将规则应用于规则作者**未参与编写**的代码库，检验泛化能力。
+
+#### 靶场选型标准
+
+| 维度 | 要求 | 本工具集选型 |
+|------|------|-------------|
+| 漏洞覆盖 | 包含 CWE Top 25 中 ≥ 5 类 | WebGoat（Spring Boot, 覆盖 SQLi/XSS/Path/Deser/Crypto） |
+| 代码规模 | ≥ 100 个 Java 源文件 | WebGoat ~350 个 Java 文件 |
+| 真实度 | 非玩具代码，有业务逻辑干扰 | WebGoat 含完整 Spring Boot 业务层 |
+| 独立性 | 规则作者未参与编写 | ✅ WebGoat 为 OWASP 社区项目 |
+| 可复现 | 公开仓库，版本固定 | gitcode 镜像 + 版本锁定 |
+
+#### 执行流程
+
+```
+1. 克隆靶场 → repos/webgoat/
+2. 规则引擎编译全部安全规则（不针对靶场做任何调整）
+3. semgrep --quiet 全量扫描
+4. 逐条记录检出（文件:行号 + 规则 ID + 消息）
+5. 对照源码逐条判定 TP/FP
+6. 计算精确率 = TP / (TP + FP)
+7. 记录漏报（已知漏洞未被检出）
+```
+
+#### WebGoat 盲测结果（2026-08-26）
+
+| 指标 | 数值 |
+|------|------|
+| 编译规则 | 91 条安全规则（13 taint + 78 pattern） |
+| 总检出 | 49 |
+| TP | 48 |
+| FP | 1（sig-java-verify-skip，已修复） |
+| **精确率** | **97.96%** |
+| 覆盖规则 | 11 / 91 |
+| 晋升 L3 | 8 条规则（crypto-hardcoded-key, crypto-weak-random-java, sqli-taint, xss-taint, deser-taint, path-traversal-taint, log-injection-taint, priv-java-runtime-exec） |
+
+#### 盲测驱动的规则修复
+
+盲测中发现的 FP 直接驱动了规则改进：
+
+| 规则 | FP 原因 | 修复方案 |
+|------|---------|---------|
+| sig-java-verify-skip | semgrep `pattern-not` 跨行 `...` 省略号中 metavariable 绑定与 `pattern` 不一致 | 改为方法级匹配：`$RETURNTYPE $METHOD(...) { ... }` + `pattern-not` 检测同方法内 verify 调用 |
+
+### 第二盲：多评审员一致性验证
+
+**核心思想**：多个独立评审员对同一代码段背靠背判定，计算一致性系数。
+
+#### 投票机制设计
+
+```
+                    ┌──────────┐
+                    │ 代码片段   │
+                    └─────┬────┘
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+         ┌─────────┐ ┌─────────┐ ┌─────────┐
+         │评审员 A  │ │评审员 B  │ │评审员 C  │
+         │(子Agent) │ │(子Agent) │ │(子Agent) │
+         │temp=0.1  │ │temp=0.1  │ │temp=0.1  │
+         └────┬────┘ └────┬────┘ └────┬────┘
+              │           │           │
+              ▼           ▼           ▼
+         {TP,FP,TP}  {TP,TP,TP}  {TP,FP,TP}
+              │           │           │
+              └───────────┼───────────┘
+                          ▼
+                   ┌──────────────┐
+                   │ 多数投票判定   │
+                   │ majority: TP  │
+                   │ agreement: 2/3│
+                   └──────────────┘
+```
+
+#### 一致性度量
+
+- **Cohen's Kappa (κ)**：两名评审员的一致性系数，排除随机一致
+  - κ > 0.8：几乎完美一致
+  - κ = 0.6-0.8：实质性一致
+  - κ < 0.6：需改进规则或判定标准
+- **Fleiss' Kappa**：多名评审员的扩展版本
+
+#### 投票模式配置
+
+```yaml
+# config.yaml
+voting:
+  enabled: true
+  votes: 3              # 投票轮次
+  temperature: 0.1      # 低温度确保严谨
+  consensus: majority   # 多数票胜出
+  min_kappa: 0.6        # 最低一致性阈值
+```
+
+### 靶场 + 投票的协同优势
+
+| 维度 | 仅 E2E 测试 | 仅靶场盲测 | 仅投票 | **靶场 + 投票** |
+|------|------------|-----------|--------|---------------|
+| 覆盖已知漏洞 | ✅ | ✅ | ✅ | ✅ |
+| 覆盖未知漏洞 | ❌ | ✅ | ❌ | ✅ |
+| 检测误报 | ❌ | ✅ | ✅ | ✅ |
+| 检测漏报 | ❌ | ✅ | ❌ | ✅ |
+| 判定一致性 | N/A | 单人 | ✅ | ✅（多人+多靶场） |
+| 规则改进驱动 | 弱 | 强 | 中 | **最强** |
+| 方法论可信度 | 低 | 中 | 中 | **高** |
+
+**核心优势**：
+1. **反确认偏误**：靶场代码非规则作者编写，消除「自己验证自己」的偏差
+2. **泛化检验**：规则在未见代码上的表现才是真实能力
+3. **FP 零容忍**：盲测 FP 直接驱动规则修复（如 sig-java-verify-skip）
+4. **量化质量**：精确率 + Kappa 系数提供客观质量度量，取代主观判断
+5. **持续回归**：每次规则变更后重跑盲测，确保改进不引入新问题
+
+### 质量阶梯与验证阶段的关系
+
+```
+L0 (未覆盖)  →  L1 (可解析)  →  L2 (E2E 测试)  →  L3 (盲测通过)
+   │                │                │                  │
+   │                │                │                  ├─ 靶场精确率 ≥ 95%
+   │                │                │                  ├─ FP = 0 或已修复
+   │                │                │                  └─ 投票 Kappa ≥ 0.6
+   │                │                │
+   │                │                ├─  golden test 全通过
+   │                │                └─  TP/TN 断言覆盖
+   │                │
+   │                ├─  semgrep 可解析
+   │                └─  无语法错误
+   │
+   └─  spec 已登记
+```
+
+### 盲测报告归档
+
+- 报告路径：`docs/blind-test-{target}.md`
+- 数据更新：`docs/capability-map-data.yaml`（blind_test 字段）
+- 自动推导：`scripts/gen_capability_map.py` 读取 data.yaml 生成能力地图
 
 

@@ -40,22 +40,29 @@ cwe: CWE-345
 
 ## 检测模式
 
+> 2026-08-26 WebGoat 盲测修正：原 pattern/pattern-not 组合因 semgrep
+> 跨行 `...` 省略号在 pattern-not 中 metavariable 绑定不一致，导致
+> CryptoUtil.java（含完整 verify 调用）被误报。
+> 修正为方法级匹配：检测包含 initVerify+update 但缺少 verify 的方法。
+
 ```pattern
-Signature $SIG = ...;
-...
-$SIG.initVerify(...);
-...
-$SIG.update(...);
+$RETURNTYPE $METHOD(...) {
+  ...
+  Signature $SIG = ...;
+  ...
+  $SIG.initVerify(...);
+  ...
+  $SIG.update(...);
+  ...
+}
 ```
 
 ```pattern-not
-Signature $SIG = ...;
-...
-$SIG.initVerify(...);
-...
-$SIG.update(...);
-...
-if (!$SIG.verify(...)) { ... }
+$RETURNTYPE $METHOD(...) {
+  ...
+  $SIG.verify(...);
+  ...
+}
 ```
 
 ---

@@ -1,10 +1,28 @@
 {
-  "total": 0,
+  "total": 10,
   "critical": 0,
   "high": 0,
-  "medium": 0,
+  "medium": 10,
   "low": 0,
-  "by_category": {},
-  "by_file": {},
-  "by_rule": {}
+  "by_category": {
+    "implementation": 9,
+    "unknown": 1
+  },
+  "by_file": {
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/ssl/PemPrivateKeyParser.java": 2,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/TotalProgressListener.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/transport/DockerConnectionException.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/ContainerStatus.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/Image.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/ImageArchiveIndex.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/Manifest.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/ManifestList.java": 1,
+    "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/RandomString.java": 1
+  },
+  "by_rule": {
+    "null-java-unwrap-boxed": 5,
+    "err-java-empty-catch": 3,
+    "null-java-method-chain": 1,
+    "crypto-weak-random-java": 1
+  }
 }

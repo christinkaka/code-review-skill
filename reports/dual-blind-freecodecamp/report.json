@@ -3,27 +3,19 @@
     "repo": "freeCodeCamp",
     "repo_path": "repos/freeCodeCamp",
     "profile": "default",
-    "timestamp": "2026-08-26 08:45:33",
-    "duration_seconds": 5.79,
+    "timestamp": "2026-08-26 15:39:06",
+    "duration_seconds": 11.14,
     "test_type": "dual-blind"
   },
   "summary": {
-    "total": 2,
+    "total": 0,
     "critical": 0,
     "high": 0,
-    "medium": 2,
+    "medium": 0,
     "low": 0,
-    "by_category": {
-      "unknown": 2
-    },
-    "by_file": {
-      "tools/challenge-parser/parser/plugins/utils/i18n-stringify.js": 1,
-      "tools/challenge-parser/parser/tools/full-parse.js": 1
-    },
-    "by_rule": {
-      "crypto-hardcoded-key": 1,
-      "path-traversal-pattern": 1
-    }
+    "by_category": {},
+    "by_file": {},
+    "by_rule": {}
   },
   "diff_summary": {
     "files_changed": 0,
@@ -35,44 +27,5 @@
     "edge_count": 0,
     "affected_methods": []
   },
-  "issues": [
-    {
-      "rule_id": "crypto-hardcoded-key",
-      "category": "unknown",
-      "severity": "HIGH",
-      "file": "tools/challenge-parser/parser/plugins/utils/i18n-stringify.js",
-      "line": 7,
-      "end_line": 7,
-      "message": "密码、密钥、令牌等敏感信息硬编码在源代码中，攻击者获取源码后可直接获取凭据。",
-      "code_snippet": "requires login",
-      "metadata": {
-        "cwe": "CWE-798",
-        "owasp": "A07:2021"
-      },
-      "engine": "semgrep",
-      "engines": [
-        "semgrep"
-      ],
-      "confidence": 0.888889,
-      "fix": "建议修复方案",
-      "ai_confidence": 0.7550021510445334,
-      "attack_vector": "",
-      "cvss_score": 0.0
-    },
-    {
-      "rule_id": "path-traversal-pattern",
-      "severity": "WARNING",
-      "message": "[路径穿越] 检测到路径穿越相关模式。",
-      "file": "tools/challenge-parser/parser/tools/full-parse.js",
-      "line": 4,
-      "end_line": 4,
-      "code_snippet": "../",
-      "engine": "ast",
-      "cwe": "CWE-22",
-      "engines": [
-        "ast"
-      ],
-      "confidence": 0.947368
-    }
-  ]
+  "issues": []
 }

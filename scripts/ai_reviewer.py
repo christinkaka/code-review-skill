@@ -73,6 +73,15 @@ class AIReviewer:
         self.audit_records: List[Dict] = []
         self._audit_input_count = 0
 
+        # Token 统计（用于成本度量）
+        self.token_stats = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "call_count": 0,
+            "model": self.llm_config.get("model", "unknown"),
+        }
+
         # 加载工作流提示词
         self.prompt_template = self._load_prompt_template()
 
@@ -465,6 +474,15 @@ class AIReviewer:
 
             with urllib.request.urlopen(req, timeout=60) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
+                
+                # 统计 token 消耗
+                usage = result.get("usage", {})
+                if usage:
+                    self.token_stats["prompt_tokens"] += usage.get("prompt_tokens", 0)
+                    self.token_stats["completion_tokens"] += usage.get("completion_tokens", 0)
+                    self.token_stats["total_tokens"] += usage.get("total_tokens", 0)
+                self.token_stats["call_count"] += 1
+                
                 return result["choices"][0]["message"]["content"]
 
         except Exception as e:
@@ -605,6 +623,10 @@ class AIReviewer:
         """获取当前工作流"""
         return self.workflow
 
+    def get_token_stats(self) -> Dict:
+        """获取 token 消耗统计（用于成本度量）"""
+        return self.token_stats.copy()
+
     def set_workflow(self, workflow: str) -> bool:
         """切换工作流"""
         if workflow not in self.WORKFLOW_CONFIG:
@@ -675,6 +697,25 @@ class AIReviewer:
             "不要修改字段名或输出格式。"
         )
         lines.append("")
+
+        # --- 投票模式委派说明（votes > 1 时）---
+        if self.voting_votes > 1:
+            lines.append("## 投票委派要求（多数票模式）")
+            lines.append("")
+            lines.append(f"> 本任务配置为 **{self.voting_votes} 评审员投票模式**（Self-Consistency）。")
+            lines.append(">")
+            lines.append("> 主 Agent 必须并行委派 **相互独立的** "
+                         f"{self.voting_votes} 个子 Agent 评审同一份任务文件，各评审员：")
+            lines.append(">")
+            lines.append("> 1. 使用相同的评审契约（本文件 + ai-enhancer-prompt.md）")
+            lines.append(f"> 2. 各自将结果写入独立文件：`ai-review-result-vote1.json` ~ "
+                         f"`ai-review-result-vote{self.voting_votes}.json`")
+            lines.append("> 3. 评审员之间不得共享结论或互相参考")
+            lines.append(">")
+            lines.append(f"> 全部 {self.voting_votes} 份结果就绪后，`_merge_subagent_review` 按 "
+                         f"(rule_id, file, line) 多数票聚合（≥ {self.voting_votes // 2 + 1} 票）："
+                         "多数判误报则滤除、多数判真实则保留、无多数保守保留待人工。")
+            lines.append("")
 
         # --- 扫描概要 ---
         lines.append("## 扫描概要")

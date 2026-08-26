@@ -1,0 +1,92 @@
+{
+  "scan_info": {
+    "repo": "WebGoat",
+    "repo_path": "repos/webgoat",
+    "profile": "default",
+    "timestamp": "2026-08-26 15:39:26",
+    "duration_seconds": 3.08,
+    "test_type": "dual-blind"
+  },
+  "summary": {
+    "total": 4,
+    "critical": 1,
+    "high": 0,
+    "medium": 3,
+    "low": 0,
+    "by_category": {
+      "unknown": 4
+    },
+    "by_file": {
+      "src/main/java/org/dummy/insecure/framework/VulnerableTaskHolder.java": 1,
+      "src/main/java/org/owasp/webgoat/webwolf/FileServer.java": 1,
+      "src/main/java/org/owasp/webgoat/container/mailbox/MailboxController.java": 1,
+      "src/main/java/org/owasp/webgoat/container/users/UserService.java": 1
+    },
+    "by_rule": {
+      "priv-java-runtime-exec": 1,
+      "path-traversal-taint": 1,
+      "api-java-missing-validation": 1,
+      "db-java-missing-transaction": 1
+    }
+  },
+  "diff_summary": {
+    "files_changed": 0,
+    "insertions": 0,
+    "deletions": 0
+  },
+  "call_graph_summary": {
+    "node_count": 0,
+    "edge_count": 0,
+    "affected_methods": []
+  },
+  "issues": [
+    {
+      "rule_id": "priv-java-runtime-exec",
+      "file": "src/main/java/org/dummy/insecure/framework/VulnerableTaskHolder.java",
+      "line": 67,
+      "severity": "ERROR",
+      "ai_confidence": 0.95,
+      "analysis": "readObject() 反序列化后直接执行 Runtime.getRuntime().exec(taskAction)，taskAction 完全来自攻击者构造的序列化数据，无任何净化。仅有 taskAction.startsWith(\"sleep\")||startsWith(\"ping\") 且 length<22 的前置限制（注释自述 prevent you from destroying the goat），但任意反序列化报文仍可在服务器执行 sleep/ping 命令实现 RCE/DoS——这正是反序列化课程的教学漏洞点，数据流真实可达，确认为真实问题。",
+      "enhanced_fix": "真实应用中应彻底移除反序列化数据驱动的命令执行，改为白名单映射：\n```java\nprivate void executeSafeAction(String taskAction) {\n  switch (taskAction) {\n    case \"sleep\" -> { try { TimeUnit.SECONDS.sleep(5); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); } }\n    case \"ping\" -> log.info(\"ping simulated\");\n    default -> log.warn(\"rejected action: {}\", taskAction);\n  }\n}\n```\n同时避免在 readObject 中执行任何副作用逻辑。",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 3/3"
+    },
+    {
+      "rule_id": "path-traversal-taint",
+      "file": "src/main/java/org/owasp/webgoat/webwolf/FileServer.java",
+      "line": 79,
+      "severity": "CRITICAL",
+      "ai_confidence": 0.9,
+      "analysis": "importFile() 第75行 destinationDir.toPath().resolve(multipartFile.getOriginalFilename()) 后执行 Files.deleteIfExists + Files.copy（76-77行），文件名未做 basename/规范化/前缀校验。已反编译核实 Tomcat ApplicationPart.getSubmittedFileName()（10.1.30）与 Spring StandardMultipartHttpServletRequest（Boot 4.1 默认解析器）均不剥离路径分隔符，getOriginalFilename() 原样返回客户端文件名。任意已登录 WebWolf 用户（POST /fileupload 需认证）可用 filename=\"../../x\"（相对）或绝对路径实现任意文件删除与写入，逃出 ${java.io.tmpdir}/webwolf-fileserver/<user>，属真实 CRITICAL 路径穿越。",
+      "enhanced_fix": "String original = Optional.ofNullable(multipartFile.getOriginalFilename()).orElse(\"upload.bin\");\nPath fileName = Paths.get(original).getFileName(); // 剥离路径成分，防 ../ 与绝对路径\nif (fileName == null || fileName.toString().isBlank()) { throw new IllegalArgumentException(\"Invalid filename\"); }\nPath destinationDir = Paths.get(fileLocation, username).normalize();\nPath destinationFile = destinationDir.resolve(fileName).normalize();\nif (!destinationFile.startsWith(destinationDir)) { throw new IllegalArgumentException(\"Path traversal detected\"); }\nFiles.copy(is, destinationFile, StandardCopyOption.REPLACE_EXISTING);",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 3/3"
+    },
+    {
+      "rule_id": "api-java-missing-validation",
+      "file": "src/main/java/org/owasp/webgoat/container/mailbox/MailboxController.java",
+      "line": 58,
+      "severity": "WARNING",
+      "ai_confidence": 0.8,
+      "analysis": "sendEmail(@RequestBody Email) 无 @Valid，而 WebSecurityConfig 对 POST /mail 显式 permitAll（46-50行，课程用无会话的 RestTemplate 投递邮件），任何人可提交缺字段邮件。Email 实体无任何约束注解，mailbox.html 132/134 行的 ${mail.shortSender}/${mail.summary} 会调用 getShortSender()（sender 为 null 则 NPE，无@则 substring(0,-1) 越界）与 getSummary()（contents 为 null 则 NPE），令收件人邮箱页持续 500。项目已引入 spring-boot-starter-validation 且 RegistrationController 已用 @Valid，此处确为校验缺失。",
+      "enhanced_fix": "在 Email 字段加约束：@NotBlank String sender/recipient/title; @NotBlank @Size(max = 1024) String contents（对应 @Column(length=1024)）；控制器改为 public void sendEmail(@Valid @RequestBody Email email)。",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 2/3"
+    },
+    {
+      "rule_id": "db-java-missing-transaction",
+      "file": "src/main/java/org/owasp/webgoat/container/users/UserService.java",
+      "line": 44,
+      "severity": "WARNING",
+      "ai_confidence": 0.7,
+      "analysis": "addUser() 连续执行 userRepository.save（47行）、userTrackerRepository.save（50行）、createLessonsForUser 的 CREATE SCHEMA+flyway.migrate()（77-80行）、mailboxRepository.save 欢迎邮件（74行）四组写入且无事务。若 createLessonsForUser 失败，用户行已各自自动提交，而重试时 existsByUsername 为 true 使 49 行跳过课程初始化——形成无法自愈的半初始化用户（能登录但无课程 schema），由 RegistrationController 的 Web 请求触发，属真实一致性缺陷。",
+      "enhanced_fix": "调整顺序：先 createLessonsForUser 成功后再 userRepository.save/userTrackerRepository.save/sendWelcomeEmail，失败时不留用户记录；或对 addUser 加 @Transactional 使 JPA 写入与欢迎邮件原子化（Flyway 部分需单独补偿）。",
+      "is_false_positive": false,
+      "needs_review": false,
+      "vote": "TP 3/3"
+    }
+  ]
+}

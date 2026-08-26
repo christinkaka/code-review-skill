@@ -1,0 +1,17 @@
+[
+  {
+    "rule_id": "sqli-taint",
+    "file": "VulnController.java",
+    "line": 10,
+    "is_false_positive": false,
+    "ai_confidence": 0.98,
+    "analysis": "确认存在 SQL 注入漏洞。污点源位于第 7 行 `String id = req.getParameter(\"id\")`，用户可控的 HTTP 请求参数 `id` 未经任何校验、过滤或转义，直接通过字符串拼接（第 10 行 `\"SELECT * FROM users WHERE id = \" + id`）流入 `Statement.executeQuery()` 这一 SQL 执行 API。关键证据：(1) 第 9 行使用 `conn.createStatement()` 创建的是 `Statement` 而非 `PreparedStatement`，不具备参数绑定能力；(2) 从污点源（第 7 行）到危险汇聚点（第 10 行）之间不存在任何净化操作（如输入校验、白名单过滤、PreparedStatement.setXXX 参数绑定）；(3) 攻击者可通过构造恶意 `id` 参数（如 `1 OR 1=1`、`1; DROP TABLE users--`）实现任意 SQL 执行、数据泄露或数据库破坏。这是一个典型的、教科书级别的 SQL 注入漏洞。",
+    "enhanced_fix": "将 `Statement` 替换为 `PreparedStatement`，使用参数绑定切断污点传播链：\n\n```java\npublic void getUser(HttpServletRequest req, HttpServletResponse resp) throws Exception {\n    String id = req.getParameter(\"id\");\n    // 可选：增加输入校验作为纵深防御\n    if (id == null || !id.matches(\"\\\\d+\")) {\n        resp.sendError(HttpServletResponse.SC_BAD_REQUEST, \"Invalid id parameter\");\n        return;\n    }\n    try (Connection conn = DriverManager.getConnection(\"jdbc:mysql://localhost/db\");\n         PreparedStatement pstmt = conn.prepareStatement(\"SELECT * FROM users WHERE id = ?\")) {\n        pstmt.setString(1, id);\n        try (ResultSet rs = pstmt.executeQuery()) {\n            // 处理查询结果\n        }\n    }\n}\n```\n\n修改要点：(1) 使用 `PreparedStatement` 替代 `Statement`，通过 `?` 占位符和 `setString()` 参数绑定确保用户输入被当作数据而非 SQL 代码；(2) 增加输入校验（仅允许数字）作为纵深防御层；(3) 使用 try-with-resources 确保数据库资源正确释放。",
+    "evidence": [
+      "第 7 行：String id = req.getParameter(\"id\"); — 污点源，用户可控的 HTTP 请求参数",
+      "第 9 行：Statement stmt = conn.createStatement(); — 使用 Statement 而非 PreparedStatement，无参数绑定能力",
+      "第 10 行：ResultSet rs = stmt.executeQuery(\"SELECT * FROM users WHERE id = \" + id); — 污点汇聚点，用户输入通过字符串拼接直接进入 SQL 执行",
+      "第 7 行至第 10 行之间不存在任何净化操作（无 PreparedStatement.setXXX、无输入校验、无转义）"
+    ]
+  }
+]

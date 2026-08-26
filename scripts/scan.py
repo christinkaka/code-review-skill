@@ -387,6 +387,206 @@ def load_profile(profile_name: str, specs_dir: str) -> dict:
 
 
 # ============================================================
+# 子 Agent 评审结果合并（单评审员 + 多评审员投票）
+# ============================================================
+def _issue_key(rule_id: str, file: str, line) -> tuple:
+    """问题的唯一标识（line 容错 str/int）"""
+    try:
+        line = int(line)
+    except (TypeError, ValueError):
+        pass
+    return (rule_id, str(file), line)
+
+
+def _aggregate_votes(vote_lists: list, votes: int) -> tuple:
+    """
+    聚合 N 份子 Agent 评审结果（多数票投票，Self-Consistency）。
+
+    语义（对齐 API 路径 AIReviewer._review_with_voting）：
+    - majority = votes // 2 + 1（3 票需 >= 2 票）
+    - FP 票 >= majority      → 判误报（键进 dropped_keys，由合并层滤除）
+    - TP 票 >= majority      → 保留，字段取 TP 票中 ai_confidence 最高者
+    - 无多数（平票/三向分歧/评审员覆盖不一致）→ 保守保留，needs_review=true
+      （与 API 路径"平票全丢弃"不同：子 Agent 路径覆盖 WARNING/INFO 低级别，
+      且漏报 CRITICAL 的代价高于多一条待人工复核的告警）
+
+    某评审员缺席某条问题（未覆盖）视为该票缺席，不参与计数；
+    缺席导致达不到多数时同样保守保留。
+
+    Returns:
+        (ai_results, dropped_keys, stats):
+        聚合后的保留裁决列表（含 needs_review 项）、多数票判误报的键集合、统计
+    """
+    majority = votes // 2 + 1
+    by_key = {}
+    for vote_index, vote_list in enumerate(vote_lists):
+        for ai in vote_list:
+            key = _issue_key(ai.get("rule_id", ""), ai.get("file", ""), ai.get("line", 0))
+            by_key.setdefault(key, []).append((vote_index, ai))
+
+    results = []
+    dropped_keys = set()
+    stats = {"votes": votes, "majority": majority, "kept_tp": 0, "dropped_fp": 0, "kept_review": 0}
+
+    for key, vote_items in by_key.items():
+        tp_votes = [ai for _, ai in vote_items if not ai.get("is_false_positive", False) and not ai.get("needs_review", False)]
+        fp_votes = [ai for _, ai in vote_items if ai.get("is_false_positive", False)]
+
+        if len(fp_votes) >= majority:
+            dropped_keys.add(key)
+            stats["dropped_fp"] += 1
+            continue
+        if len(tp_votes) >= majority:
+            best = max(tp_votes, key=lambda a: a.get("ai_confidence", 0))
+            merged = dict(best)
+            merged["vote"] = f"TP {len(tp_votes)}/{votes}"
+            results.append(merged)
+            stats["kept_tp"] += 1
+            continue
+        # 无多数：保守保留
+        merged = dict(vote_items[0][1])
+        merged["needs_review"] = True
+        merged["vote"] = f"NO_MAJORITY (TP {len(tp_votes)}/FP {len(fp_votes)}/{votes})"
+        results.append(merged)
+        stats["kept_review"] += 1
+
+    return results, dropped_keys, stats
+
+
+def _merge_subagent_review(report: dict, output_dir: Path) -> dict:
+    """
+    合并子 Agent 评审结果到报告。
+
+    支持两种模式：
+    1. 单评审员：output_dir 下存在 ai-review-result.json（子 Agent 评审后产出）
+    2. 多评审员投票：output_dir 下存在 ai-review-result-vote{N}.json（N >= 2，
+       主 Agent 并行委派 N 个子 Agent 各产出一份），按多数票聚合
+
+    两种模式均将 AI 字段（ai_confidence / analysis / enhanced_fix /
+    is_false_positive / needs_review）合并到 report.issues 中对应条目，
+    并过滤掉多数票认定误报的条目。
+
+    匹配键：(rule_id, file, line) 精确匹配；若失败则回退到 (file, line)。
+
+    Returns:
+        合并后的报告字典（若无评审结果文件则原样返回）
+    """
+    # 收集投票文件（按编号排序）
+    vote_files = sorted(
+        output_dir.glob("ai-review-result-vote*.json"),
+        key=lambda p: p.name,
+    )
+
+    vote_lists = []
+    for vf in vote_files:
+        try:
+            with open(vf, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list) and data:
+                vote_lists.append(data)
+        except (json.JSONDecodeError, IOError) as err:
+            logger.warning(f"投票文件读取失败（跳过该票）: {vf.name}: {err}")
+
+    if vote_lists:
+        ai_results, dropped_keys, stats = _aggregate_votes(vote_lists, len(vote_lists))
+        logger.info(
+            f"  子 Agent 投票聚合: {stats['votes']} 票, 多数阈值 {stats['majority']}, "
+            f"TP 保留 {stats['kept_tp']}, FP 滤除 {stats['dropped_fp']}, "
+            f"无多数保守保留 {stats['kept_review']}"
+        )
+    else:
+        dropped_keys = set()
+        # 单评审员模式（旧路径）
+        ai_result_path = output_dir / "ai-review-result.json"
+        if not ai_result_path.exists():
+            return report
+
+        try:
+            with open(ai_result_path, "r", encoding="utf-8") as f:
+                ai_results = json.load(f)
+        except (json.JSONDecodeError, IOError) as err:
+            logger.warning(f"AI 评审结果文件读取失败: {err}")
+            return report
+
+        if not isinstance(ai_results, list) or not ai_results:
+            logger.debug("AI 评审结果为空，跳过合并")
+            return report
+
+    # 注意：投票模式下 ai_results 可能为空（全部判误报），dropped_keys 仍需生效，
+    # 故该守卫只在单评审员分支内
+    if not vote_lists and not ai_results:
+        return report
+
+    # 构建精确匹配索引：(rule_id, file, line) → ai_result
+    ai_exact = {}
+    ai_by_location = {}
+    for ai in ai_results:
+        rule_id = ai.get("rule_id", "")
+        file = ai.get("file", "")
+        line = ai.get("line", 0)
+        if rule_id and file and line:
+            try:
+                line_no = int(line)
+            except (TypeError, ValueError):
+                line_no = line
+            ai_exact[(rule_id, str(file), line_no)] = ai
+            ai_by_location[(str(file), line_no)] = ai
+
+    # 合并到 issues
+    merged_issues = []
+    merged_count = 0
+    filtered_count = 0
+    for issue in report.get("issues", []):
+        rule_id = issue.get("rule_id", "")
+        file = issue.get("file", "")
+        line = issue.get("line", 0)
+
+        try:
+            line_no = int(line)
+        except (TypeError, ValueError):
+            line_no = line
+
+        key = (rule_id, str(file), line_no)
+
+        # 投票模式：多数票判误报 → 滤除（未进入 ai_results，需单独判定）
+        if key in dropped_keys:
+            filtered_count += 1
+            logger.debug(f"  投票滤除误报: {rule_id} @ {file}:{line}")
+            continue
+
+        # 精确匹配优先，回退到位置匹配
+        ai = ai_exact.get(key) or ai_by_location.get((str(file), line_no))
+
+        if ai:
+            # 过滤误报（needs_review=true 的保守保留项不滤除）
+            if ai.get("is_false_positive", False) and not ai.get("needs_review", False):
+                filtered_count += 1
+                logger.debug(f"  过滤误报: {rule_id} @ {file}:{line}")
+                continue
+
+            # 合并 AI 字段
+            for field in ("ai_confidence", "analysis", "enhanced_fix", "is_false_positive", "needs_review", "vote", "evidence"):
+                if field in ai:
+                    issue[field] = ai[field]
+            merged_count += 1
+
+        merged_issues.append(issue)
+
+    if merged_count or filtered_count:
+        logger.info(f"  子 Agent 评审合并: {merged_count} 条增强, {filtered_count} 条误报过滤")
+        report["issues"] = merged_issues
+        # 重新计算摘要
+        report["summary"] = ReportGenerator(str(output_dir))._compute_summary(merged_issues)
+        # 重新写 report.json
+        json_path = output_dir / "report.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
+        logger.info(f"  报告已更新: {json_path}")
+
+    return report
+
+
+# ============================================================
 # 主扫描流程
 # ============================================================
 def run_scan(args):
@@ -502,6 +702,17 @@ def run_scan(args):
             f"统计层保留 {triage['stats_only']} 条"
         )
         logger.info(f"  AI 评审后 {len(issues)} 个问题")
+        
+        # Token 消耗统计
+        token_stats = ai_reviewer.get_token_stats()
+        if token_stats["call_count"] > 0:
+            logger.info(
+                f"  Token 消耗: {token_stats['total_tokens']:,} tokens "
+                f"(prompt: {token_stats['prompt_tokens']:,}, "
+                f"completion: {token_stats['completion_tokens']:,}, "
+                f"calls: {token_stats['call_count']}, "
+                f"model: {token_stats['model']})"
+            )
     else:
         logger.info("[4/5] AI 增强评审已跳过（未启用）")
 
@@ -533,8 +744,19 @@ def run_scan(args):
             "affected_methods": call_graph["affected_methods"],
         },
     )
+    
+    # 写入 token 统计到报告（如果有 AI 评审）
+    if config.get("ai_review", {}).get("enabled", False) and 'ai_reviewer' in locals():
+        report["token_stats"] = ai_reviewer.get_token_stats()
+        # 重新写 report.json
+        json_path = output_dir / "report.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
 
-    # 8. 输出摘要
+    # 8. 合并子 Agent 评审结果（如果存在）
+    report = _merge_subagent_review(report, output_dir)
+
+    # 9. 输出摘要
     summary = report.get("summary", {})
     logger.info(f"=" * 60)
     logger.info(f"扫描完成！耗时: {round(time.time() - start_time, 2)}s")
@@ -543,6 +765,9 @@ def run_scan(args):
     logger.info(f"  HIGH:     {summary.get('high', 0)}")
     logger.info(f"  MEDIUM:   {summary.get('medium', 0)}")
     logger.info(f"  LOW:      {summary.get('low', 0)}")
+    ai_count = sum(1 for i in report.get("issues", []) if "ai_confidence" in i)
+    if ai_count:
+        logger.info(f"  AI 增强: {ai_count} 条检出已合并子 Agent 评审结果")
     logger.info(f"  报告输出: {output_dir}")
     logger.info(f"=" * 60)
 

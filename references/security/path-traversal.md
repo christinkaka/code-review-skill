@@ -554,7 +554,10 @@ languages: [java, python, javascript, typescript]
 severity: WARNING
 cwe: CWE-22
 owasp: A01:2021
+enabled: false
 ```
+
+> **已禁用**：该规则匹配字面量 `"../"` 等字符串，在相对导入、path.join 等安全场景产生大量 FP（freeCodeCamp 120 条 FP）。推荐使用数据流分析规则 `path-traversal-taint`（Java）或 `path-python-open`/`path-js-readfile`（Python/JS）替代。
 
 ## 常见穿越模式
 
@@ -591,4 +594,36 @@ owasp: A01:2021
 
 ```pattern
 "..%5c"
+```
+
+```pattern-not
+require("...")
+```
+
+```pattern-not
+require('...')
+```
+
+```pattern-not
+import "..."
+```
+
+```pattern-not
+import '...'
+```
+
+```pattern-not
+from "..."
+```
+
+```pattern-not
+from '...'
+```
+
+```pattern-not
+path.join(...)
+```
+
+```pattern-not
+path.resolve(...)
 ```

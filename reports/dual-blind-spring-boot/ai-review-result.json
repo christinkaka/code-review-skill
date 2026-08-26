@@ -1,0 +1,102 @@
+[
+  {
+    "rule_id": "null-java-unwrap-boxed",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/TotalProgressListener.java",
+    "line": 112,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "第112行 `int current = this.progressByStatus.get(status)` 受第111行 `this.progressByStatus.containsKey(status)` 短路守卫。该 HashMap 在构造器中仅以 `put(status, 0)` 初始化非 null 值，后续只写入非 null 的装箱 int（updateProgress 返回 int、finish() 写入 100），且键从不被删除，get() 永不返回 null，拆箱安全，无需修复。",
+    "enhanced_fix": "无需修复。如需防御性加固可改为等价写法：int current = this.progressByStatus.getOrDefault(status, 0);"
+  },
+  {
+    "rule_id": "err-java-empty-catch",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/ssl/PemPrivateKeyParser.java",
+    "line": 254,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "该 catch 块并非真空块：块内含 `// Ignore` 注释，属刻意的算法回退链设计——先按 keySpec.getAlgorithm() 生成私钥，失败后继续遍历 this.algorithms 候选算法；全部失败返回 null，外层 parse() 最终抛出 IllegalStateException(\"Missing private key or unrecognized format\")。捕获类型收窄为 InvalidKeySpecException|NoSuchAlgorithmException，语义是换下一个算法重试而非吞异常，误报。",
+    "enhanced_fix": "无需修复，保留现状。如团队规约要求更显式可扩展注释：catch (InvalidKeySpecException | NoSuchAlgorithmException ex) { // Ignore and try the next candidate algorithm }"
+  },
+  {
+    "rule_id": "err-java-empty-catch",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/ssl/PemPrivateKeyParser.java",
+    "line": 263,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.85,
+    "analysis": "第263行 catch 位于 `for (String algorithm : this.algorithms)` 回退循环内，块内含 `// Ignore` 注释表明故意忽略；单次失败仅继续尝试下一个候选算法（RSA/RSASSA-PSS/EC/DSA/EdDSA/XDH），全部失败返回 null，由外层 PemPrivateKeyParser.parse() 抛出 IllegalStateException(\"Missing private key or unrecognized format\") 兜底。异常类型已收窄且最终失败对用户可见，非吞异常缺陷，误报。",
+    "enhanced_fix": "无需修复。可选增强注释说明终态：catch (InvalidKeySpecException | NoSuchAlgorithmException ex) { // Ignore and try the next algorithm; parse() reports a terminal error if all fail }"
+  },
+  {
+    "rule_id": "null-java-method-chain",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/transport/DockerConnectionException.java",
+    "line": 51,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "第51行 `cause.getCause() != null && cause.getCause().getClass().getName().equals(...)` 中链式调用受同条件左侧 `cause.getCause() != null` 短路保护；cause 本身在 buildMessage 第40行经 `Assert.notNull(cause, \"'cause' must not be null\")` 校验；Throwable.getCause() 返回稳定字段值，getClass()/getName() 永不返回 null。if 体内第三次 getCause() 同样非 null，其 getMessage() 返回值由调用方 StringUtils.hasText 判空。无 NPE 风险，误报。",
+    "enhanced_fix": "无需修复。如需提升可读性可提取局部变量：Throwable root = cause.getCause(); if (root != null && JNA_EXCEPTION_CLASS_NAME.equals(root.getClass().getName())) { return root.getMessage(); }"
+  },
+  {
+    "rule_id": "null-java-unwrap-boxed",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/ContainerStatus.java",
+    "line": 55,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "第55行 `Integer result = valueAt(\"/StatusCode\", Integer.class)` 是 Integer 到 Integer 的局部变量赋值，本行无拆箱；实际拆箱发生在构造器第50行 `this.statusCode = extractStatusCode()`（int 字段），而方法内第56行紧跟 `Assert.state(result != null, \"'result' must not be null\")` 显式判空，null 时抛 IllegalStateException 快速失败。valueAt 对 missing node 确可返回 null，但已被断言拦截，拆箱安全，误报。",
+    "enhanced_fix": "无需修复，现有 fail-fast 模式即正确写法：Integer result = valueAt(\"/StatusCode\", Integer.class); Assert.state(result != null, \"'result' must not be null\"); return result;"
+  },
+  {
+    "rule_id": "err-java-empty-catch",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/Image.java",
+    "line": 155,
+    "is_false_positive": false,
+    "needs_review": false,
+    "ai_confidence": 0.7,
+    "analysis": "第159-160行 `catch (RuntimeException ex) { }` 为完全空块，无注释无日志，与同模块 PemPrivateKeyParser 中带 `// Ignore` 注释的刻意忽略形成鲜明对比。捕获范围过宽（RuntimeException 会连带吞掉 NPE 等真实 bug）；当首个 RepoDigest 畸形导致 ImageReference.of 抛 IllegalArgumentException 时被静默吞掉，getPrimaryDigest() 返回 null，Builder 第119-120行随即静默回退为 tag 方式引用 run image（可变引用而非 digest 锁定），全程零诊断信息，排查困难，需修复。",
+    "enhanced_fix": "if (!CollectionUtils.isEmpty(this.digests)) {\n    try {\n        String digest = this.digests.get(0);\n        return (digest != null) ? ImageReference.of(digest).getDigest() : null;\n    }\n    catch (IllegalArgumentException ex) {\n        // RepoDigest is not a valid image reference; fall back to a null digest\n        // so that the caller keeps the tag-based run image reference\n    }\n}\nreturn null;\n// 收窄异常类型至 Assert 实际抛出的 IllegalArgumentException，避免吞掉 NPE 等真实缺陷，并补充注释说明回退语义"
+  },
+  {
+    "rule_id": "null-java-unwrap-boxed",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/ImageArchiveIndex.java",
+    "line": 51,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "第51行 `Integer result = valueAt(\"/schemaVersion\", Integer.class)` 为 Integer 间赋值，字段 schemaVersion 声明为 Integer（第40行），构造器第46行赋值与 getSchemaVersion() 返回值均无拆箱；且第52行紧跟 `Assert.state(result != null, \"'result' must not be null\")` 判空，null 时抛 IllegalStateException。不存在拆箱点，更无拆箱 NPE，误报。",
+    "enhanced_fix": "无需修复，保留现有判空守卫：Integer result = valueAt(\"/schemaVersion\", Integer.class); Assert.state(result != null, \"'result' must not be null\"); return result;"
+  },
+  {
+    "rule_id": "null-java-unwrap-boxed",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/Manifest.java",
+    "line": 55,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "第55行 `Integer result = valueAt(\"/schemaVersion\", Integer.class)` 是 Integer 间赋值，第56行 `Assert.state(result != null, \"'result' must not be null\")` 显式判空后才返回；字段为 `private final Integer schemaVersion`（第41行），getSchemaVersion() 返回 Integer，主源码中无任何调用方将其拆箱为 int。无拆箱操作且 Assert 保证非 null，误报。",
+    "enhanced_fix": "无需修复，保留 Assert.state(result != null, \"'result' must not be null\"); 的 fail-fast 守卫即可。"
+  },
+  {
+    "rule_id": "null-java-unwrap-boxed",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/ManifestList.java",
+    "line": 56,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.95,
+    "analysis": "第56行 `Integer result = valueAt(\"/schemaVersion\", Integer.class)` 为 Integer 间赋值，第57行 `Assert.state(result != null, \"'result' must not be null\")` 紧跟判空，null 时抛 IllegalStateException；字段 schemaVersion 为 Integer（第42行），getSchemaVersion() 返回 Integer，无拆箱调用点。与 Manifest/ImageArchiveIndex 为同一防御式解析模式，无 NPE 风险，误报。",
+    "enhanced_fix": "无需修复，保持 Assert.state(result != null, \"'result' must not be null\"); 判空守卫现状。"
+  },
+  {
+    "rule_id": "crypto-weak-random-java",
+    "file": "buildpack/spring-boot-buildpack-platform/src/main/java/org/springframework/boot/buildpack/platform/docker/type/RandomString.java",
+    "line": 31,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.8,
+    "analysis": "该 `private static final Random random = new Random()` 仅用于生成构建期临时 Docker 资源名：EphemeralBuilder 第70行 `ImageReference.random(\"pack.local/builder/\")` 的本地临时 builder 镜像 tag（pack.local 域，构建后即删），及 Lifecycle 第282/289行 \"pack-layers-\"/\"pack-app-\" 临时缓存卷名。随机性目的是并发构建防撞名，非 token/密钥/会话标识；能访问 Docker daemon 的用户本可枚举全部镜像与卷，名字可预测性不构成安全边界。非安全敏感场景，误报。",
+    "enhanced_fix": "无需修复（非安全敏感场景）。如需纵深防御可替换为：import java.security.SecureRandom; ... private static final Random random = new SecureRandom();（对本地构建行为无影响）"
+  }
+]

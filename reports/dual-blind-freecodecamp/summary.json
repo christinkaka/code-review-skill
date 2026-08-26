@@ -1,18 +1,21 @@
 {
-  "total": 2,
-  "critical": 0,
-  "high": 0,
-  "medium": 2,
+  "total": 6,
+  "critical": 4,
+  "high": 1,
+  "medium": 1,
   "low": 0,
   "by_category": {
-    "unknown": 2
+    "security": 5,
+    "unknown": 1
   },
   "by_file": {
+    "packages/challenge-builder/src/transformers.js": 4,
     "tools/challenge-parser/parser/plugins/utils/i18n-stringify.js": 1,
-    "tools/challenge-parser/parser/tools/full-parse.js": 1
+    "tools/scripts/seed-exams/add-nano-ids.js": 1
   },
   "by_rule": {
+    "xss-js-innerhtml": 4,
     "crypto-hardcoded-key": 1,
-    "path-traversal-pattern": 1
+    "path-write-traversal": 1
   }
 }

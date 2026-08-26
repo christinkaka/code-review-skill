@@ -50,7 +50,15 @@ specs:
     enabled: true
   - path: security/deserialization.md
     enabled: true
+  - path: security/expression-injection.md
+    enabled: true
+  - path: security/command-injection.md
+    enabled: true
   - path: security/log-injection.md
+    enabled: true
+  - path: security/open-redirect.md
+    enabled: true
+  - path: security/django-flask-security.md
     enabled: true
 
   # 自定义规则

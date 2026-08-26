@@ -1,0 +1,134 @@
+# 安全规约 - 表达式注入 / 脚本注入
+# CWE-917 / CWE-94: Expression Language Injection / Code Injection
+# OWASP: A03:2021 - Injection
+# 说明：本文件是 expression-injection.md 的静态孪生产物（引擎实时编译
+# taint 规则的导出），供外部直接 semgrep -f 使用。三条规则均为数据流
+# 分析（mode: taint）：spel-taint / qlexpress-taint / script-engine-taint。
+
+rules:
+- id: spel-taint
+  mode: taint
+  message: 用户可控数据（HTTP 请求参数/头）流入 Spring Expression Language（SpEL）表达式解析与求值。攻击者构造 `T(java.lang.Runtime).getRuntime().exec(...)`
+    类表达式可实现任意代码执行（RCE）。基于 Semgrep taint 模式做过程内数据流追踪。
+  severity: CRITICAL
+  languages:
+  - java
+  pattern-sources:
+  - pattern: $REQ.getParameter(...)
+  - pattern: $REQ.getHeader(...)
+  - pattern: $REQ.getQueryString()
+  - pattern: $REQ.getInputStream()
+  - pattern: $REQ.getReader()
+  - patterns:
+    - pattern-inside: "@GetMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PostMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@RequestMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PutMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@DeleteMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PatchMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  pattern-sinks:
+  - patterns:
+    - pattern: (org.springframework.expression.Expression $E).getValue(...)
+    - pattern-not: $E.getValue((org.springframework.expression.spel.support.SimpleEvaluationContext $CTX),
+        ...)
+    - pattern-not: $P.parseExpression(...).getValue((org.springframework.expression.spel.support.SimpleEvaluationContext
+        $CTX), ...)
+  - patterns:
+    - pattern: $P.parseExpression(...).getValue(...)
+    - pattern-not: $E.getValue((org.springframework.expression.spel.support.SimpleEvaluationContext $CTX),
+        ...)
+    - pattern-not: $P.parseExpression(...).getValue((org.springframework.expression.spel.support.SimpleEvaluationContext
+        $CTX), ...)
+  metadata:
+    cwe: CWE-917
+    owasp: A03:2021
+- id: qlexpress-taint
+  mode: taint
+  message: 用户可控数据流入阿里 QLExpress（com.ql.util.express）表达式执行 API。QLExpress 表达式可实例化任意对象（`new java.net.URLClassLoader(...)`
+    等），污点直达 `ExpressRunner.execute` 即 RCE。基于 Semgrep taint 模式做过程内数据流追踪。
+  severity: CRITICAL
+  languages:
+  - java
+  pattern-sources:
+  - pattern: $REQ.getParameter(...)
+  - pattern: $REQ.getHeader(...)
+  - pattern: $REQ.getQueryString()
+  - pattern: $REQ.getInputStream()
+  - pattern: $REQ.getReader()
+  - patterns:
+    - pattern-inside: "@GetMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PostMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@RequestMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PutMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@DeleteMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PatchMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  pattern-sinks:
+  - patterns:
+    - pattern: (com.ql.util.express.ExpressRunner $R).execute(...)
+    - pattern-not-inside: 'QLExpressRunStrategy.setForbidInvokeSecurityRiskMethods(true);
+
+        ...
+
+        $X.execute(...);'
+  metadata:
+    cwe: CWE-917
+    owasp: A03:2021
+- id: script-engine-taint
+  mode: taint
+  message: 用户可控数据流入 javax.script 脚本引擎（Nashorn/JS/Groovy 等被 ScriptEngineManager 加载的引擎）的 `eval` 或 GroovyShell
+    的 `evaluate`。脚本内容完全受控即任意代码执行（RCE）。基于 Semgrep taint 模式做过程内数据流追踪。
+  severity: CRITICAL
+  languages:
+  - java
+  pattern-sources:
+  - pattern: $REQ.getParameter(...)
+  - pattern: $REQ.getHeader(...)
+  - pattern: $REQ.getQueryString()
+  - pattern: $REQ.getInputStream()
+  - pattern: $REQ.getReader()
+  - patterns:
+    - pattern-inside: "@GetMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PostMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@RequestMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PutMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@DeleteMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  - patterns:
+    - pattern-inside: "@PatchMapping(...)\n$RET $METHOD(..., $TYPE $PARAM, ...) {\n  ...\n}"
+    - focus-metavariable: $PARAM
+  pattern-sinks:
+  - pattern: (javax.script.ScriptEngine $E).eval(...)
+  - pattern: (groovy.lang.GroovyShell $S).evaluate(...)
+  metadata:
+    cwe: CWE-94
+    owasp: A03:2021

@@ -713,11 +713,16 @@ _DESER_METHODS = (
 )
 
 
-def _deser_method_hits(java_source: str, issues: list) -> set:
+def _deser_method_hits(
+    java_source: str,
+    issues: list,
+    filename: str = "Serializer.java",
+    methods: tuple = _DESER_METHODS,
+) -> set:
     method_at = {}
     current = None
     for idx, text in enumerate(java_source.split("\n"), start=1):
-        for name in _DESER_METHODS:
+        for name in methods:
             if f" {name}(" in text:
                 current = name
         method_at[idx] = current
@@ -725,7 +730,7 @@ def _deser_method_hits(java_source: str, issues: list) -> set:
             current = None
     hits = set()
     for i in issues:
-        if i.get("file") == "Serializer.java":
+        if i.get("file") == filename:
             m = method_at.get(i.get("line"))
             if m:
                 hits.add(m)
@@ -766,6 +771,66 @@ class TestDeserTaintE2E:
         assert "deserializeLocalConfig" not in hits, (
             "TN1: 常量本地文件反序列化不应误报（旧模式规则误报场景）"
         )
+
+    def test_snakeyaml_taint_tp_and_tn(self, tmp_path):
+        """deser-yaml-taint（2026-08-26 新增，java-sec-code Rce.java 缺口）：
+        默认构造器 load TP；SafeConstructor 加固豁免；常量 TN
+        """
+        java = (
+            "import org.springframework.web.bind.annotation.GetMapping;\n"
+            "import org.yaml.snakeyaml.Yaml;\n"
+            "import org.yaml.snakeyaml.constructor.SafeConstructor;\n"
+            "\n"
+            "class YamlCases {\n"
+            "    @GetMapping(\"/vuln\")\n"
+            "    void vuln(String content) {\n"
+            "        Yaml y = new Yaml();\n"
+            "        y.load(content);\n"
+            "    }\n"
+            "\n"
+            "    @GetMapping(\"/sec\")\n"
+            "    void sec(String content) {\n"
+            "        Yaml y = new Yaml(new SafeConstructor());\n"
+            "        y.load(content);\n"
+            "    }\n"
+            "\n"
+            "    @GetMapping(\"/const\")\n"
+            "    void constLoad() {\n"
+            "        Yaml y = new Yaml();\n"
+            "        y.load(\"a: 1\");\n"
+            "    }\n"
+            "}\n"
+        )
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "YamlCases.java").write_text(java, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "deserialization.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "YamlCases.java"}])
+        yaml_methods = ("vuln", "sec", "constLoad")
+        yaml_issues = [
+            i for i in issues if "deser-yaml-taint" in str(i.get("rule_id"))
+        ]
+        hits = _deser_method_hits(
+            java, yaml_issues, filename="YamlCases.java", methods=yaml_methods
+        )
+        assert "vuln" in hits, "TP: 默认构造器 Yaml.load(污点) 应报出"
+        assert "sec" not in hits, "TN: SafeConstructor 加固后不应报"
+        assert "constLoad" not in hits, "TN: 常量内容无污点源不应报"
+
+        # 原 deser-taint 不受新规则影响：SnakeYAML 场景不产 ObjectInputStream 告警
+        deser_hits = _deser_method_hits(
+            java,
+            [i for i in issues if str(i.get("rule_id", "")).endswith("deser-taint")],
+            filename="YamlCases.java",
+            methods=yaml_methods,
+        )
+        assert not deser_hits, "deser-taint 不应命中 SnakeYAML 场景"
 
     def test_python_rules_unaffected(self, tmp_path):
         """Java 交给 taint 后，Python pickle 规则仍正常检出"""

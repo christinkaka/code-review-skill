@@ -222,3 +222,59 @@ class TestAllRulesParseable:
             "存在 semgrep 解析失败的规则（将静默失效）: "
             f"{[e.get('message', '')[:150] for e in data['errors']]}"
         )
+
+
+_ARCH_JAVA = """import com.example.user.UserServiceImpl;
+import com.example.user.api.UserService;
+import com.example.order.OrderServiceImpl;
+import org.joychou.service.UserServiceImpl;
+
+class ArchCases { }
+"""
+
+
+class TestArchMissingApiLayerE2E:
+    """arch-java-missing-api-layer 复活回归（2026-08-26）
+
+    原规则 `$CLASSImpl` 非法元变量（含小写字母）自创建起 rc=2 静默失效，
+    经 pattern-metavariable-regex DSL 扩展后以 `$CLASS` + `.*Impl` 约束
+    重新启用。固化其 TP/TN 行为与 DSL 构建形态。
+    """
+
+    def _scan_arch(self, tmp_path):
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "ArchCases.java").write_text(_ARCH_JAVA, encoding="utf-8")
+        engine = RuleEngine(
+            str(_REFS_DIR / "design"),
+            {"specs": [{"path": "architecture.md", "enabled": True}]},
+        )
+        return engine.run(str(repo), [{"path": "ArchCases.java"}])
+
+    def test_impl_imports_flagged(self, tmp_path):
+        """TP：com 域实现类 import 报出；接口/非 com 域 TN 不报"""
+        lines = _lines(self._scan_arch(tmp_path), "arch-java-missing-api-layer")
+        assert 1 in lines, "UserServiceImpl 直接依赖应报出"
+        assert 3 in lines, "OrderServiceImpl 直接依赖应报出"
+        assert 2 not in lines, "api 包接口 import 不应报"
+        assert 4 not in lines, "非 com 域（org.joychou）不在规则范围"
+
+    def test_metavariable_regex_built_into_rule(self):
+        """DSL 构建：pattern-metavariable-regex 复合为 semgrep
+        metavariable-regex 条目，规则未被禁用"""
+        engine = RuleEngine(
+            str(_REFS_DIR / "design"),
+            {"specs": [{"path": "architecture.md", "enabled": True}]},
+        )
+        rules = engine._rules_to_semgrep()
+        arch = next(
+            r for r in rules["rules"]
+            if r["id"] == "arch-java-missing-api-layer"
+        )
+        mvr = [
+            p["metavariable-regex"] for p in arch.get("patterns", [])
+            if "metavariable-regex" in p
+        ]
+        assert mvr == [{"metavariable": "$CLASS", "regex": ".*Impl"}], (
+            "metavariable-regex 约束未正确构建"
+        )

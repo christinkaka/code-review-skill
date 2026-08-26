@@ -28,7 +28,7 @@ from scan import prefilter_issues, tiered_ai_review
 import yaml
 
 
-def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files: int = 50):
+def run_dual_blind_test(repo_name: str, repo_path: str, file_ext: str, max_files: int = 200):
     """对单个仓库执行双盲测试"""
     print(f"\n{'='*60}")
     print(f"双盲测试: {repo_name}")
@@ -183,6 +183,7 @@ def main():
         ("freeCodeCamp", "repos/freeCodeCamp", ".js"),
         ("Django", "repos/django", ".py"),
         ("Spring Boot", "repos/spring-boot", ".java"),
+        ("WebGoat", "repos/webgoat", ".java"),
     ]
     
     results = []

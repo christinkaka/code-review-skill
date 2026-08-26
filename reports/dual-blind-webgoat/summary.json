@@ -1,0 +1,42 @@
+{
+  "total": 22,
+  "critical": 1,
+  "high": 1,
+  "medium": 16,
+  "low": 4,
+  "by_category": {
+    "implementation": 8,
+    "design": 8,
+    "unknown": 4,
+    "security": 2
+  },
+  "by_file": {
+    "src/main/java/org/dummy/insecure/framework/VulnerableTaskHolder.java": 3,
+    "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTController.java": 3,
+    "src/main/java/org/owasp/webgoat/webwolf/FileServer.java": 2,
+    "src/main/java/org/owasp/webgoat/container/mailbox/MailboxController.java": 2,
+    "src/main/java/org/owasp/webgoat/webwolf/jwt/JWTToken.java": 2,
+    ".mvn/wrapper/MavenWrapperDownloader.java": 1,
+    "src/it/java/org/owasp/webgoat/playwright/webgoat/pages/lessons/LessonPage.java": 1,
+    "src/main/java/org/owasp/webgoat/container/AsciiDoctorTemplateResolver.java": 1,
+    "src/main/java/org/owasp/webgoat/container/assignments/LessonTrackerInterceptor.java": 1,
+    "src/main/java/org/owasp/webgoat/container/users/AdminController.java": 1,
+    "src/main/java/org/owasp/webgoat/container/users/DefaultUserInitializer.java": 1,
+    "src/main/java/org/owasp/webgoat/container/users/UserService.java": 1,
+    "src/main/java/org/owasp/webgoat/webwolf/requests/LandingPage.java": 1,
+    "src/main/java/org/owasp/webgoat/webwolf/requests/Requests.java": 1,
+    "src/main/java/org/owasp/webgoat/webwolf/requests/WebWolfTraceRepository.java": 1
+  },
+  "by_rule": {
+    "log-injection-taint": 4,
+    "null-java-method-chain": 3,
+    "api-java-missing-response-wrapper": 3,
+    "api-java-missing-validation": 3,
+    "err-java-empty-catch": 2,
+    "null-java-collection-get": 2,
+    "db-java-missing-transaction": 2,
+    "priv-java-runtime-exec": 1,
+    "path-traversal-taint": 1,
+    "naming-java-constant-case": 1
+  }
+}

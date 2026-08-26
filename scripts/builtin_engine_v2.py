@@ -458,14 +458,17 @@ class BuiltinEngineV2:
             cwe="CWE-345",
             languages=["java"],
         ))
-        self.rules.append(RegexSupplementRule(
-            rule_id="path-traversal-pattern",
-            severity="WARNING",
-            message="[路径穿越] 检测到路径穿越相关模式。",
-            regex=r'(?:\.\./|\.\.\\|%2e%2e%2f|%2e%2e/|\.\.%2f)',
-            cwe="CWE-22",
-            languages=[],
-        ))
+        # path-traversal-pattern 规则已禁用（2026-08-26）
+        # 原因：匹配字面量 "../" 等字符串在相对导入、path.join 等安全场景产生大量 FP
+        # 替代方案：使用数据流分析规则 path-traversal-taint (Java) 或 path-python-open/path-js-readfile (Python/JS)
+        # self.rules.append(RegexSupplementRule(
+        #     rule_id="path-traversal-pattern",
+        #     severity="WARNING",
+        #     message="[路径穿越] 检测到路径穿越相关模式。",
+        #     regex=r'(?:\.\./|\.\.\\|%2e%2e%2f|%2e%2e/|\.\.%2f)',
+        #     cwe="CWE-22",
+        #     languages=[],
+        # ))
         self.rules.append(RegexSupplementRule(
             rule_id="sqli-mybatis-dollar",
             severity="ERROR",
