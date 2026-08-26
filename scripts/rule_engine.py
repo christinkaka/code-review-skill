@@ -157,7 +157,7 @@ class MarkdownRuleParser:
                     except yaml.YAMLError:
                         pass
 
-                elif block_type in ("pattern", "pattern-not", "pattern-regex"):
+                elif block_type in ("pattern", "pattern-not", "pattern-not-inside", "pattern-regex"):
                     entry = {
                         "type": block_type,
                         "content": block_content,
@@ -334,6 +334,11 @@ class RuleEngine:
                             internal_rule["patterns"].append({
                                 "type": "pattern-not",
                                 "content": p["pattern-not"]
+                            })
+                        elif "pattern-not-inside" in p:
+                            internal_rule["patterns"].append({
+                                "type": "pattern-not-inside",
+                                "content": p["pattern-not-inside"]
                             })
 
             # taint 数据流规则（mode: taint + pattern-sources/sinks）：
@@ -653,6 +658,7 @@ class RuleEngine:
         # 构建 patterns
         pattern_list = []
         pattern_not_list = []
+        pattern_not_inside_list = []
         pattern_regex = None
 
         for p in filtered_patterns:
@@ -660,18 +666,25 @@ class RuleEngine:
                 pattern_list.append(p["content"])
             elif p["type"] == "pattern-not":
                 pattern_not_list.append(p["content"])
+            elif p["type"] == "pattern-not-inside":
+                pattern_not_inside_list.append(p["content"])
             elif p["type"] == "pattern-regex":
                 pattern_regex = p["content"]
+
+        # pattern-not-inside 与 pattern-not 一样决定必须使用 patterns 组合形态
+        has_negative = bool(pattern_not_list or pattern_not_inside_list)
 
         # 如果有 pattern-regex，直接使用
         if pattern_regex:
             semgrep_rule["pattern-regex"] = pattern_regex
-        elif len(pattern_list) == 1 and not pattern_not_list:
+        elif len(pattern_list) == 1 and not has_negative:
             semgrep_rule["pattern"] = pattern_list[0]
-        elif len(pattern_list) == 1 and pattern_not_list:
+        elif len(pattern_list) == 1:
             semgrep_rule["patterns"] = [{"pattern": pattern_list[0]}]
             for pn in pattern_not_list:
                 semgrep_rule["patterns"].append({"pattern-not": pn})
+            for pni in pattern_not_inside_list:
+                semgrep_rule["patterns"].append({"pattern-not-inside": pni})
         elif len(pattern_list) > 1:
             # 多个 pattern 用 pattern-either
             semgrep_rule["patterns"] = [
@@ -679,6 +692,8 @@ class RuleEngine:
             ]
             for pn in pattern_not_list:
                 semgrep_rule["patterns"].append({"pattern-not": pn})
+            for pni in pattern_not_inside_list:
+                semgrep_rule["patterns"].append({"pattern-not-inside": pni})
 
         if "fix" in rule:
             semgrep_rule["fix"] = rule["fix"]
@@ -706,6 +721,65 @@ class RuleEngine:
 
         return _walk(metadata)
 
+    # Spring 入口点方法注解（entry-point anchoring）。
+    # 参数级注解（@RequestParam 在参数上）在 Semgrep Java 签名匹配中
+    # 过滤不可靠（实测 @Transactional 方法参数同样命中，见 2026-08-26
+    # PoC）；方法级 mapping 注解锚定可靠。入口点方法的全部参数视为
+    # 用户可控（Spring 隐式参数绑定语义），业界同构方案：cogniumhq
+    # 24 仓库 Java OSS 实测不锚定入口点导致 98.7% critical 误报。
+    _SPRING_ENTRYPOINT_ANNOTATIONS = (
+        "GetMapping", "PostMapping", "RequestMapping",
+        "PutMapping", "DeleteMapping", "PatchMapping",
+    )
+
+    _ENTRYPOINT_SOURCE_MARK = "spring-entrypoint-param"
+
+    # sink 条目可选后缀 "focus: $X"：将 sink 聚焦到模式中的某个元变量。
+    # 必要性（2026-08-26 PoC 实测）：focus-metavariable 参数源（入口点参数）
+    # 的污点按"起点包含"语义命中 sink——即使污点值已流经净化器（如
+    # htmlEscape 转义后 write(escape(name)) 仍报）；sink 侧聚焦参数后恢复
+    # 值级污点判定，净化器重新生效（转义后 clean、未转义 HIT，9/9 矩阵验证）。
+    _FOCUS_SUFFIX_RE = re.compile(r"\s+focus:\s*(\$[A-Z][A-Z0-9_]*)\s*$")
+
+    def _expand_taint_entries(self, entries: List[Dict]) -> List[Dict]:
+        """展开 taint source/sink 条目，支持复合语义标记
+
+        spring-entrypoint-param：展开为 Spring 入口点方法参数复合 source
+        （pattern-inside 方法级 mapping 注解 + focus 参数），每个注解一项。
+
+        "pattern focus: $X" 后缀：展开为 pattern + focus-metavariable 复合
+        条目，用于 sink 聚焦数据参数（净化器语义见 _FOCUS_SUFFIX_RE 注释）。
+        """
+        expanded: List[Dict] = []
+        for e in entries:
+            if e.get("content") == self._ENTRYPOINT_SOURCE_MARK:
+                for ann in self._SPRING_ENTRYPOINT_ANNOTATIONS:
+                    expanded.append({
+                        "patterns": [
+                            {
+                                "pattern-inside": (
+                                    f"@{ann}(...)\n"
+                                    "$RET $METHOD(..., $TYPE $PARAM, ...) {\n"
+                                    "  ...\n"
+                                    "}"
+                                ),
+                            },
+                            {"focus-metavariable": "$PARAM"},
+                        ],
+                    })
+            else:
+                m = self._FOCUS_SUFFIX_RE.search(e["content"])
+                if m:
+                    expanded.append({
+                        "patterns": [
+                            {"pattern": e["content"][:m.start()]},
+                            {"focus-metavariable": m.group(1)},
+                        ]
+                    })
+                else:
+                    expanded.append({"pattern": e["content"]})
+        return expanded
+
     def _build_taint_rule(
         self, rule: Dict, languages: List[str], rule_id: Optional[str], target_lang
     ) -> Dict:
@@ -730,9 +804,7 @@ class RuleEngine:
                     if not e.get("lang") or e["lang"] == target_lang
                 ]
             if entries:
-                semgrep_rule[f"pattern-{key}"] = [
-                    {"pattern": e["content"]} for e in entries
-                ]
+                semgrep_rule[f"pattern-{key}"] = self._expand_taint_entries(entries)
 
         if "fix" in rule:
             semgrep_rule["fix"] = rule["fix"]

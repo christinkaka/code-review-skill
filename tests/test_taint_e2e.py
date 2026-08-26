@@ -368,6 +368,51 @@ class TestXssTaintE2E:
         assert "writeEscaped" not in hits, "HtmlUtils.htmlEscape 转义后不应误报"
         assert "writeCustomEscape" not in hits, "自定义 escapeHtml 转义后不应误报"
 
+    def test_file_write_is_not_xss_sink(self, tmp_path):
+        """hello-world 盲测实证（FileController:105）：Files.write 是文件写入，
+        不是 HTTP 响应输出，不应报 XSS。旧 sink $WRITER.write(...) 曾误报。
+        同时验证全限定名 HtmlUtils 转义净化。"""
+        java = (
+            "import java.nio.file.Files;\n"
+            "import java.nio.file.Paths;\n"
+            "import javax.servlet.http.HttpServletResponse;\n"
+            "import org.springframework.web.bind.annotation.*;\n"
+            "import org.springframework.web.multipart.MultipartFile;\n"
+            "\n"
+            "class Upload {\n"
+            "    @PostMapping(\"/upload\")\n"
+            "    String uploadProfile(@RequestParam(\"file\") MultipartFile file)\n"
+            "            throws Exception {\n"
+            "        String filename = file.getOriginalFilename();\n"
+            "        java.nio.file.Path filePath = Paths.get(\"/app/uploads/\" + filename);\n"
+            "        Files.write(filePath, file.getBytes());\n"
+            "        return \"ok\";\n"
+            "    }\n"
+            "\n"
+            "    @GetMapping(\"/greet\")\n"
+            "    void greet(@RequestParam String name, HttpServletResponse response)\n"
+            "            throws Exception {\n"
+            "        response.getWriter().write(\n"
+            "            org.springframework.web.util.HtmlUtils.htmlEscape(name));\n"
+            "    }\n"
+            "}\n"
+        )
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "Upload.java").write_text(java, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "xss.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "Upload.java"}])
+        xss = [i for i in issues if "xss-taint" in str(i.get("rule_id"))]
+        assert not xss, (
+            f"文件写入/转义输出不应报 XSS（旧 $WRITER.write(...) sink 误报场景）: {xss}"
+        )
+
     def test_js_rules_unaffected(self, tmp_path):
         """Java 交给 taint 后，JS XSS 规则仍正常检出"""
         repo = tmp_path / "repo"
@@ -662,3 +707,148 @@ class TestDeserTaintE2E:
         assert any("deser-python" in r for r in py_rules), (
             f"Python pickle 规则应仍检出: {py_rules}"
         )
+
+
+# ==================== Spring Entry-Point Anchoring E2E ====================
+
+_ENTRYPOINT_JAVA = """import java.io.ObjectInputStream;
+import java.io.ByteArrayInputStream;
+import javax.persistence.EntityManager;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+class Api {
+    private EntityManager entityManager;
+
+    @PostMapping("/deserialize")
+    String deserialize(@RequestBody String payload) throws Exception {
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(payload.getBytes()));
+        return ois.readObject().toString();
+    }
+
+    @GetMapping("/search")
+    String search(String q) {
+        String jpql = "SELECT u FROM User u WHERE u.name LIKE '%" + q + "%'";
+        return entityManager.createQuery(jpql).getResultList().toString();
+    }
+
+    @RequestMapping("/legacy")
+    String legacy(String id) {
+        String sql = "SELECT * FROM users WHERE id = " + id;
+        return entityManager.createNativeQuery(sql).getResultList().toString();
+    }
+
+    @javax.transaction.Transactional
+    void txMethod(String payload) throws Exception {
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(payload.getBytes()));
+        ois.readObject();
+    }
+
+    void plainHelper(String q) {
+        String jpql = "SELECT u FROM User u WHERE u.name LIKE '%" + q + "%'";
+        entityManager.createQuery(jpql);
+    }
+
+    @GetMapping("/constant")
+    String constant() {
+        String jpql = "SELECT u FROM User u";
+        return entityManager.createQuery(jpql).getResultList().toString();
+    }
+}
+"""
+
+_ENTRYPOINT_METHODS = (
+    "deserialize", "search", "legacy", "txMethod", "plainHelper", "constant",
+)
+
+
+def _entrypoint_method_hits(issues: list) -> dict:
+    """按方法名归类命中行（行号 -> 最近上方方法名）"""
+    method_at = {}
+    current = None
+    for idx, text in enumerate(_ENTRYPOINT_JAVA.split("\n"), start=1):
+        for name in _ENTRYPOINT_METHODS:
+            if name in text:
+                current = name
+        method_at[idx] = current
+        if text.strip() == "}":
+            current = None
+    hits = {}
+    for i in issues:
+        if i.get("file") == "Api.java":
+            m = method_at.get(i.get("line"))
+            if m:
+                hits.setdefault(m, set()).add(str(i.get("rule_id")))
+    return hits
+
+
+class TestSpringEntrypointE2E:
+    """入口点锚定（2026-08-26）：参数级注解过滤在 Semgrep Java 签名
+    匹配中不可靠（@Transactional 参数同样命中），改为方法级 mapping
+    注解锚定：入口点方法全部参数视为用户可控（Spring 隐式绑定语义）。
+    """
+
+    def _run_engine(self, tmp_path, spec_name):
+        repo = tmp_path / "repo"
+        repo.mkdir(exist_ok=True)
+        (repo / "Api.java").write_text(_ENTRYPOINT_JAVA, encoding="utf-8")
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": spec_name, "enabled": True}]},
+        )
+        return engine.run(str(repo), [{"path": "Api.java"}])
+
+    def test_deser_entrypoint_tp_and_tn(self, tmp_path):
+        issues = self._run_engine(tmp_path, "deserialization.md")
+        taint = [i for i in issues if "deser-taint" in str(i.get("rule_id"))]
+        hits = _entrypoint_method_hits(taint)
+
+        assert "deserialize" in hits, (
+            "TP: @PostMapping + @RequestBody 参数流入 ObjectInputStream 应报出"
+        )
+        assert "txMethod" not in hits, (
+            "TN: @Transactional 非入口方法参数不应作为污点源（此前参数级注解写法误报）"
+        )
+
+    def test_sqli_entrypoint_tp_and_tn(self, tmp_path):
+        issues = self._run_engine(tmp_path, "sql-injection.md")
+        taint = [i for i in issues if "sqli-taint" in str(i.get("rule_id"))]
+        hits = _entrypoint_method_hits(taint)
+
+        assert "search" in hits, (
+            "TP: @GetMapping 隐式参数绑定流入 createQuery 拼接应报出（hello-world 盲测漏检场景）"
+        )
+        assert "legacy" in hits, (
+            "TP: @RequestMapping 参数流入 createNativeQuery 应报出"
+        )
+        assert "plainHelper" not in hits, (
+            "TN: 无注解普通方法参数不应作为污点源"
+        )
+        assert "constant" not in hits, (
+            "TN: 入口方法常量 SQL 不应误报"
+        )
+
+    def test_entrypoint_mark_expands_to_composite_sources(self):
+        """引擎将 spring-entrypoint-param 标记展开为复合 source 结构"""
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "deserialization.md", "enabled": True}]},
+        )
+        semgrep_rules = engine._rules_to_semgrep()
+        deser = next(
+            r for r in semgrep_rules["rules"] if r.get("id") == "deser-taint"
+        )
+        sources = deser["pattern-sources"]
+        composite = [s for s in sources if "patterns" in s]
+        assert len(composite) == 6, (
+            f"应展开 6 个入口注解复合 source，实际 {len(composite)}"
+        )
+        for c in composite:
+            keys = [list(p.keys())[0] for p in c["patterns"]]
+            assert keys == ["pattern-inside", "focus-metavariable"], (
+                f"复合 source 结构异常: {keys}"
+            )

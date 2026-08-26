@@ -34,6 +34,7 @@ $REQ.getHeader(...)
 $REQ.getQueryString()
 $REQ.getInputStream()
 $REQ.getReader()
+spring-entrypoint-param
 ```
 
 ```pattern-sinks
@@ -212,25 +213,63 @@ if (urlObj.getHost().equals("169.254.169.254")) {
 > 2026-08-25 盲评修正：Java 侧 `new URL($USER_INPUT)` 裸构造不产生网络
 > 流量（如注册 Tomcat 静态资源），误报实测 2/2。SSRF 的判别信号是
 > **连接建立**（openConnection / send），而非 URL 对象构造。
+>
+> 2026-08-26 修正一（解析失效）：本规则为多语言规则，但 Java 语法
+> pattern 无语言标签落到 Python 变体上导致整条 `ssrf-deep-detection__python`
+> 解析失败（semgrep rc=2，Python 侧 SSRF 检测静默失效）。以语言子标题
+> 为 pattern 打语言标签：Java pattern 只进 Java 变体，requests 只进
+> Python 变体；fetch/axios 保持无标签（各语言均可解析）。
+>
+> 2026-08-26 修正二（常量误报）：`$USER_INPUT` 元变量匹配任意表达式，
+> 常量 URL 直连（`requests.get("https://api.example.com/health")`）
+> 同样命中——实测复现。各 pattern 配套 pattern-not 排除字符串字面量
+> 实参（semgrep `"..."` 匹配任意字符串字面量）；f-string/变量拼接
+> 不受影响，仍正常检出。
+
+### Java
 
 ```pattern
 new URL($USER_INPUT).openConnection()
 ```
 
+```pattern-not
+new URL("...").openConnection()
+```
+
+### Python
+
 ```pattern
 requests.get($USER_INPUT)
+```
+
+```pattern-not
+requests.get("...")
 ```
 
 ```pattern
 requests.post($USER_INPUT)
 ```
 
+```pattern-not
+requests.post("...")
+```
+
+### 通用
+
 ```pattern
 fetch($USER_INPUT)
 ```
 
+```pattern-not
+fetch("...")
+```
+
 ```pattern
 axios.get($USER_INPUT)
+```
+
+```pattern-not
+axios.get("...")
 ```
 
 ---
@@ -284,8 +323,16 @@ factory.setFeature("http://xml.org/sax/features/external-parameter-entities", fa
 ## 检测模式
 
 > 2026-08-25 盲评修正：工厂创建后紧邻设置 disallow-doctype-decl /
-> secure-processing 属 OWASP 推荐加固写法（实测 2/2 误报），以
-> pattern-not 豁免。
+> secure-processing 属 OWASP 推荐加固写法（实测 2/2 误报），以排除
+> 模式豁免。
+>
+> 2026-08-26 修正：原 pattern-not 块有两处缺陷——(1) 缺分号的语句序列
+> 无法解析，整条 `xxe-deep-detection__java` 规则 rc=2 静默失效（XXE
+> 检测从未生效）；(2) 即使可解析，pattern-not 要求与正向 pattern 范围
+> 一致，多语句排除块永远不命中（semgrep 语义），应使用 pattern-not-inside。
+> 另以语言子标题为 pattern 打标签，Java 语法排除块不再落入 Python 变体。
+
+### Java
 
 ```pattern
 DocumentBuilderFactory.newInstance()
@@ -299,18 +346,26 @@ SAXParserFactory.newInstance()
 XMLReaderFactory.createXMLReader()
 ```
 
+```pattern-not-inside
+$F = $FACTORY.newInstance();
+...
+$F.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+```
+
+```pattern-not-inside
+$F = $FACTORY.newInstance();
+...
+$F.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+```
+
+```pattern-not-inside
+$F = $FACTORY.newInstance();
+...
+$F.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+```
+
+### Python
+
 ```pattern
 etree.parse($USER_INPUT)
-```
-
-```pattern-not
-$F = $FACTORY.newInstance()
-...
-$F.setFeature("...disallow-doctype-decl...", true)
-```
-
-```pattern-not
-$F = $FACTORY.newInstance()
-...
-$F.setFeature("...secure-processing...", true)
 ```

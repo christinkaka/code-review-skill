@@ -1,6 +1,16 @@
 # XSS - 用户可控数据流入 HTTP 响应（数据流分析）
 
 > 用户可控数据（HTTP 请求参数/头）经赋值、拼接、字符串构造传播后流入 HTTP 响应输出 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。
+>
+> 2026-08-26 盲测修正：原 sink `$WRITER.write(...)`/`$OUT.write(...)` 会命中任意
+> `.write()` 调用——hello-world 实证 `Files.write(path, bytes)`（文件写入，非 HTTP
+> 输出）被误报为 XSS。sink 收紧为两类 HTTP 响应输出形态：`getWriter()`/
+> `getOutputStream()` 链式调用，或显式声明为 `PrintWriter`/`ServletOutputStream`
+> 类型的变量上的输出调用。
+>
+> sink 一律以 `focus: $DATA` 聚焦数据参数：入口点参数源的污点按"起点包含"语义
+> 命中未聚焦 sink，净化器（转义函数）失效（PoC 实测 write(escape(name)) 误报）；
+> 聚焦数据参数后恢复值级污点判定，转义后不报、未转义报出。
 
 ```yaml
 id: xss-taint
@@ -12,11 +22,13 @@ owasp: A03:2021
 
 ## 检测原理
 
-- **污点源**：Servlet 请求参数/头/查询串/输入流
-- **污点汇聚**：HTTP 响应输出 API（PrintWriter.write/println/print、ServletOutputStream.write/print）
+- **污点源**：Servlet 请求参数/头/查询串/输入流；Spring 入口点方法参数
+- **污点汇聚**：HTTP 响应输出 API（`response.getWriter().write/println/print`、`response.getOutputStream().write/print/println` 链式调用；显式类型 `java.io.PrintWriter`/`javax.servlet.ServletOutputStream` 变量上的 `write/println/print`）
 - **净化器**：HTML 转义函数（HtmlUtils.htmlEscape、escapeHtml、StringEscapeUtils.escapeHtml4、ESAPI.encoder().encodeForHTML）
 
 `request.getParameter("name")` 之后 `response.getWriter().write("Hello, " + name)` 命中（污点随字符串拼接传播）；
+`PrintWriter out = response.getWriter(); out.println(tainted)` 命中（显式类型接收者）；
+`Files.write(path, file.getBytes())` 不报（文件写入，非 HTTP 响应输出）；
 常量字符串输出无污点源，不报；
 经 `HtmlUtils.htmlEscape(...)` 转义后的数据不报。
 
@@ -28,21 +40,30 @@ $REQ.getHeader(...)
 $REQ.getQueryString()
 $REQ.getInputStream()
 $REQ.getReader()
+spring-entrypoint-param
 ```
 
 ```pattern-sinks
-$WRITER.write(...)
-$WRITER.println(...)
-$WRITER.print(...)
-$OUT.write(...)
-$OUT.print(...)
-$OUT.println(...)
+$RESP.getWriter().write(..., $DATA, ...) focus: $DATA
+$RESP.getWriter().println(..., $DATA, ...) focus: $DATA
+$RESP.getWriter().print(..., $DATA, ...) focus: $DATA
+$RESP.getOutputStream().write(..., $DATA, ...) focus: $DATA
+$RESP.getOutputStream().print(..., $DATA, ...) focus: $DATA
+$RESP.getOutputStream().println(..., $DATA, ...) focus: $DATA
+(java.io.PrintWriter $W).write(..., $DATA, ...) focus: $DATA
+(java.io.PrintWriter $W).println(..., $DATA, ...) focus: $DATA
+(java.io.PrintWriter $W).print(..., $DATA, ...) focus: $DATA
+(javax.servlet.ServletOutputStream $O).write(..., $DATA, ...) focus: $DATA
+(javax.servlet.ServletOutputStream $O).print(..., $DATA, ...) focus: $DATA
+(javax.servlet.ServletOutputStream $O).println(..., $DATA, ...) focus: $DATA
 ```
 
 ```pattern-sanitizers
 HtmlUtils.htmlEscape(...)
+org.springframework.web.util.HtmlUtils.htmlEscape(...)
 escapeHtml(...)
 StringEscapeUtils.escapeHtml4(...)
+org.apache.commons.lang3.StringEscapeUtils.escapeHtml4(...)
 ESAPI.encoder().encodeForHTML(...)
 ```
 

@@ -28,6 +28,7 @@ $REQ.getHeader(...)
 $REQ.getQueryString()
 $REQ.getInputStream()
 $REQ.getReader()
+spring-entrypoint-param
 ```
 
 ```pattern-sinks
@@ -35,6 +36,8 @@ $STMT.execute(...)
 $STMT.executeQuery(...)
 $STMT.executeUpdate(...)
 $CONN.prepareStatement(...)
+$EM.createQuery(...)
+$EM.createNativeQuery(...)
 ```
 
 ```pattern-sanitizers

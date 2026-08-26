@@ -463,6 +463,7 @@ $REQ.getQueryString()
 $REQ.getInputStream()
 $REQ.getReader()
 $FILE.getOriginalFilename()
+spring-entrypoint-param
 (ObjectInputStream $O).readObject()
 ```
 

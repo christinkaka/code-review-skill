@@ -31,6 +31,7 @@ $REQ.getHeader(...)
 $REQ.getQueryString()
 $REQ.getInputStream()
 $REQ.getReader()
+spring-entrypoint-param
 ```
 
 ```pattern-sinks

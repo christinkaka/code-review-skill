@@ -356,6 +356,72 @@ xss-java-string-builder-html 两条模式规则删除，JS/Python 模式保留�
 | Python 规则（pickle 用户输入） | 不受影响 | ✅ 正常检出 |
 
 
+### Spring 入口点锚定与盲测修复（2026-08-26）
+
+hello-world（VulnUserManager）真实仓库复测暴露三类问题，本批全部修复并回归。
+
+**1. 入口点锚定（entry-point anchoring）**
+
+5 条 taint 规则的污点源原只覆盖 Servlet API（getParameter 等），Spring
+`@RequestBody`/隐式参数绑定链路漏检（复测漏检 3 中的反序列化 2 条）。
+新增 `spring-entrypoint-param` 标记：以**方法级** mapping 注解
+（@GetMapping/@PostMapping/@RequestMapping/@PutMapping/@DeleteMapping/@PatchMapping）
+锚定入口方法，其全部参数视为用户可控（Spring 隐式参数绑定语义）。
+不使用参数级注解（@RequestParam）过滤——PoC 实测 Semgrep Java 签名匹配
+中参数级注解不可靠（@Transactional 方法参数同样命中）。业界同构方案：
+cogniumhq 在 24 个 Java OSS 仓库实测，不锚定入口点导致 98.7% critical 误报。
+
+**2. taint sink 聚焦（`focus: $DATA` 后缀语法）**
+
+复测发现 xss-taint 误报：`Files.write(path, bytes)`（文件写入）命中过宽的
+sink `$WRITER.write(...)`（匹配任意 `.write()` 调用）。sink 收紧为 HTTP 响应
+输出两类形态（`getWriter()`/`getOutputStream()` 链式调用；显式类型
+`PrintWriter`/`ServletOutputStream` 变量）。修复过程中发现更深的语义问题：
+
+- **入口点参数源（focus-metavariable source）的污点按"起点包含"语义命中
+  sink，净化器失效**——PoC 实测 `write(htmlEscape(name))` 在转义后仍报
+  （getParameter 源则正常净化）；
+- sink 侧以 `focus: $DATA` 聚焦数据参数后恢复值级污点判定，净化器重新
+  生效（9/9 矩阵验证：转义后 clean、未转义 HIT、多参写法 HIT、常量 clean、
+  `Files.write` clean）；
+- 该绕过仅影响"净化器嵌套在 sink 调用内部"形态（XSS 型）；path-traversal
+  的净化器（getName 等）在表达式结构上包住 sink，天然免疫（实测确认）；
+  sqli（setString 与 sink 分离）、deser（无净化器）不受影响。
+
+**3. DSL 扩展：`pattern-not-inside` 代码块**
+
+xxe-deep-detection 的 pattern-not 排除块有双重缺陷：(1) 缺分号语句序列
+无法解析，整条 `xxe-deep-detection__java` 规则 rc=2 静默失效（XXE 检测
+从未生效）；(2) pattern-not 要求与正向 pattern 范围一致，多语句排除块
+即使可解析也永远不命中（semgrep 语义），正确算子是 pattern-not-inside。
+引擎解析/组装/外部 YAML 加载三处支持该块类型；正则回退引擎不支持
+inside 语义，回退时按降级处理（不豁免）。
+
+**4. 多语言规则语言标签 + 常量误报收紧**
+
+ssrf-deep-detection 为多语言规则，Java 语法 pattern 无语言标签落入 Python
+变体导致 `ssrf-deep-detection__python` rc=2 解析失效（Python 侧 SSRF
+检测静默失效）。以语言子标题（### Java / ### Python）为 pattern 打标签。
+复活时一并收紧常量误报：`$USER_INPUT` 元变量匹配任意表达式，常量 URL
+直连（`requests.get("https://...")`）同样命中——各 pattern 配套
+`pattern-not: xxx("...")` 排除字符串字面量实参（f-string/变量拼接不受影响）。
+
+**验证**（真实 semgrep）：
+
+| 验证项 | 结果 |
+|--------|------|
+| 入口点锚定 TP/TN（deser/sqli，含 @Transactional TN） | `test_taint_e2e.py::TestSpringEntrypointE2E` ✅ |
+| xss sink 收紧 + focus 修复（含 hello-world Files.write 误报场景回归） | `test_taint_e2e.py::TestXssTaintE2E` ✅ |
+| 复活规则 TP/TN（xxe 三种加固豁免、ssrf 常量排除） | `test_pattern_rules_e2e.py` ✅ |
+| 全量规则可解析（rc=2 静默失效防护） | `test_pattern_rules_e2e.py::TestAllRulesParseable` ✅ |
+| 全量回归 | 584 passed / 6 skipped |
+
+hello-world 复测（5 规约）：误报 1 → 0（xss Files.write）；漏检 3 → 1
+（deser 2 条已检出；剩余 sqli 1 条为 Controller→Service 跨方法流，
+Semgrep OSS taint 过程内分析的能力边界，非规则缺陷）。详见
+`docs/blind-test-hello-world.md`。
+
+
 
 ---
 
