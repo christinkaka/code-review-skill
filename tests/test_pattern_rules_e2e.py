@@ -24,6 +24,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 _SPECS_DIR = Path(__file__).parent.parent / "references" / "security"
+_REFS_DIR = Path(__file__).parent.parent / "references"
 
 
 def _scan(tmp_path, filename, source):
@@ -83,6 +84,51 @@ class TestXxeDeepDetectionE2E:
         assert 16 not in lines, "全限定名 FEATURE_SECURE_PROCESSING 加固后不应报"
         assert 21 not in lines, "import 形式 FEATURE_SECURE_PROCESSING 加固后不应报"
 
+    def test_reader_level_hardening_exempted(self, tmp_path):
+        """reader 级加固豁免（2026-08-26，java-sec-code 盲测实证）：
+        createXMLReader 后对 reader setFeature、SAXParser 派生 reader
+        后 setFeature 两种加固写法不应报；未加固的 createXMLReader 应报。
+        """
+        java = (
+            "import javax.xml.parsers.SAXParserFactory;\n"
+            "import org.xml.sax.XMLReader;\n"
+            "import org.xml.sax.helpers.XMLReaderFactory;\n"
+            "\n"
+            "class ReaderCases {\n"
+            "    void unhardenedReader(String xml) throws Exception {\n"
+            "        XMLReader r = XMLReaderFactory.createXMLReader();\n"
+            "        r.parse(xml);\n"
+            "    }\n"
+            "\n"
+            "    void hardenedDirect(String xml) throws Exception {\n"
+            "        XMLReader r = XMLReaderFactory.createXMLReader();\n"
+            "        r.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\n"
+            "        r.parse(xml);\n"
+            "    }\n"
+            "\n"
+            "    void hardenedDerived(String xml) throws Exception {\n"
+            "        SAXParserFactory spf = SAXParserFactory.newInstance();\n"
+            "        XMLReader r = spf.newSAXParser().getXMLReader();\n"
+            "        r.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);\n"
+            "        r.parse(xml);\n"
+            "    }\n"
+            "\n"
+            "    void unhardenedDerived(String xml) throws Exception {\n"
+            "        SAXParserFactory spf = SAXParserFactory.newInstance();\n"
+            "        XMLReader r = spf.newSAXParser().getXMLReader();\n"
+            "        r.parse(xml);\n"
+            "    }\n"
+            "}\n"
+        )
+        lines = _lines(_scan(tmp_path, "ReaderCases.java", java), "xxe-deep-detection")
+        assert 7 in lines, "未加固的 createXMLReader() 应报出"
+        assert 13 not in lines, "reader 级 setFeature 加固后不应报（xmlReaderSec 误报场景）"
+        assert 19 not in lines, (
+            "SAXParser 派生 reader 加固后不应报（XMLReaderSec 误报场景，"
+            "豁免块需从工厂创建跨到 setFeature）"
+        )
+        assert 25 in lines, "SAXParser 派生 reader 未加固应报出"
+
 
 _SSRF_JAVA = """import java.net.HttpURLConnection;
 import java.net.URL;
@@ -131,15 +177,21 @@ class TestSsrfDeepDetectionE2E:
 
 class TestAllRulesParseable:
     def test_security_rules_no_semgrep_parse_errors(self, tmp_path):
-        """全量 security 规约经引擎生成后必须全部可被 semgrep 解析。
+        """全量规约（含 design/api/naming 等全部类别）经引擎生成后必须
+        全部可被 semgrep 解析。
 
-        rc=2 解析失败会导致整条规则静默失效（2026-08-26 曾有 2 条），
+        rc=2 解析失败会导致整条规则静默失效（2026-08-26 曾有 2 条安全
+        规则；后又在 design/architecture.md 发现 arch-java-missing-api-layer
+        的 `$CLASSImpl` 非法元变量——含小写字母，自创建起从未生效），
         且每次扫描都输出"Semgrep 异常退出"噪声。以真实扫描路径断言
-        errors 为空作回归防护。
+        errors 为空作回归防护；用 default profile 与生产一致。
         """
-        engine = RuleEngine(
-            str(_SPECS_DIR), {"specs": [{"path": "*.md", "enabled": True}]}
-        )
+        import yaml
+
+        profile_path = Path(__file__).parent.parent / "references" / "profiles" / "default.yaml"
+        with open(profile_path) as f:
+            profile = yaml.safe_load(f)
+        engine = RuleEngine(str(_REFS_DIR), profile)
         rules = engine._rules_to_semgrep()
         assert rules["rules"], "规则生成结果为空"
 

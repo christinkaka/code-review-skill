@@ -1,0 +1,1531 @@
+{
+  "scan_info": {
+    "repo": "java-sec-code",
+    "repo_path": "repos/java-sec-code",
+    "profile": "default",
+    "timestamp": "2026-08-26 08:45:50",
+    "duration_seconds": 2.28,
+    "test_type": "dual-blind"
+  },
+  "summary": {
+    "total": 78,
+    "critical": 15,
+    "high": 24,
+    "medium": 17,
+    "low": 22,
+    "by_category": {
+      "security": 39,
+      "design": 22,
+      "implementation": 13,
+      "unknown": 4
+    },
+    "by_file": {
+      "src/main/java/org/joychou/controller/XXE.java": 10,
+      "src/main/java/org/joychou/controller/FileUpload.java": 6,
+      "src/main/java/org/joychou/controller/SQLI.java": 6,
+      "src/main/java/org/joychou/config/SafeDomainParser.java": 4,
+      "src/main/java/org/joychou/controller/Jwt.java": 4,
+      "src/main/java/org/joychou/controller/Rce.java": 3,
+      "src/main/java/org/joychou/controller/SSRF.java": 3,
+      "src/main/java/org/joychou/config/WebSocketsProxyEndpoint.java": 3,
+      "src/main/java/org/joychou/controller/GetRequestURI.java": 3,
+      "src/main/java/org/joychou/controller/Jsonp.java": 3,
+      "src/main/java/org/joychou/config/WebSocketsCmdEndpoint.java": 2,
+      "src/main/java/org/joychou/controller/Deserialize.java": 2,
+      "src/main/java/org/joychou/controller/QLExpress.java": 2,
+      "src/main/java/org/joychou/controller/Shiro.java": 2,
+      "src/main/java/org/joychou/controller/Cookies.java": 2,
+      "src/main/java/org/joychou/controller/Cors.java": 2,
+      "src/main/java/org/joychou/controller/PathTraversal.java": 2,
+      "src/main/java/org/joychou/controller/URLWhiteList.java": 2,
+      "src/main/java/org/joychou/security/ssrf/SocketHookFactory.java": 2,
+      "src/main/java/org/joychou/util/HttpUtils.java": 2
+    },
+    "by_rule": {
+      "api-java-missing-response-wrapper": 19,
+      "auth-java-missing-annotation": 11,
+      "xxe-deep-detection": 7,
+      "path-traversal-taint": 5,
+      "sqli-taint": 5,
+      "err-java-empty-catch": 5,
+      "xxe-java-document-builder": 3,
+      "priv-java-runtime-exec": 3,
+      "api-java-rest-naming": 3,
+      "null-java-method-chain": 3,
+      "deser-taint": 2,
+      "naming-java-boolean-vague": 2,
+      "null-java-collection-get": 2,
+      "path-traversal-pattern": 2,
+      "ssrf-taint": 1,
+      "xxe-java-xml-reader": 1,
+      "xxe-java-sax-parser": 1,
+      "sqli-java-mybatis-annotation": 1,
+      "ssrf-deep-detection": 1,
+      "naming-java-constant-case": 1
+    }
+  },
+  "diff_summary": {
+    "files_changed": 0,
+    "insertions": 0,
+    "deletions": 0
+  },
+  "call_graph_summary": {
+    "node_count": 0,
+    "edge_count": 0,
+    "affected_methods": []
+  },
+  "issues": [
+    {
+      "rule_id": "xxe-java-document-builder",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/config/SafeDomainParser.java",
+      "line": 32,
+      "end_line": 34,
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7550021510445334,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/config/SafeDomainParser.java",
+      "line": 32,
+      "end_line": 32,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7946421476297646,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-java-document-builder",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/config/SafeDomainParser.java",
+      "line": 88,
+      "end_line": 91,
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8853398974845823,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/config/SafeDomainParser.java",
+      "line": 88,
+      "end_line": 88,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7673877665258833,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "priv-java-runtime-exec",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/config/TomcatFilterMemShell.java",
+      "line": 82,
+      "end_line": 82,
+      "message": "Runtime.exec() 执行用户可控命令，存在命令注入和提权风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-78",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.755959443887614,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "priv-java-runtime-exec",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/config/WebSocketsCmdEndpoint.java",
+      "line": 31,
+      "end_line": 31,
+      "message": "Runtime.exec() 执行用户可控命令，存在命令注入和提权风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-78",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8510710576206725,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "deser-taint",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/Deserialize.java",
+      "line": 49,
+      "end_line": 49,
+      "message": "用户可控数据（HTTP 请求参数/头/流）经赋值、包装传播后流入 Java 反序列化或 JNDI 查找 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-502",
+        "owasp": "A08:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8589882961206433,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-traversal-taint",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/FileUpload.java",
+      "line": 62,
+      "end_line": 62,
+      "message": "用户可控数据（HTTP 请求、上传文件名、反序列化结果）经任何赋值/拼接传播后流入文件路径操作。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配：常量拼接与已净化（basename / 规范化）场景不再误报。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8678531367751817,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-traversal-taint",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/FileUpload.java",
+      "line": 63,
+      "end_line": 63,
+      "message": "用户可控数据（HTTP 请求、上传文件名、反序列化结果）经任何赋值/拼接传播后流入文件路径操作。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配：常量拼接与已净化（basename / 规范化）场景不再误报。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7512997519356122,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-traversal-taint",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/FileUpload.java",
+      "line": 144,
+      "end_line": 144,
+      "message": "用户可控数据（HTTP 请求、上传文件名、反序列化结果）经任何赋值/拼接传播后流入文件路径操作。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配：常量拼接与已净化（basename / 规范化）场景不再误报。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8896278789976454,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-traversal-taint",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/FileUpload.java",
+      "line": 145,
+      "end_line": 145,
+      "message": "用户可控数据（HTTP 请求、上传文件名、反序列化结果）经任何赋值/拼接传播后流入文件路径操作。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配：常量拼接与已净化（basename / 规范化）场景不再误报。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7810958999623563,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "path-traversal-taint",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/FileUpload.java",
+      "line": 180,
+      "end_line": 180,
+      "message": "用户可控数据（HTTP 请求、上传文件名、反序列化结果）经任何赋值/拼接传播后流入文件路径操作。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配：常量拼接与已净化（basename / 规范化）场景不再误报。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-22",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8173189090225254,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-taint",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/QLExpress.java",
+      "line": 26,
+      "end_line": 26,
+      "message": "用户可控数据（HTTP 请求参数/头）经赋值、字符串拼接传播后流入 SQL 执行 API 或 SQL 构造 API。基于 Semgrep taint 模式做过程内数据流追踪，PreparedStatement 参数绑定（setString 等）作为净化器切断污点传播。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8707452062733783,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-taint",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/QLExpress.java",
+      "line": 40,
+      "end_line": 40,
+      "message": "用户可控数据（HTTP 请求参数/头）经赋值、字符串拼接传播后流入 SQL 执行 API 或 SQL 构造 API。基于 Semgrep taint 模式做过程内数据流追踪，PreparedStatement 参数绑定（setString 等）作为净化器切断污点传播。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8959463573387636,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "priv-java-runtime-exec",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/Rce.java",
+      "line": 135,
+      "end_line": 135,
+      "message": "Runtime.exec() 执行用户可控命令，存在命令注入和提权风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-78",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9446231527958742,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-taint",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/SQLI.java",
+      "line": 67,
+      "end_line": 67,
+      "message": "用户可控数据（HTTP 请求参数/头）经赋值、字符串拼接传播后流入 SQL 执行 API 或 SQL 构造 API。基于 Semgrep taint 模式做过程内数据流追踪，PreparedStatement 参数绑定（setString 等）作为净化器切断污点传播。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8604081262546455,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-taint",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/SQLI.java",
+      "line": 150,
+      "end_line": 150,
+      "message": "用户可控数据（HTTP 请求参数/头）经赋值、字符串拼接传播后流入 SQL 执行 API 或 SQL 构造 API。基于 Semgrep taint 模式做过程内数据流追踪，PreparedStatement 参数绑定（setString 等）作为净化器切断污点传播。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8737039504728492,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-taint",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/SQLI.java",
+      "line": 153,
+      "end_line": 153,
+      "message": "用户可控数据（HTTP 请求参数/头）经赋值、字符串拼接传播后流入 SQL 执行 API 或 SQL 构造 API。基于 Semgrep taint 模式做过程内数据流追踪，PreparedStatement 参数绑定（setString 等）作为净化器切断污点传播。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89",
+        "owasp": "A03:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8654704290513524,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-taint",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/SSRF.java",
+      "line": 130,
+      "end_line": 130,
+      "message": "用户可控数据（HTTP 请求参数/头）经赋值、拼接、URL/URI 构造传播后流入真实发起出站请求的 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918",
+        "owasp": "A10:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7591648767311324,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "deser-taint",
+      "category": "unknown",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/Shiro.java",
+      "line": 37,
+      "end_line": 37,
+      "message": "用户可控数据（HTTP 请求参数/头/流）经赋值、包装传播后流入 Java 反序列化或 JNDI 查找 API。基于 Semgrep taint 模式做过程内数据流追踪，替代纯模式匹配。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-502",
+        "owasp": "A08:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8078775927204215,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-java-xml-reader",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 69,
+      "end_line": 75,
+      "message": "XMLReader 未配置安全特性，存在 XXE 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8229664357940168,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 69,
+      "end_line": 69,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7919014061542975,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-java-sax-parser",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 166,
+      "end_line": 168,
+      "message": "SAXParser 未禁用外部实体，存在 XXE 风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9373309175424989,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 166,
+      "end_line": 166,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8718262011333977,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-java-document-builder",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 292,
+      "end_line": 298,
+      "message": "DocumentBuilder 解析 XML 输入，但 DocumentBuilderFactory 未禁用外部实体。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8779999519708186,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 292,
+      "end_line": 292,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8869228501979749,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 348,
+      "end_line": 348,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9051999823092489,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "xxe-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 368,
+      "end_line": 368,
+      "message": "XML 解析器未禁用外部实体，攻击者可读取服务器文件或发起 SSRF。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-611",
+        "owasp": "A05:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.7564200487808076,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "sqli-java-mybatis-annotation",
+      "category": "security",
+      "severity": "ERROR",
+      "file": "src/main/java/org/joychou/mapper/UserMapper.java",
+      "line": 20,
+      "end_line": 20,
+      "message": "MyBatis @Select/@Update/@Insert/@Delete 注解字符串中使用 ${} 拼接变量。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-89"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.8035481751951405,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "ssrf-deep-detection",
+      "category": "security",
+      "severity": "CRITICAL",
+      "file": "src/main/java/org/joychou/security/ssrf/SSRFChecker.java",
+      "line": 74,
+      "end_line": 74,
+      "message": "服务端发起 HTTP 请求时使用用户可控的 URL，攻击者可访问内网资源或云元数据。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-918",
+        "owasp": "A10:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889,
+      "fix": "建议修复方案",
+      "ai_confidence": 0.9385819428670109,
+      "attack_vector": "",
+      "cvss_score": 0.0
+    },
+    {
+      "rule_id": "naming-java-boolean-vague",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/config/WebSocketsCmdEndpoint.java",
+      "line": 29,
+      "end_line": 29,
+      "message": "布尔变量名应表达判断语义（如 isActive、found、enabled、hasNext），",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/config/WebSocketsProxyEndpoint.java",
+      "line": 35,
+      "end_line": 55,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/config/WebSocketsProxyEndpoint.java",
+      "line": 66,
+      "end_line": 91,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/config/WebSocketsProxyEndpoint.java",
+      "line": 102,
+      "end_line": 107,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/CommandInject.java",
+      "line": 13,
+      "end_line": 63,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Cookies.java",
+      "line": 19,
+      "end_line": 87,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Cookies.java",
+      "line": 19,
+      "end_line": 87,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Cors.java",
+      "line": 19,
+      "end_line": 119,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Cors.java",
+      "line": 19,
+      "end_line": 119,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Deserialize.java",
+      "line": 26,
+      "end_line": 100,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "null-java-collection-get",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Fastjson.java",
+      "line": 24,
+      "end_line": 24,
+      "message": "Map.get() 可能返回 null，直接调用方法会导致 NPE。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "naming-java-boolean-vague",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/FileUpload.java",
+      "line": 181,
+      "end_line": 181,
+      "message": "布尔变量名应表达判断语义（如 isActive、found、enabled、hasNext），",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/GetRequestURI.java",
+      "line": 28,
+      "end_line": 51,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/GetRequestURI.java",
+      "line": 28,
+      "end_line": 51,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/IPForge.java",
+      "line": 15,
+      "end_line": 47,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Jsonp.java",
+      "line": 30,
+      "end_line": 141,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Jsonp.java",
+      "line": 30,
+      "end_line": 141,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-rest-naming",
+      "category": "design",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Jsonp.java",
+      "line": 117,
+      "end_line": 117,
+      "message": "GET 接口应使用名词复数形式，不应使用动词前缀。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Jwt.java",
+      "line": 19,
+      "end_line": 64,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Jwt.java",
+      "line": 19,
+      "end_line": 64,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-rest-naming",
+      "category": "design",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Jwt.java",
+      "line": 31,
+      "end_line": 31,
+      "message": "GET 接口应使用名词复数形式，不应使用动词前缀。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-rest-naming",
+      "category": "design",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Jwt.java",
+      "line": 58,
+      "end_line": 58,
+      "message": "GET 接口应使用名词复数形式，不应使用动词前缀。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Log4j.java",
+      "line": 8,
+      "end_line": 29,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/PathTraversal.java",
+      "line": 16,
+      "end_line": 56,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Rce.java",
+      "line": 25,
+      "end_line": 137,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/Rce.java",
+      "line": 25,
+      "end_line": 137,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/SQLI.java",
+      "line": 23,
+      "end_line": 245,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/SQLI.java",
+      "line": 23,
+      "end_line": 245,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "naming-java-constant-case",
+      "category": "implementation",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/SQLI.java",
+      "line": 31,
+      "end_line": 31,
+      "message": "Java 常量（static final 字段）应使用 UPPER_SNAKE_CASE 命名。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/SSRF.java",
+      "line": 27,
+      "end_line": 318,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/SSRF.java",
+      "line": 27,
+      "end_line": 318,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/SSTI.java",
+      "line": 13,
+      "end_line": 39,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/Shiro.java",
+      "line": 16,
+      "end_line": 49,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/SpEL.java",
+      "line": 17,
+      "end_line": 63,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/URLWhiteList.java",
+      "line": 24,
+      "end_line": 171,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/URLWhiteList.java",
+      "line": 24,
+      "end_line": 171,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/WebSockets.java",
+      "line": 15,
+      "end_line": 76,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/XStreamRce.java",
+      "line": 14,
+      "end_line": 33,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "api-java-missing-response-wrapper",
+      "category": "design",
+      "severity": "INFO",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 41,
+      "end_line": 443,
+      "message": "Controller 返回值未使用统一包装类（如 Result<T>），建议统一响应格式。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "auth-java-missing-annotation",
+      "category": "security",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/controller/XXE.java",
+      "line": 41,
+      "end_line": 443,
+      "message": "Controller 方法缺少鉴权注解，可能存在未授权访问风险。",
+      "code_snippet": "requires login",
+      "metadata": {
+        "cwe": "CWE-862",
+        "owasp": "A01:2021"
+      },
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "null-java-method-chain",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/security/WebSecurityConfig.java",
+      "line": 76,
+      "end_line": 80,
+      "message": "链式调用未做空值检查，任一环节返回 null 将导致 NPE。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/security/ssrf/SocketHook.java",
+      "line": 18,
+      "end_line": 21,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "null-java-collection-get",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/security/ssrf/SocketHookFactory.java",
+      "line": 47,
+      "end_line": 47,
+      "message": "Map.get() 可能返回 null，直接调用方法会导致 NPE。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "err-java-empty-catch",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/security/ssrf/SocketHookFactory.java",
+      "line": 57,
+      "end_line": 61,
+      "message": "空的 catch 块会吞掉异常，导致问题难以排查。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "null-java-method-chain",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/util/HttpUtils.java",
+      "line": 59,
+      "end_line": 59,
+      "message": "链式调用未做空值检查，任一环节返回 null 将导致 NPE。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "null-java-method-chain",
+      "category": "implementation",
+      "severity": "WARNING",
+      "file": "src/main/java/org/joychou/util/HttpUtils.java",
+      "line": 168,
+      "end_line": 168,
+      "message": "链式调用未做空值检查，任一环节返回 null 将导致 NPE。",
+      "code_snippet": "requires login",
+      "engine": "semgrep",
+      "engines": [
+        "semgrep"
+      ],
+      "confidence": 0.888889
+    },
+    {
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "message": "[路径穿越] 检测到路径穿越相关模式。",
+      "file": "src/main/java/org/joychou/controller/GetRequestURI.java",
+      "line": 21,
+      "end_line": 21,
+      "code_snippet": "%2e%2e/",
+      "engine": "ast",
+      "cwe": "CWE-22",
+      "engines": [
+        "ast"
+      ],
+      "confidence": 0.947368
+    },
+    {
+      "rule_id": "path-traversal-pattern",
+      "severity": "WARNING",
+      "message": "[路径穿越] 检测到路径穿越相关模式。",
+      "file": "src/main/java/org/joychou/controller/PathTraversal.java",
+      "line": 22,
+      "end_line": 22,
+      "code_snippet": "../",
+      "engine": "ast",
+      "cwe": "CWE-22",
+      "engines": [
+        "ast"
+      ],
+      "confidence": 0.947368
+    }
+  ]
+}

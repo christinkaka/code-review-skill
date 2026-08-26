@@ -22,6 +22,14 @@ owasp: A03:2021
 
 ## 检测模式
 
+> 2026-08-26 类型化 sink（java-sec-code 盲测实证）：`$STMT.execute(...)` 元变量
+> 匹配任意 receiver，`ExpressRunner.execute()`（表达式执行）、
+> `ExecutorService.execute()`（线程池，真实代码高频）均误命中（实测 2 FP）。
+> sink 改用类型化元变量 `(java.sql.Statement $STMT).execute(...)`，仅
+> JDBC/JPA 类型 receiver 命中。注意 semgrep 类型化元变量**不做子类型
+> 匹配**（实测 PreparedStatement 声明的变量不命中 Statement 类型 sink），
+> Statement/PreparedStatement/CallableStatement 需逐一列出。
+
 ```pattern-sources
 $REQ.getParameter(...)
 $REQ.getHeader(...)
@@ -32,12 +40,20 @@ spring-entrypoint-param
 ```
 
 ```pattern-sinks
-$STMT.execute(...)
-$STMT.executeQuery(...)
-$STMT.executeUpdate(...)
-$CONN.prepareStatement(...)
-$EM.createQuery(...)
-$EM.createNativeQuery(...)
+(java.sql.Statement $STMT).execute(...)
+(java.sql.Statement $STMT).executeQuery(...)
+(java.sql.Statement $STMT).executeUpdate(...)
+(java.sql.PreparedStatement $PS).execute(...)
+(java.sql.PreparedStatement $PS).executeQuery(...)
+(java.sql.PreparedStatement $PS).executeUpdate(...)
+(java.sql.CallableStatement $CS).execute(...)
+(java.sql.CallableStatement $CS).executeQuery(...)
+(java.sql.CallableStatement $CS).executeUpdate(...)
+(java.sql.Connection $CONN).prepareStatement(...)
+(java.sql.Connection $CONN).prepareCall(...)
+(javax.persistence.EntityManager $EM).createQuery(...)
+(javax.persistence.EntityManager $EM).createNativeQuery(...)
+(javax.persistence.EntityManager $EM).createStoredProcedureQuery(...)
 ```
 
 ```pattern-sanitizers

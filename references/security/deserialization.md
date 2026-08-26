@@ -331,6 +331,13 @@ factory.setFeature("http://xml.org/sax/features/external-parameter-entities", fa
 > 检测从未生效）；(2) 即使可解析，pattern-not 要求与正向 pattern 范围
 > 一致，多语句排除块永远不命中（semgrep 语义），应使用 pattern-not-inside。
 > 另以语言子标题为 pattern 打标签，Java 语法排除块不再落入 Python 变体。
+>
+> 2026-08-26 补充（java-sec-code 盲测实证）：reader 级加固两种写法原豁免
+> 不覆盖——(1) `createXMLReader()` 后对 reader 本身 setFeature（非工厂
+> newInstance）；(2) `spf.newInstance() → newSAXParser() → getXMLReader()`
+> 后 setFeature（豁免块需从工厂创建跨到 setFeature 才能包住命中位置）。
+> 补两条 pattern-not-inside 后：XXE.java 7 检出 → 5（sec 方法 2 误报
+> 清零，vuln 方法 5 真阳性全保留，真实文件实测）。
 
 ### Java
 
@@ -362,6 +369,20 @@ $F.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
 $F = $FACTORY.newInstance();
 ...
 $F.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+```
+
+```pattern-not-inside
+$R = XMLReaderFactory.createXMLReader();
+...
+$R.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+```
+
+```pattern-not-inside
+$F = $FACTORY.newInstance();
+...
+$R = $P.getXMLReader();
+...
+$R.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 ```
 
 ### Python

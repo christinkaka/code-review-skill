@@ -421,6 +421,66 @@ hello-world 复测（5 规约）：误报 1 → 0（xss Files.write）；漏检 
 Semgrep OSS taint 过程内分析的能力边界，非规则缺陷）。详见
 `docs/blind-test-hello-world.md`。
 
+### 第二仓库泛化验证与类型化 sink（2026-08-26）
+
+java-sec-code（JoyChou93，知名 Java 安全靶场，80 文件）第二仓库盲测，
+检验 hello-world 调优规则的泛化能力（防过拟合）。方法级 ground truth：
+URL 映射路径含 `vuln` 为漏洞方法、含 `sec` 为加固方法。
+
+**1. sqli-taint 类型化 sink**
+
+`$STMT.execute(...)` 元变量匹配任意 receiver，QLExpress 的
+`ExpressRunner.execute()`（表达式执行）与 `ExecutorService.execute()`
+（线程池，真实代码高频）均误命中（实测 2 FP）。sink 改类型化元变量
+（`(java.sql.Statement $STMT).execute(...)` 等 14 条）。**关键发现：
+semgrep 类型化元变量不做子类型匹配**——PreparedStatement 声明的变量
+不命中 Statement 类型 sink（PoC 实证），Statement/PreparedStatement/
+CallableStatement 需逐一枚举。
+
+**2. xxe-deep-detection reader 级加固豁免**
+
+reader 级加固两种写法原豁免不覆盖：`createXMLReader()` 后对 reader
+本身 setFeature（非工厂 newInstance）；`newInstance() → newSAXParser()
+→ getXMLReader()` 后 setFeature（豁免块必须从工厂创建跨到 setFeature
+才能包住命中位置——pattern-not-inside 要求命中点在块范围内）。
+
+**3. 入口点锚定语义正确性再验证**
+
+Shiro-550 检出路径：入口方法 `HttpServletRequest` 参数（请求对象本身
+即用户输入）经入口点锚定视为污点 → `getCookie(req,...)` 调用传参保守
+传播 → 解密流 → `ObjectInputStream`，5 层调用链命中。
+`$FILE.getOriginalFilename()` 源在非入口辅助方法中直接生效（FileUpload
+convert 私有方法检出）。
+
+**4. taint vs pattern 同仓库直接实证**
+
+SSRFChecker（SSRF 白名单校验器本身发起出站连接验证）：ssrf-taint
+正确零检出（无污点源），ssrf-deep-detection 误报——pattern 规则无
+数据流语义，无法区分安全控件与漏洞代码。
+
+**5. 第三条静默失效规则（design 类目）**
+
+复扫期间发现 `arch-java-missing-api-layer`（design/architecture.md）
+pattern `import com.$ORG.$MODULE.$CLASSImpl;` 中 `$CLASSImpl` 含小写
+字母，非法元变量（要求 `$[A-Z_][A-Z_0-9]*`），自创建起 rc=2 从未生效。
+按禁用处理（正确表达需 metavariable-regex，DSL 暂不支持）；
+`TestAllRulesParseable` 从 security 目录扩展为全量 references 目录 +
+default profile，覆盖所有类目。
+
+**验证**（真实 semgrep）：
+
+| 验证项 | 结果 |
+|--------|------|
+| 类型化 sink TP/TN（ExpressRunner/ExecutorService 阴性 + PreparedStatement 显式 sink） | `test_taint_e2e.py::TestSqliTaintE2E` ✅ |
+| reader 级加固豁免（direct/derived 两种形态 + 未加固 TP） | `test_pattern_rules_e2e.py` ✅ |
+| 真实仓库复扫 | taint 11 TP / 0 FP；pattern 5 TP / 3 FP（固有） |
+| 全量回归 | 586 passed / 6 skipped |
+
+java-sec-code 最终：taint 规则 11 检出全真阳性零误报（Shiro-550、
+文件上传路径穿越、JDBC/JPA SQL 注入、openStream SSRF）；跨方法委托
+漏检（SSRF 7 个 vuln 方法、PathTraversal 1 个）与 hello-world 结论
+一致，泛化验证成立。详见 `docs/blind-test-java-sec-code.md`。
+
 
 
 ---

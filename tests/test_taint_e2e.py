@@ -554,6 +554,92 @@ class TestSqliTaintE2E:
         assert "listAllUsers" not in hits, "TN2: 常量 SQL 执行不应误报"
         assert "findUserByAge" not in hits, "TN3: PreparedStatement + setInt 不应误报"
 
+    def test_untyped_execute_receivers_not_flagged(self, tmp_path):
+        """类型化 sink（2026-08-26，java-sec-code 盲测实证）：非 JDBC/JPA
+        receiver 的 execute(...) 不应命中。盲测中 QLExpress 的
+        ExpressRunner.execute()（加固后的 sec 方法）误报；ExecutorService
+        .execute() 是真实代码高频调用，同为过宽 sink 的误报面。
+        注意 semgrep 类型化元变量不做子类型匹配，PreparedStatement 声明
+        的变量需由显式 PreparedStatement sink 命中（盲测漏报场景）。
+        """
+        java = (
+            "import java.sql.*;\n"
+            "import java.util.concurrent.*;\n"
+            "import javax.servlet.http.HttpServletRequest;\n"
+            "import org.springframework.web.bind.annotation.*;\n"
+            "\n"
+            "class Mixed {\n"
+            "    private Connection conn;\n"
+            "\n"
+            "    // TN: ExpressRunner.execute 是表达式执行，非 SQL（QLExpress sec 场景）\n"
+            "    @PostMapping(\"/express\")\n"
+            "    String express(@RequestParam String input) throws Exception {\n"
+            "        Object r = new ExpressRunner().execute(input, null, null, true, false);\n"
+            "        return r.toString();\n"
+            "    }\n"
+            "\n"
+            "    // TN: ExecutorService.execute 是线程池提交，非 SQL\n"
+            "    @PostMapping(\"/async\")\n"
+            "    String async(@RequestParam String input) {\n"
+            "        ExecutorService pool = Executors.newFixedThreadPool(2);\n"
+            "        pool.execute(() -> System.out.println(input));\n"
+            "        return \"ok\";\n"
+            "    }\n"
+            "\n"
+            "    // TP: PreparedStatement 声明变量的 executeQuery（无 prepareStatement\n"
+            "    // 中间 sink，直接命中 PreparedStatement 类型化 sink；对应 java-sec-code\n"
+            "    // SQLI.java:153 场景——类型化不做子类型匹配时此用例会漏报）\n"
+            "    @PostMapping(\"/ps\")\n"
+            "    String psVuln(@RequestParam String username) throws SQLException {\n"
+            "        PreparedStatement st = getPs();\n"
+            "        return String.valueOf(st.executeQuery(\n"
+            "            \"select * from users where name = '\" + username + \"'\"));\n"
+            "    }\n"
+            "\n"
+            "    PreparedStatement getPs() throws SQLException {\n"
+            "        return conn.prepareStatement(\"select 1\");\n"
+            "    }\n"
+            "}\n"
+            "\n"
+            "class ExpressRunner {\n"
+            "    Object execute(String s, Object c, Object l, boolean a, boolean b) {\n"
+            "        return s;\n"
+            "    }\n"
+            "}\n"
+        )
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "Mixed.java").write_text(java, encoding="utf-8")
+
+        specs_dir = Path(__file__).parent.parent / "references" / "security"
+        engine = RuleEngine(
+            str(specs_dir),
+            {"specs": [{"path": "sql-injection.md", "enabled": True}]},
+        )
+
+        issues = engine.run(str(repo), [{"path": "Mixed.java"}])
+        lines = {
+            i["line"] for i in issues
+            if "sqli-taint" in str(i.get("rule_id")) and i.get("file") == "Mixed.java"
+        }
+        src = java.split("\n")
+        express_line = next(
+            n for n, t in enumerate(src, 1) if "ExpressRunner().execute" in t)
+        pool_line = next(
+            n for n, t in enumerate(src, 1) if "pool.execute" in t)
+        ps_line = next(
+            n for n, t in enumerate(src, 1) if "st.executeQuery(" in t)
+
+        assert express_line not in lines, (
+            "TN: ExpressRunner.execute 是表达式执行，不应命中 SQL sink"
+        )
+        assert pool_line not in lines, (
+            "TN: ExecutorService.execute 是线程池提交，不应命中 SQL sink"
+        )
+        assert ps_line in lines, (
+            "TP: PreparedStatement 声明变量的 executeQuery 应命中"
+        )
+
     def test_python_rules_unaffected(self, tmp_path):
         """Java 交给 taint 后，Python SQL 注入规则仍正常检出"""
         repo = tmp_path / "repo"
