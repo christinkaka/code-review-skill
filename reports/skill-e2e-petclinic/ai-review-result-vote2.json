@@ -1,0 +1,319 @@
+[
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 99,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第99行为 <version>${webjars-locator.version}</version>，这是 Maven 属性插值语法，用于引用 <properties> 中定义的 webjars-locator.version=1.1.3。该文件是 Maven 构建配置文件，不是 MyBatis 映射文件，${} 在此上下文中与 SQL 完全无关。项目 pom.xml 中不存在任何 MyBatis 依赖。",
+    "enhanced_fix": "无需修复。这是 Maven 标准的属性引用语法，在构建时由 Maven 从 <properties> 节解析替换为字面值。",
+    "references": [
+      "pom.xml:26 <webjars-locator.version>1.1.3</webjars-locator.version>",
+      "pom.xml:99 <version>${webjars-locator.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 105,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第105行为 <version>${webjars-bootstrap.version}</version>，这是 Maven 属性插值，引用 <properties> 中定义的 webjars-bootstrap.version=5.3.8。文件为 Maven POM，非 MyBatis 映射文件，不存在 SQL 注入风险。",
+    "enhanced_fix": "无需修复。Maven 属性引用在构建时解析为静态版本号字面值。",
+    "references": [
+      "pom.xml:27 <webjars-bootstrap.version>5.3.8</webjars-bootstrap.version>",
+      "pom.xml:105 <version>${webjars-bootstrap.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 111,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第111行为 <version>${webjars-font-awesome.version}</version>，Maven 属性插值引用 webjars-font-awesome.version=4.7.0。与 SQL/MyBatis 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 版本属性引用。",
+    "references": [
+      "pom.xml:28 <webjars-font-awesome.version>4.7.0</webjars-font-awesome.version>",
+      "pom.xml:111 <version>${webjars-font-awesome.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 197,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第197行为 Maven Enforcer 插件的错误提示消息：<message>This build requires at least Java ${java.version}...</message>。这是插件配置中的文本消息，${java.version} 是 Maven 属性引用（值为17），与 SQL 完全无关。",
+    "enhanced_fix": "无需修复。Maven Enforcer 插件配置中引用属性用于显示人类可读的错误消息。",
+    "references": [
+      "pom.xml:19 <java.version>17</java.version>",
+      "pom.xml:197 <message>This build requires at least Java ${java.version}...</message>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 198,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第198行为 <version>${java.version}</version>，位于 maven-enforcer-plugin 的 requireJavaVersion 规则内，用于指定最低 Java 版本要求。这是 Maven 属性引用，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven Enforcer 插件版本要求配置。",
+    "references": [
+      "pom.xml:19 <java.version>17</java.version>",
+      "pom.xml:198 <version>${java.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 208,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第208行为 <version>${spring-format.version}</version>，是 spring-javaformat-maven-plugin 的版本声明，引用属性 spring-format.version=0.0.47。标准 Maven 插件版本管理，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 插件版本属性引用。",
+    "references": [
+      "pom.xml:37 <spring-format.version>0.0.47</spring-format.version>",
+      "pom.xml:208 <version>${spring-format.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 221,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第221行为 <version>${maven-checkstyle.version}</version>，是 maven-checkstyle-plugin 的版本声明，引用属性 maven-checkstyle.version=3.6.0。标准 Maven 语法，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 插件版本属性引用。",
+    "references": [
+      "pom.xml:35 <maven-checkstyle.version>3.6.0</maven-checkstyle.version>",
+      "pom.xml:221 <version>${maven-checkstyle.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 226,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第226行为 <version>${checkstyle.version}</version>，是 checkstyle 依赖的版本声明，引用属性 checkstyle.version=12.3.1。标准 Maven 语法，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 依赖版本属性引用。",
+    "references": [
+      "pom.xml:31 <checkstyle.version>12.3.1</checkstyle.version>",
+      "pom.xml:226 <version>${checkstyle.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 231,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第231行为 <version>${nohttp-checkstyle.version}</version>，是 nohttp-checkstyle 依赖的版本声明，引用属性 nohttp-checkstyle.version=0.0.11。标准 Maven 语法，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 依赖版本属性引用。",
+    "references": [
+      "pom.xml:36 <nohttp-checkstyle.version>0.0.11</nohttp-checkstyle.version>",
+      "pom.xml:231 <version>${nohttp-checkstyle.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 243,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第243行为 <sourceDirectories>${basedir}</sourceDirectories>，是 checkstyle 插件配置中引用 Maven 内置属性 ${basedir}（项目根目录路径）。这是文件系统路径配置，与 SQL 完全无关。",
+    "enhanced_fix": "无需修复。Maven 内置属性 ${basedir} 引用，用于指定文件系统路径。",
+    "references": [
+      "pom.xml:243 <sourceDirectories>${basedir}</sourceDirectories>",
+      "Maven 内置属性: ${basedir} = 项目根目录"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 246,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第246行为 <propertyExpansion>config_loc=${basedir}/src/checkstyle/</propertyExpansion>，是 checkstyle 插件的属性扩展配置，引用 Maven 内置属性 ${basedir}。文件系统路径配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven 插件属性扩展配置。",
+    "references": [
+      "pom.xml:246 <propertyExpansion>config_loc=${basedir}/src/checkstyle/</propertyExpansion>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 267,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第267行为 <encoding.source>${project.build.sourceEncoding}</encoding.source>，位于 spring-boot-maven-plugin 的 build-info 配置中，引用 Maven 内置属性 project.build.sourceEncoding=UTF-8。构建元数据配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Spring Boot build-info 元数据配置。",
+    "references": [
+      "pom.xml:20 <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>",
+      "pom.xml:267 <encoding.source>${project.build.sourceEncoding}</encoding.source>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 268,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第268行为 <encoding.reporting>${project.reporting.outputEncoding}</encoding.reporting>，引用 Maven 内置属性 project.reporting.outputEncoding=UTF-8。构建元数据配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Spring Boot build-info 元数据配置。",
+    "references": [
+      "pom.xml:21 <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>",
+      "pom.xml:268 <encoding.reporting>${project.reporting.outputEncoding}</encoding.reporting>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 269,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第269行为 <java.source>${java.version}</java.source>，引用属性 java.version=17，用于 build-info 中记录 Java 源码版本。构建元数据配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Spring Boot build-info 元数据配置。",
+    "references": [
+      "pom.xml:19 <java.version>17</java.version>",
+      "pom.xml:269 <java.source>${java.version}</java.source>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 270,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第270行为 <java.target>${java.version}</java.target>，引用属性 java.version=17，用于 build-info 中记录 Java 目标版本。构建元数据配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Spring Boot build-info 元数据配置。",
+    "references": [
+      "pom.xml:19 <java.version>17</java.version>",
+      "pom.xml:270 <java.target>${java.version}</java.target>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 279,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第279行为 <version>${jacoco.version}</version>，是 jacoco-maven-plugin 的版本声明，引用属性 jacoco.version=0.8.15。标准 Maven 插件版本管理，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 插件版本属性引用。",
+    "references": [
+      "pom.xml:32 <jacoco.version>0.8.15</jacoco.version>",
+      "pom.xml:279 <version>${jacoco.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 343,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第343行为 <version>${webjars-bootstrap.version}</version>，位于 maven-dependency-plugin 的 artifactItem 配置中，引用属性 webjars-bootstrap.version=5.3.8。依赖拷贝配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven 依赖拷贝插件中的版本属性引用。",
+    "references": [
+      "pom.xml:27 <webjars-bootstrap.version>5.3.8</webjars-bootstrap.version>",
+      "pom.xml:343 <version>${webjars-bootstrap.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 346,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第346行为 <outputDirectory>${project.build.directory}/webjars</outputDirectory>，引用 Maven 内置属性 ${project.build.directory}（通常为 target/）。文件系统路径配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven 内置属性引用，用于指定输出目录路径。",
+    "references": [
+      "pom.xml:346 <outputDirectory>${project.build.directory}/webjars</outputDirectory>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 354,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第354行为 <version>${libsass.version}</version>，是 libsass-maven-plugin 的版本声明，引用属性 libsass.version=0.3.4。标准 Maven 插件版本管理，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 插件版本属性引用。",
+    "references": [
+      "pom.xml:33 <libsass.version>0.3.4</libsass.version>",
+      "pom.xml:354 <version>${libsass.version}</version>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 356,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第356行为 <inputPath>${basedir}/src/main/scss/</inputPath>，引用 Maven 内置属性 ${basedir}，配置 SASS 编译器的输入路径。文件系统路径配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven 内置属性引用，用于指定 SCSS 源文件路径。",
+    "references": [
+      "pom.xml:356 <inputPath>${basedir}/src/main/scss/</inputPath>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 357,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第357行为 <outputPath>${basedir}/src/main/resources/static/resources/css/</outputPath>，引用 ${basedir} 配置 SASS 编译输出路径。文件系统路径配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven 内置属性引用，用于指定 CSS 输出路径。",
+    "references": [
+      "pom.xml:357 <outputPath>${basedir}/src/main/resources/static/resources/css/</outputPath>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 358,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第358行为 <includePath>${project.build.directory}/webjars/META-INF/resources/webjars/bootstrap/${webjars-bootstrap.version}/scss/</includePath>，引用 ${project.build.directory} 和 ${webjars-bootstrap.version}，配置 SASS 的 include 路径。文件系统路径配置，与 SQL 无关。",
+    "enhanced_fix": "无需修复。Maven 属性引用，用于指定 SASS include 搜索路径。",
+    "references": [
+      "pom.xml:358 <includePath>${project.build.directory}/webjars/.../${webjars-bootstrap.version}/scss/</includePath>"
+    ]
+  },
+  {
+    "rule_id": "sqli-mybatis-dollar",
+    "file": "pom.xml",
+    "line": 388,
+    "is_false_positive": true,
+    "needs_review": false,
+    "ai_confidence": 0.99,
+    "analysis": "pom.xml 第388行为 <version>${lifecycle-mapping}</version>，是 Eclipse m2e lifecycle-mapping 插件的版本声明，引用属性 lifecycle-mapping=1.0.0。标准 Maven 插件版本管理，与 SQL 无关。",
+    "enhanced_fix": "无需修复。标准 Maven 插件版本属性引用。",
+    "references": [
+      "pom.xml:34 <lifecycle-mapping>1.0.0</lifecycle-mapping>",
+      "pom.xml:388 <version>${lifecycle-mapping}</version>"
+    ]
+  }
+]

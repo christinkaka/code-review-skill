@@ -1,0 +1,16 @@
+{
+  "total": 23,
+  "critical": 23,
+  "high": 0,
+  "medium": 0,
+  "low": 0,
+  "by_category": {
+    "unknown": 23
+  },
+  "by_file": {
+    "pom.xml": 23
+  },
+  "by_rule": {
+    "sqli-mybatis-dollar": 23
+  }
+}

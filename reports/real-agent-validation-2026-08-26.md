@@ -140,32 +140,47 @@
 
 ## 复现方式
 
-```bash
-# 1. 从存量报告生成任务文件
-python3 scripts/gen_llm_tasks.py
+> **注意**：投票委派是主 Agent 的能力（Task 工具），不能用 bash 复现。以下是完整的 Agent 操作手册。
 
-# 2. 主 Agent 委派子 Agent 评审（Task 工具，模型 qwen-3.7-plus，
-#    裁决契约见 .trae/agents/code-reviewer.md）
-#    单评审员：子 Agent 产出 reports/dual-blind-{repo}/ai-review-result.json
-#    3 票投票：主 Agent 并行委派 3 个独立子 Agent，
-#    各产出 ai-review-result-vote{1,2,3}.json（互不参考）
-
-# 3. 合并验证（自动识别投票文件并多数票聚合）
-python3 -c "import importlib.util, json; from pathlib import Path; \
-spec = importlib.util.spec_from_file_location('m', 'scripts/scan.py'); \
-m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); \
-d = Path('reports/dual-blind-webgoat'); \
-r = m._merge_subagent_review(json.load(open(d/'report.json')), d); \
-print(len(r['issues']))"
-
-# 4. 投票聚合单元测试（12 例：多数票/缺席/损坏票/平票保守保留）
-python3 -m pytest tests/test_subagent_voting.py -v
-```
-
-投票模式配置（config.yaml）：
+### 前置：配置投票模式
 
 ```yaml
+# config.yaml
 ai_review:
   voting:
     votes: 3    # 建议奇数；1 = 禁用投票（默认）
 ```
+
+### Step 2: 确定性扫描（bash）
+
+```bash
+python3 scripts/scan.py \
+  --repo <repo-path> --base <base-branch> --target <target-branch> \
+  --profile default --workflow security --language java \
+  --config config.yaml --output <output-dir>/
+```
+
+扫描完成后，`<output-dir>/` 下生成：
+- `report.json` — 原始检出报告
+- `subagent-review-task.md` — 评审任务文件（含投票委派说明）
+- `.scan-meta.json` — 编排元数据（votes / issue_count / task_file / report_file）
+
+### Step 3: 主 Agent 委派子 Agent（Agent 操作）
+
+1. 读取 `<output-dir>/.scan-meta.json`，获取 `votes`、`issue_count`、`task_file` 路径
+2. 按 `votes` 数**并行**委派 `votes` 个独立子 Agent（Task 工具，subagent_type: general_purpose_task）
+3. 每个子 Agent 的 prompt 包含：
+   - 任务文件路径（`task_file`）
+   - 被扫描仓库路径（已 checkout 到目标版本）
+   - 裁决契约（is_false_positive / ai_confidence / analysis / enhanced_fix）
+   - 输出路径：`<output-dir>/ai-review-result-vote{N}.json`
+   - 禁止事项（不得修改仓库、不得读取其他评审员输出、必须覆盖全部 issue_count 条）
+4. 等待全部子 Agent 完成，验证 `votes` 个投票文件存在
+
+### Step 4: 合并（bash）
+
+```bash
+python3 scripts/scan.py --merge-only --output <output-dir>/
+```
+
+输出：`report.json` 已更新（多数票聚合后的最终报告）

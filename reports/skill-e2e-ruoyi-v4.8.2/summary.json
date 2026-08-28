@@ -1,0 +1,35 @@
+{
+  "total": 48,
+  "critical": 34,
+  "high": 0,
+  "medium": 12,
+  "low": 2,
+  "by_category": {
+    "unknown": 35,
+    "implementation": 10,
+    "design": 3
+  },
+  "by_file": {
+    "pom.xml": 29,
+    "ruoyi-common/src/main/java/com/ruoyi/common/utils/http/UserAgentUtils.java": 4,
+    "ruoyi-common/src/main/java/com/ruoyi/common/utils/poi/ExcelUtil.java": 4,
+    "ruoyi-system/src/main/resources/mapper/system/SysUserMapper.xml": 3,
+    "ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysProfileController.java": 2,
+    "ruoyi-admin/pom.xml": 2,
+    "ruoyi-common/src/main/java/com/ruoyi/common/utils/file/FileUtils.java": 1,
+    "ruoyi-framework/src/main/java/com/ruoyi/framework/aspectj/LogAspect.java": 1,
+    "ruoyi-framework/src/main/java/com/ruoyi/framework/manager/factory/AsyncFactory.java": 1,
+    "ruoyi-quartz/src/main/java/com/ruoyi/quartz/util/ScheduleUtils.java": 1
+  },
+  "by_rule": {
+    "sqli-mybatis-dollar": 34,
+    "null-java-collection-get": 4,
+    "api-java-rest-naming": 2,
+    "err-java-empty-catch": 2,
+    "null-java-method-chain": 2,
+    "naming-java-boolean-vague": 1,
+    "naming-java-constant-case": 1,
+    "arch-java-missing-api-layer": 1,
+    "sig-bypass-version-check-regex": 1
+  }
+}

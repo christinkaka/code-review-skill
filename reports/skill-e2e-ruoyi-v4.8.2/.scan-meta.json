@@ -1,0 +1,8 @@
+{
+  "output_dir": "reports/skill-e2e-ruoyi-v4.8.2",
+  "task_file": "reports/skill-e2e-ruoyi-v4.8.2/subagent-review-task.md",
+  "report_file": "reports/skill-e2e-ruoyi-v4.8.2/report.json",
+  "votes": 3,
+  "issue_count": 48,
+  "workflow": "comprehensive"
+}

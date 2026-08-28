@@ -591,6 +591,13 @@ def _merge_subagent_review(report: dict, output_dir: Path) -> dict:
 # ============================================================
 def run_scan(args):
     """执行完整扫描流程"""
+    # 校验必填参数（--merge-only 模式不需要这些）
+    if not getattr(args, "merge_only", False):
+        for param in ("repo", "base", "target"):
+            if not getattr(args, param, None):
+                logger.error(f"缺少必填参数: --{param}")
+                sys.exit(1)
+
     start_time = time.time()
 
     # 1. 加载配置
@@ -753,8 +760,20 @@ def run_scan(args):
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
 
-    # 8. 合并子 Agent 评审结果（如果存在）
-    report = _merge_subagent_review(report, output_dir)
+    # 8. 输出编排元数据（供主 Agent 读取后委派子 Agent）
+    votes = config.get("ai_review", {}).get("voting", {}).get("votes", 1)
+    scan_meta = {
+        "output_dir": str(output_dir),
+        "task_file": str(output_dir / "subagent-review-task.md"),
+        "report_file": str(output_dir / "report.json"),
+        "votes": votes,
+        "issue_count": len(report.get("issues", [])),
+        "workflow": config.get("ai_review", {}).get("workflow", "comprehensive"),
+    }
+    meta_path = output_dir / ".scan-meta.json"
+    with open(meta_path, "w", encoding="utf-8") as f:
+        json.dump(scan_meta, f, ensure_ascii=False, indent=2)
+    logger.info(f"  编排元数据: {meta_path}")
 
     # 9. 输出摘要
     summary = report.get("summary", {})
@@ -767,7 +786,9 @@ def run_scan(args):
     logger.info(f"  LOW:      {summary.get('low', 0)}")
     ai_count = sum(1 for i in report.get("issues", []) if "ai_confidence" in i)
     if ai_count:
-        logger.info(f"  AI 增强: {ai_count} 条检出已合并子 Agent 评审结果")
+        logger.info(f"  AI 增强: {ai_count} 条检出已有 AI 字段")
+    if votes > 1:
+        logger.info(f"  投票模式: {votes} 票，待主 Agent 委派子 Agent 后执行 --merge-only 合并")
     logger.info(f"  报告输出: {output_dir}")
     logger.info(f"=" * 60)
 
@@ -794,9 +815,9 @@ def main():
         """,
     )
 
-    parser.add_argument("--repo", required=True, help="Git 仓库路径")
-    parser.add_argument("--base", required=True, help="基线分支（如 master）")
-    parser.add_argument("--target", required=True, help="目标分支（如 release/1.0）")
+    parser.add_argument("--repo", required=False, help="Git 仓库路径")
+    parser.add_argument("--base", required=False, help="基线分支（如 master）")
+    parser.add_argument("--target", required=False, help="目标分支（如 release/1.0）")
     parser.add_argument("--profile", default="default", help="规约 Profile（default/strict/minimal）")
     parser.add_argument("--output", default="report", help="报告输出目录")
     parser.add_argument("--config", default=None, help="配置文件路径")
@@ -813,6 +834,11 @@ def main():
         "--trigger", action="store_true", default=False,
         help="手动触发扫描（立即执行，不等待定时调度）",
     )
+    parser.add_argument(
+        "--merge-only", action="store_true", default=False,
+        help="仅执行子 Agent 评审结果合并（不扫描）。需配合 --output 指定报告目录。"
+             "用于主 Agent 委派子 Agent 完成后触发多数票聚合。",
+    )
 
     args = parser.parse_args()
 
@@ -823,6 +849,21 @@ def main():
 
     if getattr(args, "trigger", False):
         logger.info("手动触发扫描 (--trigger)")
+
+    # --merge-only：仅执行子 Agent 评审结果合并（主 Agent 编排入口）
+    if getattr(args, "merge_only", False):
+        output_dir = Path(args.output)
+        report_path = output_dir / "report.json"
+        if not report_path.exists():
+            logger.error(f"报告文件不存在: {report_path}，无法执行合并")
+            sys.exit(1)
+        with open(report_path, "r", encoding="utf-8") as f:
+            report = json.load(f)
+        logger.info(f"合并子 Agent 评审结果: {output_dir}")
+        report = _merge_subagent_review(report, output_dir)
+        summary = report.get("summary", {})
+        logger.info(f"合并完成！总计问题: {summary.get('total', 0)}")
+        sys.exit(0)
 
     # 构建 Notifier（如果配置了通知）
     notifier = None

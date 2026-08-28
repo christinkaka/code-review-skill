@@ -1,0 +1,8 @@
+{
+  "output_dir": "reports/skill-e2e-petclinic",
+  "task_file": "reports/skill-e2e-petclinic/subagent-review-task.md",
+  "report_file": "reports/skill-e2e-petclinic/report.json",
+  "votes": 3,
+  "issue_count": 23,
+  "workflow": "comprehensive"
+}
