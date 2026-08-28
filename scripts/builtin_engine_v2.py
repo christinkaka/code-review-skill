@@ -522,9 +522,13 @@ class BuiltinEngineV2:
         # 正则补充扫描（所有语言）
         try:
             content = source.decode("utf-8", errors="replace")
+            file_name = Path(file_path).name.lower()
             for rule in self.rules:
                 if isinstance(rule, RegexSupplementRule):
                     if file_lang in rule.languages or not rule.languages:
+                        # 排除 pom.xml（Maven 属性插值不是 MyBatis SQL）
+                        if rule.rule_id == "sqli-mybatis-dollar" and file_name == "pom.xml":
+                            continue
                         found = rule.check_regex(content, file_path)
                         issues.extend(found)
         except Exception as e:
