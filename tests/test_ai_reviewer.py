@@ -234,6 +234,69 @@ class TestParseResponse:
         valid_ids = [r["rule_id"] for r in result]
         assert "xxe-java-document-builder" not in valid_ids
 
+    def test_parse_response_filters_formal_false_positive_fields(
+        self, reviewer_with_config, two_issues
+    ):
+        """正式 prompt 契约的 is_false_positive=true 必须被过滤"""
+        response = json.dumps([
+            {
+                "rule_id": "xxe-java-document-builder",
+                "file": "src/main/java/com/example/Parser.java",
+                "line": 42,
+                "is_false_positive": True,
+                "ai_confidence": 0.99,
+                "analysis": "已有安全配置，属于误报",
+                "enhanced_fix": "",
+            },
+        ])
+
+        result = reviewer_with_config._parse_response(two_issues, response)
+
+        valid_ids = [r["rule_id"] for r in result]
+        assert "xxe-java-document-builder" not in valid_ids
+
+    def test_parse_response_uses_formal_confidence_and_analysis(
+        self, reviewer_with_config, two_issues
+    ):
+        """正式 ai_confidence 与 analysis 应合并到保留的问题"""
+        response = json.dumps([
+            {
+                "rule_id": "xxe-java-document-builder",
+                "file": "src/main/java/com/example/Parser.java",
+                "line": 42,
+                "is_false_positive": False,
+                "ai_confidence": 0.96,
+                "analysis": "外部实体未禁用",
+                "enhanced_fix": "factory.setFeature(...)",
+            },
+        ])
+
+        result = reviewer_with_config._parse_response(two_issues, response)
+        issue = next(i for i in result if i["rule_id"] == "xxe-java-document-builder")
+
+        assert issue["ai_confidence"] == 0.96
+        assert issue["analysis"] == "外部实体未禁用"
+        assert issue["is_false_positive"] is False
+        assert issue["needs_review"] is False
+
+    def test_formal_fields_take_precedence_over_legacy_fields(
+        self, reviewer_with_config, two_issues
+    ):
+        """新旧字段同时存在时，以正式 prompt 契约为准"""
+        response = json.dumps([
+            {
+                "rule_id": "xxe-java-document-builder",
+                "is_false_positive": True,
+                "ai_confidence": 0.95,
+                "is_valid": True,
+                "confidence": 0.95,
+            },
+        ])
+
+        result = reviewer_with_config._parse_response(two_issues, response)
+
+        assert "xxe-java-document-builder" not in [r["rule_id"] for r in result]
+
     def test_parse_response_enhances_fix(
         self, reviewer_with_config, two_issues, two_issue_ai_response
     ):
@@ -309,18 +372,17 @@ class TestParseResponseInvalidJson:
     def test_parse_response_empty_json_array(
         self, reviewer_with_config, two_issues
     ):
-        """UT2: 空 JSON 数组时，所有 issue 无 AI 匹配，使用默认值（is_valid=True, confidence=0.8）全部保留"""
+        """UT2: 空 JSON 数组时 fail-open，全部保留并转人工复核"""
         result = reviewer_with_config._parse_response(two_issues, "[]")
 
-        # 空数组意味着 AI 没有对任何 issue 给出评价
-        # _parse_response 中 ai_map 为空，每个 issue 的默认 is_valid=True, confidence=0.8
-        # 0.8 >= 0.7 阈值，所以所有 issue 都被保留
         assert len(result) == len(two_issues)
+        assert all(issue["needs_review"] is True for issue in result)
+        assert all("ai_confidence" not in issue for issue in result)
 
     def test_parse_response_partial_json(
         self, reviewer_with_config, two_issues
     ):
-        """UT2: 部分有效的 JSON（缺少字段）使用默认值"""
+        """UT2: 部分有效的 JSON（缺少字段）保留并转人工复核"""
         response = json.dumps([
             {"rule_id": "xxe-java-document-builder"},
             # 缺少 is_valid, confidence, enhanced_fix
@@ -328,9 +390,32 @@ class TestParseResponseInvalidJson:
 
         result = reviewer_with_config._parse_response(two_issues, response)
 
-        # 缺少 is_valid 默认为 True，缺少 confidence 默认为 0.8
-        # 0.8 >= 0.7 阈值，应保留
-        assert len(result) >= 1
+        assert len(result) == len(two_issues)
+        assert all(issue["needs_review"] is True for issue in result)
+
+    @pytest.mark.parametrize(
+        "response_item",
+        [
+            {"rule_id": "xxe-java-document-builder", "ai_confidence": 0.9},
+            {"rule_id": "xxe-java-document-builder", "is_false_positive": False},
+            {
+                "rule_id": "xxe-java-document-builder",
+                "is_false_positive": False,
+                "ai_confidence": "invalid",
+            },
+        ],
+    )
+    def test_missing_or_invalid_formal_fields_need_review(
+        self, reviewer_with_config, two_issues, response_item
+    ):
+        """缺少必需字段或置信度非法时不能静默删除或伪造置信度"""
+        result = reviewer_with_config._parse_response(
+            two_issues, json.dumps([response_item])
+        )
+        issue = next(i for i in result if i["rule_id"] == "xxe-java-document-builder")
+
+        assert issue["needs_review"] is True
+        assert issue["is_false_positive"] is False
 
     def test_parse_response_non_list_json(
         self, reviewer_with_config, two_issues

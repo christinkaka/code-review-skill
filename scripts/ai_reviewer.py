@@ -555,16 +555,70 @@ class AIReviewer:
                     if ai_result is None:
                         ai_result = {}
 
-                # 检查是否为有效问题
-                is_valid = ai_result.get("is_valid", True)
-                confidence = ai_result.get("confidence", 0.8)
+                # 正式 prompt 契约使用 is_false_positive / ai_confidence；
+                # is_valid / confidence 仅用于兼容旧版调用方。
+                # 禁止在字段缺失时伪造 True / 0.8，否则会把明确的
+                # is_false_positive=true 误读为真实问题。
+                verdict_source = None
+                if isinstance(ai_result.get("is_false_positive"), bool):
+                    is_valid = not ai_result["is_false_positive"]
+                    verdict_source = "is_false_positive"
+                elif isinstance(ai_result.get("is_valid"), bool):
+                    is_valid = ai_result["is_valid"]
+                    verdict_source = "is_valid"
+                else:
+                    is_valid = None
+
+                confidence_source = None
+                if "ai_confidence" in ai_result:
+                    raw_confidence = ai_result.get("ai_confidence")
+                    confidence_source = "ai_confidence"
+                elif "confidence" in ai_result:
+                    raw_confidence = ai_result.get("confidence")
+                    confidence_source = "confidence"
+                else:
+                    raw_confidence = None
+
+                try:
+                    confidence = float(raw_confidence)
+                    if not 0.0 <= confidence <= 1.0:
+                        confidence = None
+                except (TypeError, ValueError):
+                    confidence = None
+
+                # LLM 未覆盖该问题、字段缺失或类型非法时 fail-open：
+                # 保留原问题交给人工复核，不参与阈值过滤。
+                if verdict_source is None or confidence_source is None or confidence is None:
+                    issue["needs_review"] = True
+                    issue["is_false_positive"] = False
+                    if confidence is not None:
+                        issue["ai_confidence"] = confidence
+                    if ai_result.get("analysis"):
+                        issue["analysis"] = ai_result["analysis"]
+                    filtered.append(issue)
+                    self._audit({
+                        "decision": "kept",
+                        "rule_id": issue.get("rule_id"),
+                        "file": issue.get("file"),
+                        "line": issue.get("line"),
+                        "severity": issue.get("severity"),
+                        "match_type": match_type,
+                        "needs_review": True,
+                        "reason": "missing_or_invalid_ai_fields",
+                    })
+                    continue
 
                 if is_valid and confidence >= self.confidence_threshold:
                     # 增强修复建议
                     enhanced_fix = ai_result.get("enhanced_fix", "")
                     if enhanced_fix:
                         issue["fix"] = enhanced_fix
+                        issue["enhanced_fix"] = enhanced_fix
                     issue["ai_confidence"] = confidence
+                    issue["is_false_positive"] = False
+                    issue["needs_review"] = False
+                    if ai_result.get("analysis"):
+                        issue["analysis"] = ai_result["analysis"]
 
                     # 添加工作流特定字段
                     if self.workflow == "security":
@@ -591,6 +645,8 @@ class AIReviewer:
                         "severity": issue.get("severity"),
                         "ai_confidence": confidence,
                         "ai_is_valid": is_valid,
+                        "verdict_source": verdict_source,
+                        "confidence_source": confidence_source,
                         "match_type": match_type,
                         "reason": "passed_threshold" if match_type != "none" else "no_ai_match_default_keep",
                     })
@@ -604,9 +660,15 @@ class AIReviewer:
                         "severity": issue.get("severity"),
                         "ai_confidence": confidence,
                         "ai_is_valid": is_valid,
+                        "verdict_source": verdict_source,
+                        "confidence_source": confidence_source,
                         "match_type": match_type,
                         "threshold": self.confidence_threshold,
-                        "reason": "is_valid_false" if not is_valid else "low_confidence",
+                        "reason": (
+                            "is_false_positive_true"
+                            if not is_valid and verdict_source == "is_false_positive"
+                            else "is_valid_false" if not is_valid else "low_confidence"
+                        ),
                     })
 
             return filtered
