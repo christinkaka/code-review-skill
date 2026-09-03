@@ -220,7 +220,7 @@ class DiffAnalyzer:
             # Java 方法匹配
             pattern = r'(?:public|private|protected)?\s*(?:static\s+)?(?:\w+(?:<[^>]+>)?)\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{'
             for match in re.finditer(pattern, content):
-                line_no = content[:match.start()].count("\n") + 1
+                line_no = content.count("\n", 0, match.start()) + 1
                 methods.append({
                     "name": match.group(1),
                     "line": line_no,
@@ -231,7 +231,7 @@ class DiffAnalyzer:
             # Python 函数匹配
             pattern = r'(?:def\s+(\w+)\s*\([^)]*\)\s*(?:->\s*[\w\[\],\s]+)?\s*:)'
             for match in re.finditer(pattern, content):
-                line_no = content[:match.start()].count("\n") + 1
+                line_no = content.count("\n", 0, match.start()) + 1
                 methods.append({
                     "name": match.group(1),
                     "line": line_no,
@@ -247,7 +247,7 @@ class DiffAnalyzer:
             ]
             for pattern in patterns:
                 for match in re.finditer(pattern, content):
-                    line_no = content[:match.start()].count("\n") + 1
+                    line_no = content.count("\n", 0, match.start()) + 1
                     methods.append({
                         "name": match.group(1),
                         "line": line_no,

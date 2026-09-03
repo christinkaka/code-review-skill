@@ -126,3 +126,86 @@ class TestCallGraphBuilder:
         builder = CallGraphBuilder(str(temp_java_repo), language="java")
         result = builder.build_all()
         assert "node_count" in result
+
+    def test_build_traces_callers_across_unchanged_files(self, temp_java_repo):
+        """全仓索引应追踪未变更文件中的跨文件调用者。"""
+        builder = CallGraphBuilder(str(temp_java_repo))
+        result = builder.build([
+            {"file": "src/Service.java", "name": "validate", "line": 9, "end_line": 12}
+        ])
+
+        assert "process" in result["affected_methods"]
+        assert "handleRequest" in result["affected_methods"]
+        assert any(node["file"] == "src/Controller.java" for node in result["nodes"])
+
+    def test_duplicate_method_names_do_not_create_cross_file_cartesian_edges(self, temp_java_repo):
+        """跨文件同名方法不能产生 N*M 组合边。"""
+        (temp_java_repo / "src" / "Other.java").write_text("""
+public class Other {
+    public void process(String input) {
+        validate(input);
+    }
+
+    private String validate(String input) {
+        return input;
+    }
+}
+""")
+        builder = CallGraphBuilder(str(temp_java_repo))
+        result = builder.build([
+            {"file": "src/Service.java", "name": "validate", "line": 9, "end_line": 12},
+            {"file": "src/Other.java", "name": "validate", "line": 7, "end_line": 9},
+        ])
+
+        edge_pairs = {(edge["from"], edge["to"]) for edge in result["edges"]}
+        assert len(edge_pairs) == result["edge_count"]
+        assert all(
+            source.split(":", 1)[0] == target.split(":", 1)[0]
+            for source, target in edge_pairs
+        )
+
+    def test_build_ignores_paths_outside_repository(self, temp_java_repo):
+        """变更文件路径不能越过仓库边界。"""
+        builder = CallGraphBuilder(str(temp_java_repo))
+        result = builder.build([
+            {"file": "../outside.java", "name": "outside", "line": 1, "end_line": 2}
+        ])
+
+        assert result["node_count"] == 0
+        assert result["edge_count"] == 0
+
+    def test_build_handles_78_files_and_533_changed_methods_without_unrelated_nodes(self, tmp_path):
+        """回归实际规模：全仓扫描后不把无关方法加入影响图。"""
+        src_dir = tmp_path / "src"
+        unrelated_dir = tmp_path / "unrelated"
+        src_dir.mkdir()
+        unrelated_dir.mkdir()
+        changed_methods = []
+
+        for file_index in range(78):
+            method_count = 7 if file_index < 65 else 6
+            methods = []
+            for method_index in range(method_count):
+                name = f"changed_{file_index}_{method_index}"
+                methods.append(f"    public void {name}() {{}}")
+                changed_methods.append({
+                    "file": f"src/Changed{file_index}.java",
+                    "name": name,
+                    "line": method_index + 2,
+                    "end_line": method_index + 2,
+                })
+            (src_dir / f"Changed{file_index}.java").write_text(
+                "public class Changed%d {\n%s\n}\n" % (file_index, "\n".join(methods))
+            )
+
+        assert len(changed_methods) == 533
+        for file_index in range(200):
+            (unrelated_dir / f"Unrelated{file_index}.java").write_text(
+                f"public class Unrelated{file_index} {{ public void unrelated_{file_index}() {{}} }}\n"
+            )
+
+        result = CallGraphBuilder(str(tmp_path)).build(changed_methods)
+
+        assert result["node_count"] == 533
+        assert len(result["affected_methods"]) == 533
+        assert all(node["file"].startswith("src/") for node in result["nodes"])

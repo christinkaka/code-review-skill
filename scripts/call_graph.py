@@ -2,13 +2,13 @@
 """
 调用图构建器
 基于变更方法构建调用图，追踪血缘关系和影响范围。
-支持 Tree-sitter（多语言）和简单正则两种模式。
+调用图采用轻量级全仓索引；精确 Tree-sitter AST 规约扫描由规则引擎负责。
 """
 
 import logging
 import os
 import re
-from collections import defaultdict
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -21,15 +21,9 @@ class CallGraphBuilder:
     def __init__(self, repo_path: str, language: str = "java"):
         self.repo_path = Path(repo_path).resolve()
         self.language = language.lower()
-        self._use_tree_sitter = False
-
-        # 尝试加载 Tree-sitter
-        try:
-            import tree_sitter
-            self._use_tree_sitter = True
-            logger.info("Tree-sitter 可用，使用精确解析模式")
-        except ImportError:
-            logger.info("Tree-sitter 不可用，使用正则近似模式")
+        # 调用图当前使用轻量级正则近似；精确 Tree-sitter AST 扫描由
+        # BuiltinEngineV2 负责。不要仅因依赖可导入就宣称调用图已使用 AST。
+        logger.info("调用图使用全仓两遍流式轻量级解析模式")
 
     def build(self, changed_methods: List[Dict]) -> Dict:
         """
@@ -60,16 +54,20 @@ class CallGraphBuilder:
                 "call_chains": {},
             }
 
-        # 1. 解析所有源文件，提取方法定义和调用关系
+        # 1. 两遍流式扫描整个仓库：第一遍建立全局方法名索引，第二遍识别
+        # 跨文件调用。每次只保留一个文件的源码内容，避免把全仓源码驻留内存。
         all_methods, call_edges = self._parse_repository()
+
+        methods_by_file_and_name = defaultdict(list)
+        for method_name, definitions in all_methods.items():
+            for definition in definitions:
+                methods_by_file_and_name[(definition["file"], method_name)].append(definition)
 
         # 2. 构建邻接表
         callers = defaultdict(set)  # method -> set of callers
-        callees = defaultdict(set)  # method -> set of callees
 
-        for caller, callee in call_edges:
+        for _, caller, _, callee in call_edges:
             callers[callee].add(caller)
-            callees[caller].add(callee)
 
         # 3. 从变更方法出发，计算影响范围（BFS 向上追溯调用者）
         changed_names = {m["name"] for m in changed_methods}
@@ -78,6 +76,7 @@ class CallGraphBuilder:
         # 4. 构建节点和边
         nodes = []
         edges = []
+        edge_ids = set()
         node_ids = set()
 
         for method_name in affected:
@@ -92,14 +91,21 @@ class CallGraphBuilder:
                     })
                     node_ids.add(node_id)
 
-        for caller, callee in call_edges:
+        for file_path, caller, caller_line, callee in call_edges:
             if caller in affected and callee in affected:
-                for caller_info in all_methods.get(caller, []):
-                    for callee_info in all_methods.get(callee, []):
-                        edges.append({
-                            "from": f"{caller_info['file']}:{caller_info['line']}",
-                            "to": f"{callee_info['file']}:{callee_info['line']}",
-                        })
+                caller_id = f"{file_path}:{caller_line}"
+                # 优先连接当前文件内的定义；无本文件定义时，仅连接全仓唯一
+                # 目标。重名歧义调用
+                # 仍参与保守影响传播，但不展开为 N*M 实体边。
+                callee_candidates = methods_by_file_and_name.get((file_path, callee), [])
+                if not callee_candidates and len(all_methods.get(callee, [])) == 1:
+                    callee_candidates = all_methods[callee]
+                for callee_info in callee_candidates:
+                    callee_id = f"{callee_info['file']}:{callee_info['line']}"
+                    edge_id = (caller_id, callee_id)
+                    if edge_id not in edge_ids:
+                        edges.append({"from": caller_id, "to": callee_id})
+                        edge_ids.add(edge_id)
 
         # 5. 为变更方法生成调用链
         call_chains = {}
@@ -256,17 +262,41 @@ class CallGraphBuilder:
         }
         return ext_map.get(self.language, [".java", ".py", ".js", ".ts"])
 
-    def _parse_repository(self) -> Tuple[Dict, List[Tuple[str, str]]]:
+    def _iter_source_files(self, file_paths: Optional[Set[str]], extensions: List[str]):
+        """按指定范围迭代源文件；file_paths=None 时才遍历整个仓库。"""
+        if file_paths is not None:
+            for rel_path in sorted(file_paths):
+                if not any(rel_path.endswith(ext) for ext in extensions):
+                    continue
+                file_path = self.repo_path / rel_path
+                if file_path.is_file():
+                    yield file_path, rel_path
+            return
+
+        for root, dirs, files in os.walk(self.repo_path):
+            dirs[:] = [
+                d for d in dirs
+                if d not in {".git", "node_modules", "target", "build", "__pycache__", ".venv", "vendor"}
+            ]
+            for filename in files:
+                if not any(filename.endswith(ext) for ext in extensions):
+                    continue
+                file_path = Path(root) / filename
+                yield file_path, file_path.relative_to(self.repo_path).as_posix()
+
+    def _parse_repository(
+        self, file_paths: Optional[Set[str]] = None
+    ) -> Tuple[Dict, Set[Tuple[str, str, int, str]]]:
         """
-        解析仓库中所有源文件
+        解析指定源文件；未指定范围时解析整个仓库
 
         Returns:
             (methods_dict, call_edges)
             methods_dict: {method_name: [{"file": str, "line": int}]}
-            call_edges: [(caller_name, callee_name)]
+            call_edges: {(file, caller_name, caller_line, callee_name)}
         """
         methods_dict = defaultdict(list)
-        call_edges = []
+        call_edges = set()
 
         # 确定要扫描的文件扩展名
         ext_map = {
@@ -277,39 +307,36 @@ class CallGraphBuilder:
         }
         extensions = ext_map.get(self.language, [".java", ".py", ".js"])
 
-        # 遍历源文件
-        for root, dirs, files in os.walk(self.repo_path):
-            # 跳过常见非源码目录
-            dirs[:] = [
-                d for d in dirs
-                if d not in {".git", "node_modules", "target", "build", "__pycache__", ".venv", "vendor"}
-            ]
+        # 第一遍只保留方法定义索引，不缓存文件内容。
+        for file_path, rel_path in self._iter_source_files(file_paths, extensions):
+            try:
+                with file_path.open("r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()
 
-            for filename in files:
-                if not any(filename.endswith(ext) for ext in extensions):
-                    continue
+                methods = self._extract_method_defs(rel_path, content)
+                for method in methods:
+                    methods_dict[method["name"]].append({
+                        "file": rel_path,
+                        "line": method["line"],
+                    })
 
-                file_path = os.path.join(root, filename)
-                rel_path = os.path.relpath(file_path, self.repo_path)
+            except Exception as e:
+                logger.debug(f"解析文件失败 {rel_path}: {e}")
 
-                try:
-                    with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-                        content = f.read()
-
-                    # 提取方法定义
-                    methods = self._extract_method_defs(rel_path, content)
-                    for m in methods:
-                        methods_dict[m["name"]].append({
-                            "file": rel_path,
-                            "line": m["line"],
-                        })
-
-                    # 提取方法内的调用关系
-                    edges = self._extract_call_edges(content, methods)
-                    call_edges.extend(edges)
-
-                except Exception as e:
-                    logger.debug(f"解析文件失败 {rel_path}: {e}")
+        # 第二遍使用全局方法名集合识别跨文件调用。相比缓存全仓源码，两遍 I/O
+        # 会增加少量顺序读取时间，但峰值内存与单个最大源码文件大小相关。
+        known_method_names = set(methods_dict)
+        for file_path, rel_path in self._iter_source_files(file_paths, extensions):
+            try:
+                with file_path.open("r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+                methods = self._extract_method_defs(rel_path, content)
+                for caller, caller_line, callee in self._extract_call_edges(
+                    content, methods, known_method_names
+                ):
+                    call_edges.add((rel_path, caller, caller_line, callee))
+            except Exception as e:
+                logger.debug(f"解析调用关系失败 {rel_path}: {e}")
 
         return methods_dict, call_edges
 
@@ -322,13 +349,13 @@ class CallGraphBuilder:
             for match in re.finditer(pattern, content):
                 name = match.group(1)
                 if name not in ("if", "for", "while", "switch", "catch", "try"):
-                    line = content[:match.start()].count("\n") + 1
+                    line = content.count("\n", 0, match.start()) + 1
                     methods.append({"name": name, "line": line})
 
         elif self.language == "python":
             pattern = r'def\s+(\w+)\s*\('
             for match in re.finditer(pattern, content):
-                line = content[:match.start()].count("\n") + 1
+                line = content.count("\n", 0, match.start()) + 1
                 methods.append({"name": match.group(1), "line": line})
 
         elif self.language in ("javascript", "typescript"):
@@ -338,22 +365,31 @@ class CallGraphBuilder:
             ]
             for pattern in patterns:
                 for match in re.finditer(pattern, content):
-                    line = content[:match.start()].count("\n") + 1
+                    line = content.count("\n", 0, match.start()) + 1
                     methods.append({"name": match.group(1), "line": line})
 
         return methods
 
-    def _extract_call_edges(self, content: str, methods: List[Dict]) -> List[Tuple[str, str]]:
+    def _extract_call_edges(
+        self,
+        content: str,
+        methods: List[Dict],
+        known_method_names: Optional[Set[str]] = None,
+    ) -> List[Tuple[str, int, str]]:
         """提取方法内的调用关系"""
         edges = []
         lines = content.split("\n")
 
-        # 构建方法名集合（用于匹配调用）
-        all_method_names = {m["name"] for m in methods}
+        # 全仓扫描时使用第一遍得到的全局方法名；独立调用时保持原有本文件语义。
+        all_method_names = known_method_names or {m["name"] for m in methods}
+        ordered_methods = sorted(methods, key=lambda item: item["line"])
 
-        for method in methods:
+        for index, method in enumerate(ordered_methods):
             start = method["line"] - 1
-            end = min(start + 50, len(lines))  # 近似方法体范围
+            if index + 1 < len(ordered_methods):
+                end = ordered_methods[index + 1]["line"] - 1
+            else:
+                end = len(lines)
 
             for i in range(start, end):
                 line = lines[i]
@@ -362,18 +398,18 @@ class CallGraphBuilder:
                 for match in re.finditer(call_pattern, line):
                     callee = match.group(1)
                     if callee in all_method_names and callee != method["name"]:
-                        edges.append((method["name"], callee))
+                        edges.append((method["name"], method["line"], callee))
 
         return edges
 
     def _compute_affected(self, changed_names: Set[str], callers: Dict[str, Set[str]]) -> Set[str]:
         """BFS 计算受变更影响的所有方法（向上追溯调用者）"""
         affected = set(changed_names)
-        queue = list(changed_names)
+        queue = deque(changed_names)
         visited = set(changed_names)
 
         while queue:
-            current = queue.pop(0)
+            current = queue.popleft()
             for caller in callers.get(current, set()):
                 if caller not in visited:
                     visited.add(caller)
@@ -393,7 +429,7 @@ class CallGraphBuilder:
             if not direct_callers:
                 break
             # 取第一个调用者（简化）
-            next_caller = next(iter(direct_callers))
+            next_caller = sorted(direct_callers)[0]
             if next_caller in visited:
                 break
             chain.append(next_caller)
